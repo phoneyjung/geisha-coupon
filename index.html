@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>เกอิชา - สุ่มส่วนลด</title>
+<script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Sarabun', 'Prompt', sans-serif;
+    background: linear-gradient(135deg, #1a0000 0%, #3d0000 50%, #1a0000 100%);
+    min-height: 100vh;
+    color: #fff;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .container { max-width: 500px; width: 100%; text-align: center; }
+
+  .logo-box {
+    background: linear-gradient(135deg, #d4af37, #f4e5a1, #d4af37);
+    padding: 3px;
+    border-radius: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 0 30px rgba(212, 175, 55, 0.5);
+  }
+  .logo-inner {
+    background: #1a0000;
+    border-radius: 17px;
+    padding: 25px 15px;
+  }
+  .shop-name {
+    font-size: 42px;
+    font-weight: bold;
+    background: linear-gradient(135deg, #d4af37, #f4e5a1, #d4af37);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: 3px;
+  }
+  .shop-sub {
+    font-size: 14px;
+    color: #d4af37;
+    margin-top: 5px;
+    letter-spacing: 2px;
+  }
+
+  .user-info {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: rgba(255,255,255,0.1);
+    padding: 10px 15px;
+    border-radius: 30px;
+    margin-bottom: 20px;
+    font-size: 14px;
+  }
+  .user-info img { width: 30px; height: 30px; border-radius: 50%; }
+
+  .title { font-size: 22px; margin-bottom: 10px; color: #f4e5a1; }
+  .subtitle { font-size: 14px; margin-bottom: 20px; color: #ccc; }
+
+  .btn {
+    background: linear-gradient(135deg, #d4af37, #b8941f);
+    color: #1a0000;
+    border: none;
+    padding: 15px 40px;
+    font-size: 18px;
+    font-weight: bold;
+    border-radius: 30px;
+    cursor: pointer;
+    margin-top: 15px;
+    box-shadow: 0 5px 15px rgba(212, 175, 55, 0.4);
+  }
+  .btn:disabled { background: #666; color: #999; cursor: not-allowed; }
+  .btn-staff { background: linear-gradient(135deg, #8B0000, #5a0000); color: #fff; }
+
+  .info-box {
+    background: rgba(255,255,255,0.1);
+    border: 2px solid #d4af37;
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+
+  .scratch-instruction {
+    background: rgba(212, 175, 55, 0.15);
+    border: 1px dashed #d4af37;
+    padding: 12px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    color: #f4e5a1;
+    font-size: 14px;
+  }
+  .scratch-instruction .big {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 5px;
+  }
+
+  .coupons-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin-top: 10px;
+  }
+
+  /* ใบคูปอง */
+  .coupon {
+    position: relative;
+    aspect-ratio: 1/1.2;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+    border: 2px solid #d4af37;
+    background: linear-gradient(135deg, #fff, #fff5e0);
+  }
+
+  /* ส่วนเฉลย (อยู่ข้างหลัง) */
+  .coupon-prize {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #8B0000;
+    text-align: center;
+    padding: 10px;
+  }
+  .coupon-prize .discount {
+    font-size: 38px;
+    font-weight: bold;
+    color: #8B0000;
+    line-height: 1;
+    text-shadow: 2px 2px 0 rgba(212, 175, 55, 0.3);
+  }
+  .coupon-prize .baht {
+    font-size: 18px;
+    color: #8B0000;
+    margin-top: 3px;
+    font-weight: bold;
+  }
+  .coupon-prize .label {
+    font-size: 11px;
+    color: #666;
+    margin-top: 8px;
+  }
+  .coupon-prize .emoji-prize {
+    font-size: 28px;
+    margin-top: 6px;
+  }
+  .coupon-prize .loading-dots {
+    font-size: 32px;
+    color: #8B0000;
+    font-weight: bold;
+    animation: pulse 1s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* Canvas สำหรับขูด (อยู่ข้างหน้า) */
+  .scratch-canvas {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    cursor: grab;
+    touch-action: none;
+  }
+  .scratch-canvas:active { cursor: grabbing; }
+
+  /* ตอนเฉลยเสร็จแล้ว */
+  .coupon.revealed .scratch-canvas {
+    opacity: 0;
+    transition: opacity 0.6s;
+    pointer-events: none;
+  }
+  .coupon.revealed {
+    animation: revealPop 0.6s;
+  }
+  @keyframes revealPop {
+    0% { transform: scale(1); }
+    30% { transform: scale(1.08); }
+    100% { transform: scale(1); }
+  }
+
+  /* ใบที่ "เสียดาย" - ใบที่ไม่ได้ */
+  .coupon.peek-revealed::after {
+    content: "เสียดาย!";
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(139, 0, 0, 0.85);
+    color: #fff;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: bold;
+    z-index: 5;
+  }
+  .coupon.peek-revealed .coupon-prize {
+    opacity: 0.7;
+    filter: grayscale(0.3);
+  }
+
+  /* ใบที่เลือก = ใบที่ได้จริง */
+  .coupon.winner {
+    border-color: #d4af37;
+    box-shadow: 0 0 25px rgba(212, 175, 55, 0.8), 0 5px 20px rgba(0,0,0,0.5);
+  }
+  .coupon.winner::after {
+    content: "★ คุณได้รับ ★";
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: linear-gradient(135deg, #d4af37, #f4e5a1);
+    color: #1a0000;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: bold;
+    z-index: 5;
+  }
+
+  .progress-bar {
+    width: 100%;
+    height: 4px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 15px;
+    display: none;
+  }
+  .progress-bar.show { display: block; }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #d4af37, #f4e5a1);
+    width: 0%;
+    transition: width 0.2s;
+  }
+
+  .result-box {
+    display: none;
+    background: linear-gradient(135deg, #fff, #fff5e0);
+    color: #8B0000;
+    padding: 25px;
+    border-radius: 20px;
+    margin-top: 25px;
+    border: 3px dashed #8B0000;
+    animation: popIn 0.5s;
+  }
+  @keyframes popIn {
+    0% { transform: scale(0.8); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .result-box h2 { font-size: 20px; margin-bottom: 10px; }
+  .result-box .amount {
+    font-size: 60px;
+    font-weight: bold;
+    color: #8B0000;
+    margin: 10px 0;
+    line-height: 1;
+  }
+  .result-box .valid { font-size: 14px; color: #666; margin-top: 10px; }
+
+  .warning {
+    background: rgba(255, 100, 100, 0.15);
+    border: 2px solid #ff6464;
+    padding: 12px;
+    border-radius: 10px;
+    margin-top: 15px;
+    font-size: 13px;
+    color: #8B0000;
+    font-weight: bold;
+  }
+
+  .rules {
+    background: rgba(0,0,0,0.3);
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: 20px;
+    font-size: 13px;
+    text-align: left;
+    color: #ddd;
+  }
+  .rules h3 { color: #d4af37; margin-bottom: 8px; font-size: 14px; }
+  .rules ul { padding-left: 20px; }
+  .rules li { margin-bottom: 5px; }
+
+  .hidden { display: none !important; }
+
+  .loading {
+    text-align: center;
+    padding: 40px 20px;
+    color: #d4af37;
+  }
+  .spinner {
+    width: 40px; height: 40px;
+    border: 4px solid rgba(212, 175, 55, 0.3);
+    border-top-color: #d4af37;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 15px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .status-badge {
+    display: inline-block;
+    padding: 6px 15px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: bold;
+    margin-top: 10px;
+  }
+  .status-unused { background: #4caf50; color: #fff; }
+  .status-used { background: #999; color: #fff; }
+
+  .toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #4caf50;
+    color: #fff;
+    padding: 12px 25px;
+    border-radius: 25px;
+    z-index: 9999;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    font-weight: bold;
+  }
+  .toast.error { background: #f44336; }
+
+  .peek-hint {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(244, 229, 161, 0.2));
+    border: 1px solid #d4af37;
+    padding: 10px;
+    border-radius: 8px;
+    margin-top: 15px;
+    font-size: 13px;
+    color: #f4e5a1;
+    display: none;
+  }
+  .peek-hint.show { display: block; animation: fadeIn 0.5s; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="logo-box">
+    <div class="logo-inner">
+      <div class="shop-name">เกอิชา</div>
+      <div class="shop-sub">GEISHA MASSAGE</div>
+    </div>
+  </div>
+
+  <!-- LOADING -->
+  <div id="loadingScreen" class="loading">
+    <div class="spinner"></div>
+    <div>กำลังเชื่อมต่อ Line...</div>
+  </div>
+
+  <!-- MAIN -->
+  <div id="mainContent" class="hidden">
+
+    <div class="user-info">
+      <img id="userPic" src="" alt="">
+      <span id="userName">ผู้ใช้</span>
+    </div>
+
+    <div class="title">🎁 สุ่มส่วนลดสุดพิเศษ 🎁</div>
+    <div class="subtitle">ส่วนลด 50 - 300 บาท สำหรับราคาปกติ</div>
+
+    <!-- ก่อนเริ่ม -->
+    <div id="notPlayedBox">
+      <div class="info-box">
+        <div style="font-size: 18px; margin-bottom: 10px;">พร้อมขูดคูปองแล้ว!</div>
+        <div style="font-size: 13px; color: #ccc;">สุ่มได้ 1 ครั้งเท่านั้นต่อบัญชี</div>
+        <button class="btn" onclick="showCoupons()">🎲 เริ่มขูดคูปอง</button>
+      </div>
+    </div>
+
+    <!-- กริดคูปอง -->
+    <div id="gridSection" class="hidden">
+      <div class="scratch-instruction">
+        <div class="big">👆 เลือก 1 ใบ แล้วใช้นิ้วถูเพื่อขูด!</div>
+        <div>ขูดให้ได้ 60% ขึ้นไปจะเฉลยอัตโนมัติ</div>
+      </div>
+      <div class="coupons-grid" id="couponsGrid"></div>
+      <div class="progress-bar" id="progressBar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="peek-hint" id="peekHint">
+        💡 อยากรู้ใบอื่นได้อะไรไหม? ลองขูดดูได้ (แต่จะได้แค่ใบแรกที่ขูดนะ!)
+      </div>
+    </div>
+
+    <!-- ผลลัพธ์ -->
+    <div id="resultBox" class="result-box">
+      <h2>🎉 ยินดีด้วย! คุณได้รับส่วนลด 🎉</h2>
+      <div class="amount"><span id="amount-display">0</span> บาท</div>
+      <div style="font-size: 14px;">ใช้ลดกับราคาปกติ</div>
+      <div class="valid">📅 หมดอายุ: <span id="expire-display">31/05/69</span></div>
+      <div class="valid">🏪 ใช้ได้ที่ร้านเกอิชาเท่านั้น</div>
+
+      <div id="statusContainer">
+        <div id="statusBadge" class="status-badge status-unused">⏳ ยังไม่ได้ใช้</div>
+      </div>
+
+      <div id="staffArea">
+        <div class="warning">
+          ⚠️ ห้ามกดใช้สิทธิ์เอง!<br>
+          กรุณาให้พนักงานหน้าร้านกดให้เท่านั้น
+        </div>
+        <button id="staff-btn" class="btn btn-staff" onclick="useCoupon()">
+          🔒 พนักงานกดเพื่อใช้สิทธิ์
+        </button>
+      </div>
+    </div>
+
+    <div class="rules">
+      <h3>📋 เงื่อนไขการใช้งาน</h3>
+      <ul>
+        <li>ส่วนลดใช้กับราคาปกติเท่านั้น</li>
+        <li>ใช้ได้ถึงวันที่ 31 พฤษภาคม 2569</li>
+        <li>สุ่มได้เพียง 1 ครั้ง ต่อ 1 Line ID</li>
+        <li><strong style="color:#ff9999;">ห้ามกด "ใช้คูปอง" ด้วยตนเอง</strong></li>
+        <li>ต้องให้พนักงานหน้าร้านเป็นผู้กดใช้เท่านั้น</li>
+        <li>ไม่สามารถใช้ร่วมกับโปรโมชั่นอื่นได้</li>
+        <li>ขอสงวนสิทธิ์ในการเปลี่ยนแปลงโดยไม่แจ้งล่วงหน้า</li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ===== ตั้งค่า =====
+const LIFF_ID = "2009881458-wioPjdS0";
+const REVEAL_THRESHOLD = 0.6; // ขูด 60% เฉลย
+const TOTAL_COUPONS = 6;
+
+// โอกาสการสุ่ม (ใช้สำหรับใบที่ไม่ได้รับ - mock เท่านั้น)
+const fakeDiscounts = [50, 100, 150, 200, 250, 300];
+
+let userLineId = "";
+let currentCouponData = null;
+let winnerIndex = -1; // ใบที่ลูกค้าเลือกขูดเป็นใบแรก = ใบที่ได้
+let firstScratchedIndex = -1;
+let resultShown = false;
+let couponPrizes = []; // [{amount, isWinner}, ...] สำหรับ 6 ใบ
+
+// ===== Toast =====
+function showToast(msg, isError) {
+  const existing = document.querySelector(".toast");
+  if (existing) existing.remove();
+  const toast = document.createElement("div");
+  toast.className = "toast" + (isError ? " error" : "");
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2500);
+}
+
+// ===== 1. เริ่ม LIFF =====
+async function main() {
+  try {
+    await liff.init({ liffId: LIFF_ID });
+    if (!liff.isLoggedIn()) {
+      liff.login();
+      return;
+    }
+    const profile = await liff.getProfile();
+    userLineId = profile.userId;
+    document.getElementById("userName").textContent = profile.displayName;
+    if (profile.pictureUrl) {
+      document.getElementById("userPic").src = profile.pictureUrl;
+    } else {
+      document.getElementById("userPic").style.display = "none";
+    }
+    document.getElementById("loadingScreen").classList.add("hidden");
+    document.getElementById("mainContent").classList.remove("hidden");
+    await checkExistingCoupon();
+  } catch (err) {
+    document.getElementById("loadingScreen").innerHTML = `
+      <div style="color:#ff9999;">
+        ❌ ไม่สามารถเชื่อมต่อ Line ได้<br>
+        <small style="color:#ccc;">${err.message}</small><br><br>
+        <button class="btn" onclick="location.reload()">ลองใหม่</button>
+      </div>
+    `;
+  }
+}
+
+// ===== 2. เช็คคูปองเดิม =====
+async function checkExistingCoupon() {
+  try {
+    const res = await fetch('/api/get-coupon', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lineId: userLineId, checkOnly: true })
+    });
+    const result = await res.json();
+    if (result.success && result.isNew === false) {
+      currentCouponData = result.data;
+      showResult(result.data.amount, result.data.expireDate, result.data.isUsed);
+    }
+  } catch (err) {
+    console.error("checkExistingCoupon error:", err);
+  }
+}
+
+// ===== 3. สร้างกริดคูปอง 6 ใบ =====
+function showCoupons() {
+  document.getElementById("notPlayedBox").classList.add("hidden");
+  document.getElementById("gridSection").classList.remove("hidden");
+
+  // เตรียมรางวัลปลอมสำหรับ 5 ใบที่ไม่ได้รับ (สำหรับโชว์ "เสียดาย")
+  // ตัวจริงจะมาจาก API ตอนกดขูดใบแรก
+  couponPrizes = generateFakePrizes();
+
+  const grid = document.getElementById("couponsGrid");
+  grid.innerHTML = "";
+  firstScratchedIndex = -1;
+  winnerIndex = -1;
+  resultShown = false;
+
+  for (let i = 0; i < TOTAL_COUPONS; i++) {
+    const div = document.createElement("div");
+    div.className = "coupon";
+    div.dataset.index = i;
+    div.innerHTML = `
+      <div class="coupon-prize">
+        <div class="loading-dots" id="prize-loading-${i}">. . .</div>
+        <div class="discount" id="prize-amount-${i}" style="display:none;">---</div>
+        <div class="baht" id="prize-baht-${i}" style="display:none;">บาท</div>
+        <div class="label" id="prize-label-${i}" style="display:none;">ส่วนลด</div>
+        <div class="emoji-prize" id="prize-emoji-${i}" style="display:none;">🎁</div>
+      </div>
+      <canvas class="scratch-canvas" id="canvas-${i}"></canvas>
+    `;
+    grid.appendChild(div);
+
+    // ตั้ง canvas
+    setupScratchCanvas(div, i);
+  }
+}
+
+// ===== สร้างรางวัลปลอม (ไม่ซ้ำ) =====
+function generateFakePrizes() {
+  const arr = [];
+  const used = new Set();
+  while (arr.length < TOTAL_COUPONS) {
+    const r = fakeDiscounts[Math.floor(Math.random() * fakeDiscounts.length)];
+    // ให้มีความหลากหลาย
+    arr.push(r);
+  }
+  return arr;
+}
+
+// ===== 4. ตั้งค่า Canvas สำหรับขูด =====
+function setupScratchCanvas(couponDiv, index) {
+  const canvas = couponDiv.querySelector(".scratch-canvas");
+  const ctx = canvas.getContext("2d");
+
+  // รอให้ DOM render เสร็จ
+  requestAnimationFrame(() => {
+    const rect = couponDiv.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    canvas.style.width = rect.width + "px";
+    canvas.style.height = rect.height + "px";
+    ctx.scale(dpr, dpr);
+
+    // วาดพื้นผิวเหมือนล็อตเตอรี่
+    drawScratchSurface(ctx, rect.width, rect.height, index + 1);
+  });
+
+  // ตัวแปร state
+  let isDrawing = false;
+  let hasStarted = false;
+  let lastPos = null;
+
+  const getPos = (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const p = e.touches ? e.touches[0] : e;
+    return {
+      x: p.clientX - rect.left,
+      y: p.clientY - rect.top
+    };
+  };
+
+  const scratch = (x, y) => {
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.beginPath();
+    ctx.arc(x, y, 22, 0, Math.PI * 2);
+    ctx.fill();
+
+    // ลากเส้นต่อกัน
+    if (lastPos) {
+      ctx.beginPath();
+      ctx.lineWidth = 44;
+      ctx.lineCap = "round";
+      ctx.moveTo(lastPos.x, lastPos.y);
+      ctx.lineTo(x, y);
+      ctx.stroke();
+    }
+    lastPos = { x, y };
+  };
+
+  const startScratch = async (e) => {
+    e.preventDefault();
+    if (resultShown) return;
+
+    // ถ้ายังไม่มีใครขูด → ใบนี้คือใบที่ "ได้จริง"
+    if (firstScratchedIndex === -1) {
+      firstScratchedIndex = index;
+      winnerIndex = index;
+
+      // ขอข้อมูลจริงจาก API ก่อน (ทำขนานไป)
+      requestPrizeFromAPI();
+    }
+
+    // ใบอื่นที่ไม่ใช่ใบแรก → แสดงรางวัลปลอม (ให้รู้สึกเสียดาย)
+    if (index !== firstScratchedIndex) {
+      // ทำให้ "เสียดาย" - แสดงรางวัลที่ดูดี (อาจจะดีกว่าที่ได้)
+      showFakePrize(index);
+    }
+
+    isDrawing = true;
+    hasStarted = true;
+    lastPos = null;
+    const pos = getPos(e);
+    scratch(pos.x, pos.y);
+  };
+
+  const moveScratch = (e) => {
+    if (!isDrawing) return;
+    e.preventDefault();
+    const pos = getPos(e);
+    scratch(pos.x, pos.y);
+    updateProgress(canvas, ctx, couponDiv, index);
+  };
+
+  const endScratch = () => {
+    isDrawing = false;
+    lastPos = null;
+    if (hasStarted) {
+      checkRevealComplete(canvas, ctx, couponDiv, index);
+    }
+  };
+
+  // Mouse events
+  canvas.addEventListener("mousedown", startScratch);
+  canvas.addEventListener("mousemove", moveScratch);
+  canvas.addEventListener("mouseup", endScratch);
+  canvas.addEventListener("mouseleave", endScratch);
+
+  // Touch events
+  canvas.addEventListener("touchstart", startScratch, { passive: false });
+  canvas.addEventListener("touchmove", moveScratch, { passive: false });
+  canvas.addEventListener("touchend", endScratch);
+}
+
+// ===== วาดพื้นผิวคูปองที่จะขูด =====
+function drawScratchSurface(ctx, w, h, num) {
+  // พื้นเงิน-ทอง gradient
+  const grad = ctx.createLinearGradient(0, 0, w, h);
+  grad.addColorStop(0, "#8B0000");
+  grad.addColorStop(0.3, "#d4af37");
+  grad.addColorStop(0.6, "#f4e5a1");
+  grad.addColorStop(1, "#8B0000");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, w, h);
+
+  // ลายจุดประดับ
+  ctx.fillStyle = "rgba(255,255,255,0.15)";
+  for (let i = 0; i < 30; i++) {
+    const x = Math.random() * w;
+    const y = Math.random() * h;
+    const r = 1 + Math.random() * 2;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // เลขใบใหญ่กลาง
+  ctx.fillStyle = "rgba(26, 0, 0, 0.4)";
+  ctx.font = "bold 60px sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(num, w / 2, h / 2 - 15);
+
+  // ข้อความ "ขูดเลย!"
+  ctx.fillStyle = "#1a0000";
+  ctx.font = "bold 16px sans-serif";
+  ctx.fillText("👆 ขูดเลย!", w / 2, h / 2 + 35);
+
+  // กรอบ
+  ctx.strokeStyle = "rgba(255,255,255,0.4)";
+  ctx.lineWidth = 3;
+  ctx.strokeRect(8, 8, w - 16, h - 16);
+}
+
+// ===== คำนวณว่าขูดไปแล้วเท่าไหร่ =====
+function calcScratchedPercent(canvas, ctx) {
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const pixels = imageData.data;
+  let transparent = 0;
+  // sample ทุก 10 pixel เพื่อความเร็ว
+  for (let i = 3; i < pixels.length; i += 40) {
+    if (pixels[i] === 0) transparent++;
+  }
+  const total = pixels.length / 40;
+  return transparent / total;
+}
+
+// ===== Update progress bar =====
+let progressUpdateTimer = null;
+function updateProgress(canvas, ctx, couponDiv, index) {
+  if (index !== firstScratchedIndex) return;
+  if (progressUpdateTimer) return;
+
+  progressUpdateTimer = setTimeout(() => {
+    const pct = calcScratchedPercent(canvas, ctx);
+    const bar = document.getElementById("progressFill");
+    document.getElementById("progressBar").classList.add("show");
+    bar.style.width = Math.min(100, (pct / REVEAL_THRESHOLD) * 100) + "%";
+    progressUpdateTimer = null;
+  }, 100);
+}
+
+// ===== เช็คว่าขูดเสร็จหรือยัง =====
+function checkRevealComplete(canvas, ctx, couponDiv, index) {
+  const pct = calcScratchedPercent(canvas, ctx);
+  if (pct >= REVEAL_THRESHOLD) {
+    revealCoupon(couponDiv, index);
+  }
+}
+
+// ===== เปิดใบให้เห็นชัด =====
+function revealCoupon(couponDiv, index) {
+  if (couponDiv.classList.contains("revealed")) return;
+  couponDiv.classList.add("revealed");
+
+  if (index === winnerIndex) {
+    // ใบที่ได้จริง
+    couponDiv.classList.add("winner");
+    setTimeout(() => {
+      if (currentCouponData) {
+        showResult(currentCouponData.amount, currentCouponData.expireDate, false);
+      }
+    }, 1200);
+  } else {
+    // ใบที่ขูดเล่น
+    couponDiv.classList.add("peek-revealed");
+    document.getElementById("peekHint").classList.add("show");
+  }
+}
+
+// ===== แสดงรางวัลปลอม (สำหรับใบที่ไม่ใช่ใบแรก) =====
+function showFakePrize(index) {
+  // ทำให้ดูเหมือน "เสียดาย" - ใส่รางวัลที่อาจจะดีกว่า
+  const fakeAmount = couponPrizes[index];
+  document.getElementById(`prize-loading-${index}`).style.display = "none";
+  document.getElementById(`prize-amount-${index}`).textContent = fakeAmount;
+  document.getElementById(`prize-amount-${index}`).style.display = "block";
+  document.getElementById(`prize-baht-${index}`).style.display = "block";
+  document.getElementById(`prize-label-${index}`).style.display = "block";
+  document.getElementById(`prize-emoji-${index}`).style.display = "block";
+}
+
+// ===== ขอข้อมูลจริงจาก API =====
+async function requestPrizeFromAPI() {
+  try {
+    const res = await fetch('/api/get-coupon', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lineId: userLineId })
+    });
+    const result = await res.json();
+
+    if (result.success) {
+      currentCouponData = result.data;
+      // อัพเดทใบที่ "ได้จริง" - ใส่ตัวเลขจริง
+      const idx = winnerIndex;
+      document.getElementById(`prize-loading-${idx}`).style.display = "none";
+      document.getElementById(`prize-amount-${idx}`).textContent = result.data.amount;
+      document.getElementById(`prize-amount-${idx}`).style.display = "block";
+      document.getElementById(`prize-baht-${idx}`).style.display = "block";
+      document.getElementById(`prize-label-${idx}`).style.display = "block";
+      document.getElementById(`prize-emoji-${idx}`).style.display = "block";
+      // อัพเดทรางวัลปลอมในตำแหน่งนี้ใน array ด้วย
+      couponPrizes[idx] = result.data.amount;
+    } else {
+      showToast("❌ " + (result.error || "เกิดข้อผิดพลาด"), true);
+    }
+  } catch (err) {
+    showToast("❌ เชื่อมต่อเซิร์ฟเวอร์ไม่ได้", true);
+    console.error(err);
+  }
+}
+
+// ===== แสดงหน้าผลลัพธ์ =====
+function showResult(amount, expireDate, isUsed) {
+  resultShown = true;
+  document.getElementById("notPlayedBox").classList.add("hidden");
+  document.getElementById("resultBox").style.display = "block";
+
+  // เลื่อนลงไปดูผลลัพธ์
+  setTimeout(() => {
+    document.getElementById("resultBox").scrollIntoView({
+      behavior: "smooth",
+      block: "center"
+    });
+  }, 200);
+
+  document.getElementById("amount-display").textContent = amount;
+  document.getElementById("expire-display").textContent = expireDate || "31/05/69";
+
+  const badge = document.getElementById("statusBadge");
+  const staffBtn = document.getElementById("staff-btn");
+
+  if (isUsed) {
+    badge.className = "status-badge status-used";
+    badge.innerHTML = "✅ ใช้แล้ว";
+    staffBtn.textContent = "คูปองนี้ถูกใช้งานแล้ว";
+    staffBtn.disabled = true;
+    document.querySelector("#staffArea .warning").style.display = "none";
+    // ซ่อนกริดถ้าใช้แล้ว
+    document.getElementById("gridSection").classList.add("hidden");
+  } else {
+    badge.className = "status-badge status-unused";
+    badge.innerHTML = "⏳ ยังไม่ได้ใช้";
+    staffBtn.textContent = "🔒 พนักงานกดเพื่อใช้สิทธิ์";
+    staffBtn.disabled = false;
+  }
+}
+
+// ===== พนักงานกดใช้ =====
+async function useCoupon() {
+  if (!confirm("ยืนยันการใช้สิทธิ์คูปองนี้? (สำหรับพนักงานเท่านั้น)")) return;
+
+  try {
+    const res = await fetch('/api/use-coupon', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lineId: userLineId })
+    });
+    const result = await res.json();
+
+    if (result.success) {
+      showToast("✅ " + (result.message || "ใช้คูปองเรียบร้อย"));
+      const badge = document.getElementById("statusBadge");
+      badge.className = "status-badge status-used";
+      badge.innerHTML = "✅ ใช้แล้ว";
+      const staffBtn = document.getElementById("staff-btn");
+      staffBtn.textContent = "คูปองนี้ถูกใช้งานแล้ว";
+      staffBtn.disabled = true;
+      document.querySelector("#staffArea .warning").style.display = "none";
+    } else {
+      showToast("❌ " + (result.error || "เกิดข้อผิดพลาด"), true);
+    }
+  } catch (err) {
+    showToast("❌ เชื่อมต่อเซิร์ฟเวอร์ไม่ได้", true);
+    console.error(err);
+  }
+}
+
+window.addEventListener("load", main);
+</script>
+
+</body>
+</html>
