@@ -3,15 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>เกอิชา - สุ่มส่วนลด</title>
+<title>Geisha SPA - สุ่มส่วนลด</title>
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     font-family: 'Sarabun', 'Prompt', sans-serif;
-    background: linear-gradient(135deg, #1a0000 0%, #3d0000 50%, #1a0000 100%);
+    /* ⭐ พื้นหลังโทนเดียวกับโลโก้ - ครีม+ชมพูจางๆ */
+    background:
+      radial-gradient(circle at 0% 0%, rgba(253, 224, 228, 0.6) 0%, transparent 35%),
+      radial-gradient(circle at 100% 100%, rgba(253, 224, 228, 0.5) 0%, transparent 35%),
+      radial-gradient(circle at 100% 0%, rgba(255, 235, 215, 0.4) 0%, transparent 30%),
+      linear-gradient(135deg, #fdf5e8 0%, #fdebe0 50%, #fdf5e8 100%);
     min-height: 100vh;
-    color: #fff;
+    color: #2a1a1a;
     padding: 20px;
     display: flex;
     flex-direction: column;
@@ -20,13 +25,42 @@
     user-select: none;
     -webkit-user-select: none;
   }
-  .container { max-width: 500px; width: 100%; text-align: center; }
+
+  /* ดอกซากุระลอยอยู่ตามมุม */
+  body::before {
+    content: "🌸";
+    position: fixed;
+    top: 20px;
+    left: 15px;
+    font-size: 30px;
+    opacity: 0.6;
+    z-index: 0;
+    pointer-events: none;
+    animation: float 4s ease-in-out infinite;
+  }
+  body::after {
+    content: "🌸";
+    position: fixed;
+    bottom: 30px;
+    right: 15px;
+    font-size: 24px;
+    opacity: 0.5;
+    z-index: 0;
+    pointer-events: none;
+    animation: float 5s ease-in-out infinite reverse;
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-10px) rotate(10deg); }
+  }
+
+  .container { max-width: 500px; width: 100%; text-align: center; position: relative; z-index: 1; }
 
   .demo-banner {
-    background: linear-gradient(135deg, #ff9800, #f57c00);
+    background: linear-gradient(135deg, #ffb6c1, #ff9eb4);
     color: #fff;
     padding: 10px 15px;
-    border-radius: 10px;
+    border-radius: 12px;
     margin-bottom: 15px;
     font-size: 13px;
     font-weight: bold;
@@ -34,12 +68,12 @@
     align-items: center;
     justify-content: space-between;
     gap: 10px;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+    box-shadow: 0 3px 10px rgba(255, 158, 180, 0.3);
   }
   .demo-banner .demo-text { text-align: left; flex: 1; }
   .demo-banner .demo-reset {
     background: #fff;
-    color: #f57c00;
+    color: #d96e87;
     border: none;
     padding: 6px 12px;
     border-radius: 15px;
@@ -49,27 +83,23 @@
     white-space: nowrap;
   }
 
+  /* ⭐ กล่องโลโก้ - ไร้ขอบ พื้นเดียวกับเว็บ ดูเป็นธรรมชาติ */
   .logo-box {
-    background: linear-gradient(135deg, #d4af37, #f4e5a1, #d4af37);
-    padding: 3px;
-    border-radius: 25px;
     margin-bottom: 20px;
-    box-shadow: 0 0 25px rgba(212, 175, 55, 0.5);
+    padding: 0;
   }
   .logo-inner {
-    /* พื้นหลังครีมติดเหลืองอ่อน - ดูพรีเมียม นุ่มตา */
-    background: linear-gradient(135deg, #fef9e7, #faf0c5, #fef9e7);
-    border-radius: 22px;
-    padding: 20px 25px;
+    padding: 10px 20px;
     display: flex;
     align-items: center;
     justify-content: center;
   }
   .logo-img {
-    max-width: 300px;
+    max-width: 320px;
     width: 100%;
     height: auto;
-    /* ไม่ต้อง glow แล้ว เพราะพื้นสว่าง โลโก้ชัดอยู่แล้ว */
+    /* เงาอ่อนๆ ใต้โลโก้ ให้ดูลอย */
+    filter: drop-shadow(0 4px 8px rgba(217, 110, 135, 0.15));
   }
 
   .user-info {
@@ -77,20 +107,22 @@
     align-items: center;
     justify-content: center;
     gap: 10px;
-    background: rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(217, 110, 135, 0.2);
     padding: 10px 15px;
     border-radius: 30px;
     margin-bottom: 20px;
     font-size: 14px;
+    color: #5a3a3a;
   }
   .user-info img { width: 30px; height: 30px; border-radius: 50%; }
 
-  .title { font-size: 22px; margin-bottom: 10px; color: #f4e5a1; }
-  .subtitle { font-size: 14px; margin-bottom: 20px; color: #ccc; }
+  .title { font-size: 22px; margin-bottom: 10px; color: #d96e87; font-weight: bold; }
+  .subtitle { font-size: 14px; margin-bottom: 20px; color: #8a6a6a; }
 
   .btn {
-    background: linear-gradient(135deg, #d4af37, #b8941f);
-    color: #1a0000;
+    background: linear-gradient(135deg, #ff9eb4, #d96e87);
+    color: #fff;
     border: none;
     padding: 15px 40px;
     font-size: 18px;
@@ -98,32 +130,33 @@
     border-radius: 30px;
     cursor: pointer;
     margin-top: 15px;
-    box-shadow: 0 5px 15px rgba(212, 175, 55, 0.4);
+    box-shadow: 0 5px 15px rgba(217, 110, 135, 0.3);
   }
-  .btn:disabled { background: #666; color: #999; cursor: not-allowed; }
-  .btn-staff { background: linear-gradient(135deg, #8B0000, #5a0000); color: #fff; }
+  .btn:disabled { background: #ccc; color: #888; cursor: not-allowed; }
+  .btn-staff { background: linear-gradient(135deg, #6a4a4a, #4a2a2a); color: #fff; }
 
   .info-box {
-    background: rgba(255,255,255,0.1);
-    border: 2px solid #d4af37;
+    background: rgba(255, 255, 255, 0.7);
+    border: 2px dashed #ff9eb4;
     border-radius: 15px;
     padding: 20px;
     margin-bottom: 20px;
   }
 
   .scratch-instruction {
-    background: rgba(212, 175, 55, 0.15);
-    border: 1px dashed #d4af37;
+    background: rgba(255, 218, 224, 0.5);
+    border: 1px dashed #d96e87;
     padding: 12px;
     border-radius: 10px;
     margin-bottom: 15px;
-    color: #f4e5a1;
+    color: #8a4a5a;
     font-size: 14px;
   }
   .scratch-instruction .big {
     font-size: 16px;
     font-weight: bold;
     margin-bottom: 5px;
+    color: #d96e87;
   }
 
   .coupons-grid {
@@ -138,21 +171,22 @@
     aspect-ratio: 1/1.2;
     border-radius: 15px;
     overflow: hidden;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.5);
-    border: 2px solid #d4af37;
-    background: linear-gradient(135deg, #8B0000 0%, #d4af37 30%, #f4e5a1 60%, #8B0000 100%);
+    box-shadow: 0 5px 15px rgba(217, 110, 135, 0.25);
+    border: 2px solid #ff9eb4;
+    /* พื้นซากุระ-ครีม */
+    background: linear-gradient(135deg, #ffc6d0 0%, #ffd6c0 50%, #ffc6d0 100%);
     cursor: pointer;
   }
 
   .coupon.active-scratch {
     animation: glowActive 1.5s ease-in-out infinite;
+    border-color: #d96e87;
   }
   @keyframes glowActive {
-    0%, 100% { box-shadow: 0 0 20px rgba(212, 175, 55, 0.6), 0 5px 20px rgba(0,0,0,0.5); }
-    50% { box-shadow: 0 0 35px rgba(212, 175, 55, 1), 0 5px 20px rgba(0,0,0,0.5); }
+    0%, 100% { box-shadow: 0 0 15px rgba(217, 110, 135, 0.5), 0 5px 15px rgba(217, 110, 135, 0.25); }
+    50% { box-shadow: 0 0 30px rgba(217, 110, 135, 0.9), 0 5px 15px rgba(217, 110, 135, 0.25); }
   }
 
-  /* รางวัลข้างหลัง */
   .coupon-prize {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
@@ -160,13 +194,12 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    color: #8B0000;
+    color: #d96e87;
     text-align: center;
     padding: 10px;
-    background: linear-gradient(135deg, #fff, #fff5e0);
+    background: linear-gradient(135deg, #fff, #fff5f5);
     visibility: hidden;
   }
-  /* visible เมื่อ active หรือ revealed */
   .coupon.active-scratch .coupon-prize,
   .coupon.revealed .coupon-prize,
   .coupon.show-other .coupon-prize {
@@ -176,19 +209,19 @@
   .coupon-prize .discount {
     font-size: 38px;
     font-weight: bold;
-    color: #8B0000;
+    color: #d96e87;
     line-height: 1;
-    text-shadow: 2px 2px 0 rgba(212, 175, 55, 0.3);
+    text-shadow: 2px 2px 0 rgba(255, 200, 220, 0.5);
   }
   .coupon-prize .baht {
     font-size: 18px;
-    color: #8B0000;
+    color: #d96e87;
     margin-top: 3px;
     font-weight: bold;
   }
   .coupon-prize .label {
     font-size: 11px;
-    color: #666;
+    color: #8a6a6a;
     margin-top: 8px;
   }
   .coupon-prize .emoji-prize {
@@ -203,7 +236,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    color: #1a0000;
+    color: #5a3a3a;
     z-index: 1;
     pointer-events: none;
     transition: opacity 0.3s;
@@ -211,13 +244,13 @@
   .coupon-front-label .num {
     font-size: 60px;
     font-weight: bold;
-    color: rgba(26, 0, 0, 0.4);
+    color: rgba(90, 58, 58, 0.4);
     line-height: 1;
   }
   .coupon-front-label .hint {
     font-size: 14px;
     font-weight: bold;
-    color: #1a0000;
+    color: #5a3a3a;
     margin-top: 10px;
   }
   .coupon.canvas-ready .coupon-front-label,
@@ -250,23 +283,21 @@
     100% { transform: scale(1); }
   }
 
-  /* ใบที่เหลือ - แสดงรางวัลแบบจางๆ */
   .coupon.show-other {
-    opacity: 0.65;
-    filter: grayscale(0.4);
+    opacity: 0.7;
+    filter: grayscale(0.3);
     animation: fadeInOther 0.5s;
   }
   @keyframes fadeInOther {
     from { opacity: 0; transform: scale(0.95); }
-    to { opacity: 0.65; transform: scale(1); }
+    to { opacity: 0.7; transform: scale(1); }
   }
-  /* ⭐ ป้าย "เสียดาย!" แสดงเฉพาะใบที่มี is-grand-prize (300) เท่านั้น */
   .coupon.show-other:has(.coupon-prize.is-grand-prize)::after {
     content: "เสียดาย!";
     position: absolute;
     top: 8px;
     right: 8px;
-    background: rgba(139, 0, 0, 0.95);
+    background: rgba(217, 110, 135, 0.95);
     color: #fff;
     padding: 4px 12px;
     border-radius: 12px;
@@ -282,16 +313,17 @@
   }
 
   .coupon.winner {
-    border-color: #d4af37;
-    box-shadow: 0 0 25px rgba(212, 175, 55, 0.8), 0 5px 20px rgba(0,0,0,0.5);
+    border-color: #d96e87;
+    border-width: 3px;
+    box-shadow: 0 0 25px rgba(217, 110, 135, 0.6), 0 5px 15px rgba(217, 110, 135, 0.25);
   }
   .coupon.winner::after {
-    content: "★ คุณได้รับ ★";
+    content: "🌸 คุณได้รับ 🌸";
     position: absolute;
     top: 8px;
     right: 8px;
-    background: linear-gradient(135deg, #d4af37, #f4e5a1);
-    color: #1a0000;
+    background: linear-gradient(135deg, #ff9eb4, #d96e87);
+    color: #fff;
     padding: 3px 10px;
     border-radius: 12px;
     font-size: 11px;
@@ -301,9 +333,9 @@
 
   .progress-bar {
     width: 100%;
-    height: 4px;
-    background: rgba(255,255,255,0.1);
-    border-radius: 2px;
+    height: 6px;
+    background: rgba(217, 110, 135, 0.15);
+    border-radius: 3px;
     overflow: hidden;
     margin-top: 15px;
     display: none;
@@ -311,37 +343,38 @@
   .progress-bar.show { display: block; }
   .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, #d4af37, #f4e5a1);
+    background: linear-gradient(90deg, #ff9eb4, #d96e87);
     width: 0%;
     transition: width 0.2s;
   }
 
   .result-box {
     display: none;
-    background: linear-gradient(135deg, #fff, #fff5e0);
-    color: #8B0000;
+    background: linear-gradient(135deg, #fff, #fff5f5);
+    color: #d96e87;
     padding: 25px;
     border-radius: 20px;
     margin-top: 25px;
-    border: 3px dashed #8B0000;
+    border: 3px dashed #ff9eb4;
     animation: popIn 0.5s;
+    box-shadow: 0 5px 20px rgba(217, 110, 135, 0.2);
   }
   @keyframes popIn {
     0% { transform: scale(0.8); opacity: 0; }
     100% { transform: scale(1); opacity: 1; }
   }
-  .result-box h2 { font-size: 20px; margin-bottom: 10px; }
+  .result-box h2 { font-size: 20px; margin-bottom: 10px; color: #d96e87; }
   .result-box .amount {
     font-size: 60px;
     font-weight: bold;
-    color: #8B0000;
+    color: #d96e87;
     margin: 10px 0;
     line-height: 1;
   }
-  .result-box .valid { font-size: 14px; color: #666; margin-top: 10px; }
+  .result-box .valid { font-size: 14px; color: #8a6a6a; margin-top: 10px; }
   .result-box .code {
-    background: #8B0000;
-    color: #d4af37;
+    background: linear-gradient(135deg, #d96e87, #b85070);
+    color: #fff;
     padding: 12px;
     border-radius: 10px;
     margin-top: 15px;
@@ -352,26 +385,27 @@
   }
 
   .warning {
-    background: rgba(255, 100, 100, 0.15);
-    border: 2px solid #ff6464;
+    background: rgba(255, 158, 180, 0.15);
+    border: 2px solid #ff9eb4;
     padding: 12px;
     border-radius: 10px;
     margin-top: 15px;
     font-size: 13px;
-    color: #8B0000;
+    color: #d96e87;
     font-weight: bold;
   }
 
   .rules {
-    background: rgba(0,0,0,0.3);
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(217, 110, 135, 0.2);
     padding: 15px;
-    border-radius: 10px;
+    border-radius: 12px;
     margin-top: 20px;
     font-size: 13px;
     text-align: left;
-    color: #ddd;
+    color: #5a3a3a;
   }
-  .rules h3 { color: #d4af37; margin-bottom: 8px; font-size: 14px; }
+  .rules h3 { color: #d96e87; margin-bottom: 8px; font-size: 14px; }
   .rules ul { padding-left: 20px; }
   .rules li { margin-bottom: 5px; }
 
@@ -380,12 +414,12 @@
   .loading {
     text-align: center;
     padding: 40px 20px;
-    color: #d4af37;
+    color: #d96e87;
   }
   .spinner {
     width: 40px; height: 40px;
-    border: 4px solid rgba(212, 175, 55, 0.3);
-    border-top-color: #d4af37;
+    border: 4px solid rgba(217, 110, 135, 0.2);
+    border-top-color: #d96e87;
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin: 0 auto 15px;
@@ -413,22 +447,22 @@
     padding: 12px 25px;
     border-radius: 25px;
     z-index: 9999;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
     font-weight: bold;
     max-width: 90%;
     text-align: center;
   }
   .toast.error { background: #f44336; }
-  .toast.warn { background: #ff9800; }
+  .toast.warn { background: #ff9eb4; color: #fff; }
 
   .others-banner {
-    background: linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(244, 229, 161, 0.2));
-    border: 1px solid #d4af37;
+    background: linear-gradient(135deg, rgba(255, 158, 180, 0.2), rgba(255, 200, 220, 0.2));
+    border: 1px solid #ff9eb4;
     padding: 12px;
     border-radius: 10px;
     margin-top: 15px;
     font-size: 14px;
-    color: #f4e5a1;
+    color: #d96e87;
     display: none;
     animation: fadeIn 0.6s;
   }
@@ -439,7 +473,7 @@
   .modal-overlay {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.75);
+    background: rgba(90, 58, 58, 0.6);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -454,15 +488,15 @@
     pointer-events: auto;
   }
   .modal-box {
-    background: linear-gradient(135deg, #fff, #fff5e0);
-    color: #8B0000;
+    background: linear-gradient(135deg, #fff, #fff5f5);
+    color: #d96e87;
     padding: 30px 25px;
     border-radius: 20px;
     max-width: 350px;
     width: 100%;
     text-align: center;
-    border: 3px solid #d4af37;
-    box-shadow: 0 10px 40px rgba(212, 175, 55, 0.4);
+    border: 3px solid #ff9eb4;
+    box-shadow: 0 10px 40px rgba(217, 110, 135, 0.3);
     transform: scale(0.8);
     transition: transform 0.3s;
   }
@@ -470,18 +504,18 @@
   .modal-box .modal-title {
     font-size: 20px;
     font-weight: bold;
-    color: #8B0000;
+    color: #d96e87;
     margin-bottom: 10px;
   }
   .modal-box .modal-text {
     font-size: 14px;
-    color: #555;
+    color: #8a6a6a;
     margin-bottom: 20px;
     line-height: 1.5;
   }
   .modal-box .modal-coupon-num {
-    background: linear-gradient(135deg, #8B0000, #5a0000);
-    color: #f4e5a1;
+    background: linear-gradient(135deg, #ff9eb4, #d96e87);
+    color: #fff;
     width: 60px;
     height: 60px;
     border-radius: 50%;
@@ -491,7 +525,8 @@
     margin: 0 auto 15px;
     font-size: 32px;
     font-weight: bold;
-    border: 3px solid #d4af37;
+    border: 3px solid #fff;
+    box-shadow: 0 3px 10px rgba(217, 110, 135, 0.3);
   }
   .modal-buttons { display: flex; gap: 10px; }
   .modal-btn {
@@ -504,10 +539,10 @@
     border: none;
   }
   .modal-btn-confirm {
-    background: linear-gradient(135deg, #d4af37, #b8941f);
-    color: #1a0000;
+    background: linear-gradient(135deg, #ff9eb4, #d96e87);
+    color: #fff;
   }
-  .modal-btn-cancel { background: #ddd; color: #555; }
+  .modal-btn-cancel { background: #eee; color: #888; }
 </style>
 </head>
 <body>
@@ -539,13 +574,13 @@
       <span id="userName">ผู้ใช้</span>
     </div>
 
-    <div class="title">🎁 สุ่มส่วนลดสุดพิเศษ 🎁</div>
+    <div class="title">🌸 สุ่มส่วนลดสุดพิเศษ 🌸</div>
     <div class="subtitle">ส่วนลด 50 - 300 บาท สำหรับราคาปกติ</div>
 
     <div id="notPlayedBox">
       <div class="info-box">
-        <div style="font-size: 18px; margin-bottom: 10px;">พร้อมขูดคูปองแล้ว!</div>
-        <div style="font-size: 13px; color: #ccc;">สุ่มได้ 1 ครั้งเท่านั้นต่อบัญชี</div>
+        <div style="font-size: 18px; margin-bottom: 10px; color: #d96e87; font-weight: bold;">พร้อมขูดคูปองแล้ว!</div>
+        <div style="font-size: 13px; color: #8a6a6a;">สุ่มได้ 1 ครั้งเท่านั้นต่อบัญชี</div>
         <button class="btn" onclick="showCoupons()">🎲 เริ่มขูดคูปอง</button>
       </div>
     </div>
@@ -571,7 +606,7 @@
       <div style="font-size: 14px;">ใช้ลดกับราคาปกติ</div>
       <div class="code" id="couponCodeDisplay">GEISHA-XXXXXX</div>
       <div class="valid">📅 หมดอายุ: <span id="expire-display">31/05/69</span></div>
-      <div class="valid">🏪 ใช้ได้ที่ร้านเกอิชาเท่านั้น</div>
+      <div class="valid">🏪 ใช้ได้ที่ Geisha SPA เท่านั้น</div>
 
       <div id="statusContainer">
         <div id="statusBadge" class="status-badge status-unused">⏳ ยังไม่ได้ใช้</div>
@@ -594,7 +629,7 @@
         <li>ส่วนลดใช้กับราคาปกติเท่านั้น</li>
         <li>ใช้ได้ถึงวันที่ 31 พฤษภาคม 2569</li>
         <li>สุ่มได้เพียง 1 ครั้ง ต่อ 1 Line ID</li>
-        <li><strong style="color:#ff9999;">ห้ามกด "ใช้คูปอง" ด้วยตนเอง</strong></li>
+        <li><strong style="color:#d96e87;">ห้ามกด "ใช้คูปอง" ด้วยตนเอง</strong></li>
         <li>ต้องให้พนักงานหน้าร้านเป็นผู้กดใช้เท่านั้น</li>
         <li>ไม่สามารถใช้ร่วมกับโปรโมชั่นอื่นได้</li>
         <li>ขอสงวนสิทธิ์ในการเปลี่ยนแปลงโดยไม่แจ้งล่วงหน้า</li>
@@ -609,7 +644,7 @@
     <div class="modal-coupon-num" id="modalCouponNum">1</div>
     <div class="modal-title">เลือกใบนี้ชัวร์นะคะ?</div>
     <div class="modal-text">
-      ใบที่เลือกจะเป็น<strong style="color:#8B0000;">รางวัลที่คุณได้รับ</strong><br>
+      ใบที่เลือกจะเป็น<strong style="color:#d96e87;">รางวัลที่คุณได้รับ</strong><br>
       เลือกแล้วเปลี่ยนไม่ได้นะคะ!
     </div>
     <div class="modal-buttons">
@@ -620,7 +655,6 @@
 </div>
 
 <script>
-// ===== ตั้งค่า =====
 const LIFF_ID = "2009881458-wioPjdS0";
 const REVEAL_THRESHOLD = 0.6;
 const TOTAL_COUPONS = 6;
@@ -642,9 +676,10 @@ let currentCouponData = null;
 let resultShown = false;
 let couponPrizes = [];
 let pendingChoiceIndex = -1;
-let chosenIndex = -1; // ใบที่ผู้ใช้เลือกขูด (มีแค่ใบเดียว)
+let chosenIndex = -1;
+let userPrizeAmount = 0;
+let userPrizeCode = "";
 
-// ===== Audio =====
 let audioCtx = null;
 let scratchSource = null;
 let scratchGain = null;
@@ -653,7 +688,7 @@ function initAudio() {
   if (audioCtx) return;
   try {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  } catch (e) { console.warn("Audio not supported", e); }
+  } catch (e) {}
 }
 
 function startScratchSound() {
@@ -665,9 +700,7 @@ function startScratchSound() {
     const bufferSize = audioCtx.sampleRate * 0.5;
     const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
     const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) {
-      data[i] = (Math.random() * 2 - 1) * 0.6;
-    }
+    for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * 0.6;
     scratchSource = audioCtx.createBufferSource();
     scratchSource.buffer = buffer;
     scratchSource.loop = true;
@@ -689,7 +722,7 @@ function startScratchSound() {
     scratchGain.gain.cancelScheduledValues(now);
     scratchGain.gain.setValueAtTime(0, now);
     scratchGain.gain.linearRampToValueAtTime(0.25, now + 0.05);
-  } catch (e) { console.warn("startScratchSound error:", e); }
+  } catch (e) {}
 }
 
 function stopScratchSound() {
@@ -702,7 +735,7 @@ function stopScratchSound() {
     setTimeout(() => { try { src.stop(); } catch(e) {} }, 100);
     scratchSource = null;
     scratchGain = null;
-  } catch (e) { console.warn("stopScratchSound error:", e); }
+  } catch (e) {}
 }
 
 function playRevealSound() {
@@ -724,7 +757,7 @@ function playRevealSound() {
       osc.start(now + i * 0.1);
       osc.stop(now + i * 0.1 + 0.4);
     });
-  } catch (e) { console.warn("playRevealSound error:", e); }
+  } catch (e) {}
 }
 
 function showToast(msg, type) {
@@ -750,9 +783,7 @@ function randomDiscount() {
 function generateCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let code = "GEISHA-";
-  for (let i = 0; i < 6; i++) {
-    code += chars[Math.floor(Math.random() * chars.length)];
-  }
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
   return code;
 }
 
@@ -775,9 +806,7 @@ function resetDemoData() {
 }
 
 function detectMode() {
-  const isInLineApp = navigator.userAgent.includes("Line/") ||
-                      window.location.hostname === "liff.line.me";
-  return !isInLineApp;
+  return !(navigator.userAgent.includes("Line/") || window.location.hostname === "liff.line.me");
 }
 
 async function main() {
@@ -803,11 +832,8 @@ async function main() {
     const profile = await liff.getProfile();
     userLineId = profile.userId;
     document.getElementById("userName").textContent = profile.displayName;
-    if (profile.pictureUrl) {
-      document.getElementById("userPic").src = profile.pictureUrl;
-    } else {
-      document.getElementById("userPic").style.display = "none";
-    }
+    if (profile.pictureUrl) document.getElementById("userPic").src = profile.pictureUrl;
+    else document.getElementById("userPic").style.display = "none";
     document.getElementById("loadingScreen").classList.add("hidden");
     document.getElementById("mainContent").classList.remove("hidden");
     const existing = getPlayData();
@@ -816,7 +842,6 @@ async function main() {
       showResult(existing.amount, existing.code, existing.expireDate, existing.isUsed);
     }
   } catch (err) {
-    console.error("LIFF init error:", err);
     isDemoMode = true;
     document.getElementById("demoBanner").classList.remove("hidden");
     userLineId = "demo_user_" + (localStorage.getItem("demo_user_id") || generateDemoId());
@@ -838,10 +863,6 @@ function generateDemoId() {
   return id;
 }
 
-// ===== เก็บรางวัลของ user (สุ่มก่อนตอนเริ่มเกม) =====
-let userPrizeAmount = 0;
-let userPrizeCode = "";
-
 function showCoupons() {
   if (getPlayData()) {
     showToast("⚠️ คุณเคยสุ่มไปแล้ว", "error");
@@ -851,11 +872,8 @@ function showCoupons() {
   document.getElementById("notPlayedBox").classList.add("hidden");
   document.getElementById("gridSection").classList.remove("hidden");
 
-  // ⭐ สุ่มรางวัลของ user ก่อน (ตามอัตราจริง 5%, 15%, 35%...)
   userPrizeAmount = randomDiscount();
   userPrizeCode = generateCode();
-
-  // ⭐ สร้างใบ 6 ใบไม่ซ้ำ - ค่ารางวัลของ user + 5 ค่าที่เหลือ
   couponPrizes = generateUniquePrizes(userPrizeAmount);
 
   chosenIndex = -1;
@@ -868,14 +886,13 @@ function showCoupons() {
     const div = document.createElement("div");
     div.className = "coupon";
     div.dataset.index = i;
-    // เพิ่ม class "is-grand-prize" ถ้าค่าเป็น 300 (เพื่อแสดง "เสียดาย!")
     const isGrand = couponPrizes[i] === 300 ? "is-grand-prize" : "";
     div.innerHTML = `
       <div class="coupon-prize ${isGrand}">
         <div class="discount" id="prize-amount-${i}">${couponPrizes[i]}</div>
         <div class="baht">บาท</div>
         <div class="label">ส่วนลด</div>
-        <div class="emoji-prize">🎁</div>
+        <div class="emoji-prize">🌸</div>
       </div>
       <div class="coupon-front-label">
         <div class="num">${i + 1}</div>
@@ -888,20 +905,13 @@ function showCoupons() {
   }
 }
 
-// ⭐ สร้างใบ 6 ใบไม่ซ้ำ - หนึ่งใบเป็นรางวัลของ user + 5 ค่าที่เหลือจากชุดรางวัลทั้งหมด
 function generateUniquePrizes(userAmount) {
-  // เริ่มด้วยรางวัลของ user
-  const allValues = [...fakeDiscounts]; // [50, 100, 150, 200, 250, 300]
-  // สุ่มตำแหน่ง (Fisher-Yates shuffle)
+  const allValues = [...fakeDiscounts];
   for (let i = allValues.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [allValues[i], allValues[j]] = [allValues[j], allValues[i]];
   }
-  // ถ้า user ได้ค่าที่ไม่ตรงกับใน fakeDiscounts (ไม่น่าจะมี แต่กันไว้)
-  // ก็แทรกเข้าไปแทนค่าใดค่าหนึ่ง
-  if (!allValues.includes(userAmount)) {
-    allValues[0] = userAmount;
-  }
+  if (!allValues.includes(userAmount)) allValues[0] = userAmount;
   return allValues;
 }
 
@@ -922,23 +932,17 @@ function confirmChoice() {
   pendingChoiceIndex = -1;
   if (idx === -1) return;
 
-  // เลือกใบนี้แล้ว = ใบที่ได้
   chosenIndex = idx;
   const couponDiv = document.querySelector(`.coupon[data-index="${idx}"]`);
   if (couponDiv) couponDiv.classList.add("active-scratch");
 
-  // ⭐ ใช้รางวัลของ user (สุ่มไว้ตั้งแต่ตอน showCoupons)
-  // และ "สลับ" ค่าระหว่างใบที่เลือก กับใบที่มี userPrizeAmount อยู่
   const targetIdx = couponPrizes.indexOf(userPrizeAmount);
   if (targetIdx !== -1 && targetIdx !== idx) {
-    // สลับค่าให้ใบที่ผู้ใช้เลือกมี userPrizeAmount
     const temp = couponPrizes[idx];
     couponPrizes[idx] = userPrizeAmount;
     couponPrizes[targetIdx] = temp;
-    // อัพเดท UI
     document.getElementById(`prize-amount-${idx}`).textContent = couponPrizes[idx];
     document.getElementById(`prize-amount-${targetIdx}`).textContent = couponPrizes[targetIdx];
-    // อัพเดท class is-grand-prize (300)
     updateGrandPrizeClass(idx);
     updateGrandPrizeClass(targetIdx);
   }
@@ -960,17 +964,13 @@ function confirmChoice() {
   `;
 }
 
-// อัพเดท class "is-grand-prize" ตามค่ารางวัลปัจจุบันของใบนั้น
 function updateGrandPrizeClass(idx) {
   const couponDiv = document.querySelector(`.coupon[data-index="${idx}"]`);
   if (!couponDiv) return;
   const prizeBox = couponDiv.querySelector(".coupon-prize");
   if (!prizeBox) return;
-  if (couponPrizes[idx] === 300) {
-    prizeBox.classList.add("is-grand-prize");
-  } else {
-    prizeBox.classList.remove("is-grand-prize");
-  }
+  if (couponPrizes[idx] === 300) prizeBox.classList.add("is-grand-prize");
+  else prizeBox.classList.remove("is-grand-prize");
 }
 
 function setupScratchCanvas(couponDiv, index) {
@@ -996,13 +996,11 @@ function setupScratchCanvas(couponDiv, index) {
 
   let isDrawing = false;
   let lastPos = null;
-
   const getPos = (e) => {
     const rect = canvas.getBoundingClientRect();
     const p = e.touches ? e.touches[0] : e;
     return { x: p.clientX - rect.left, y: p.clientY - rect.top };
   };
-
   const scratch = (x, y) => {
     ctx.globalCompositeOperation = "destination-out";
     ctx.beginPath();
@@ -1027,22 +1025,16 @@ function setupScratchCanvas(couponDiv, index) {
     e.preventDefault();
     if (resultShown) return;
     if (couponDiv.classList.contains("revealed")) return;
-
-    // ⭐ ถ้ามีใบอื่นที่เลือกไว้แล้ว และไม่ใช่ใบนี้ → block
     if (chosenIndex !== -1 && chosenIndex !== index) {
       showToast("⚠️ คุณเลือกใบที่ " + (chosenIndex + 1) + " ไปแล้ว", "warn");
       return;
     }
-
-    // ⭐ ใบนี้ยังไม่ได้เลือก → tap detection
     if (chosenIndex !== index) {
       touchStartTime = Date.now();
       touchStartPos = getPos(e);
       movedDistance = 0;
       return;
     }
-
-    // ใบนี้เลือกแล้ว → ขูด
     isDrawing = true;
     lastPos = null;
     const pos = getPos(e);
@@ -1053,7 +1045,6 @@ function setupScratchCanvas(couponDiv, index) {
   const onPointerMove = (e) => {
     if (resultShown) return;
     if (couponDiv.classList.contains("revealed")) return;
-
     if (chosenIndex !== index) {
       if (touchStartPos) {
         const pos = getPos(e);
@@ -1063,7 +1054,6 @@ function setupScratchCanvas(couponDiv, index) {
       }
       return;
     }
-
     if (!isDrawing) return;
     e.preventDefault();
     const pos = getPos(e);
@@ -1074,7 +1064,6 @@ function setupScratchCanvas(couponDiv, index) {
   const onPointerUp = (e) => {
     if (resultShown) return;
     if (couponDiv.classList.contains("revealed")) return;
-
     if (chosenIndex !== index) {
       const elapsed = Date.now() - touchStartTime;
       if (touchStartPos && elapsed < 800 && movedDistance < 15) {
@@ -1085,7 +1074,6 @@ function setupScratchCanvas(couponDiv, index) {
       movedDistance = 0;
       return;
     }
-
     isDrawing = false;
     lastPos = null;
     stopScratchSound();
@@ -1102,34 +1090,41 @@ function setupScratchCanvas(couponDiv, index) {
   canvas.addEventListener("touchcancel", onPointerUp);
 }
 
+// ⭐ พื้นผิวขูด - โทนชมพูซากุระ
 function drawScratchSurface(ctx, w, h, num) {
   const grad = ctx.createLinearGradient(0, 0, w, h);
-  grad.addColorStop(0, "#8B0000");
-  grad.addColorStop(0.3, "#d4af37");
-  grad.addColorStop(0.6, "#f4e5a1");
-  grad.addColorStop(1, "#8B0000");
+  grad.addColorStop(0, "#ffc6d0");
+  grad.addColorStop(0.3, "#ffd6c0");
+  grad.addColorStop(0.6, "#ffe6d0");
+  grad.addColorStop(1, "#ffc6d0");
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, w, h);
 
-  ctx.fillStyle = "rgba(255,255,255,0.15)";
-  for (let i = 0; i < 30; i++) {
+  // จุดดอกซากุระลอย
+  ctx.fillStyle = "rgba(255, 158, 180, 0.35)";
+  for (let i = 0; i < 25; i++) {
     const x = Math.random() * w;
     const y = Math.random() * h;
-    const r = 1 + Math.random() * 2;
+    const r = 2 + Math.random() * 4;
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
     ctx.fill();
   }
 
-  ctx.fillStyle = "rgba(26, 0, 0, 0.4)";
+  // เลขใหญ่กลาง
+  ctx.fillStyle = "rgba(217, 110, 135, 0.35)";
   ctx.font = "bold 60px sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(num, w / 2, h / 2 - 15);
-  ctx.fillStyle = "#1a0000";
+
+  // ข้อความ
+  ctx.fillStyle = "#8a4a5a";
   ctx.font = "bold 14px sans-serif";
   ctx.fillText("👆 แตะเพื่อเลือก", w / 2, h / 2 + 35);
-  ctx.strokeStyle = "rgba(255,255,255,0.4)";
+
+  // กรอบ
+  ctx.strokeStyle = "rgba(217, 110, 135, 0.4)";
   ctx.lineWidth = 3;
   ctx.strokeRect(8, 8, w - 16, h - 16);
 }
@@ -1162,9 +1157,7 @@ function updateProgress(canvas, ctx, couponDiv, index) {
 
 function checkRevealComplete(canvas, ctx, couponDiv, index) {
   const pct = calcScratchedPercent(canvas, ctx);
-  if (pct >= REVEAL_THRESHOLD) {
-    revealCoupon(couponDiv, index);
-  }
+  if (pct >= REVEAL_THRESHOLD) revealCoupon(couponDiv, index);
 }
 
 function revealCoupon(couponDiv, index) {
@@ -1177,20 +1170,16 @@ function revealCoupon(couponDiv, index) {
   document.getElementById("progressFill").style.width = "0%";
   playRevealSound();
 
-  // ⭐ โชว์ใบที่เหลือทั้งหมดอัตโนมัติ (ทยอยเปิด ใบละ 200ms)
   setTimeout(() => {
     document.getElementById("othersBanner").classList.add("show");
     let delay = 0;
     document.querySelectorAll(".coupon").forEach((c, i) => {
-      if (i === index) return; // ข้ามใบที่ขูดแล้ว
-      setTimeout(() => {
-        c.classList.add("show-other");
-      }, delay);
+      if (i === index) return;
+      setTimeout(() => c.classList.add("show-other"), delay);
       delay += 200;
     });
   }, 800);
 
-  // แสดงผลลัพธ์หลังเปิดใบที่เหลือเสร็จ
   setTimeout(() => {
     if (currentCouponData) {
       showResult(currentCouponData.amount, currentCouponData.code, currentCouponData.expireDate, false);
