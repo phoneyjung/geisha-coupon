@@ -259,18 +259,25 @@
     from { opacity: 0; transform: scale(0.95); }
     to { opacity: 0.65; transform: scale(1); }
   }
-  .coupon.show-other::after {
+  /* ⭐ ป้าย "เสียดาย!" แสดงเฉพาะใบที่มี is-grand-prize (300) เท่านั้น */
+  .coupon.show-other:has(.coupon-prize.is-grand-prize)::after {
     content: "เสียดาย!";
     position: absolute;
     top: 8px;
     right: 8px;
-    background: rgba(139, 0, 0, 0.85);
+    background: rgba(139, 0, 0, 0.95);
     color: #fff;
-    padding: 3px 10px;
+    padding: 4px 12px;
     border-radius: 12px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: bold;
     z-index: 5;
+    animation: shake 0.6s ease-in-out;
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-3px); }
+    75% { transform: translateX(3px); }
   }
 
   .coupon.winner {
@@ -830,6 +837,10 @@ function generateDemoId() {
   return id;
 }
 
+// ===== เก็บรางวัลของ user (สุ่มก่อนตอนเริ่มเกม) =====
+let userPrizeAmount = 0;
+let userPrizeCode = "";
+
 function showCoupons() {
   if (getPlayData()) {
     showToast("⚠️ คุณเคยสุ่มไปแล้ว", "error");
@@ -839,7 +850,13 @@ function showCoupons() {
   document.getElementById("notPlayedBox").classList.add("hidden");
   document.getElementById("gridSection").classList.remove("hidden");
 
-  couponPrizes = generateFakePrizes();
+  // ⭐ สุ่มรางวัลของ user ก่อน (ตามอัตราจริง 5%, 15%, 35%...)
+  userPrizeAmount = randomDiscount();
+  userPrizeCode = generateCode();
+
+  // ⭐ สร้างใบ 6 ใบไม่ซ้ำ - ค่ารางวัลของ user + 5 ค่าที่เหลือ
+  couponPrizes = generateUniquePrizes(userPrizeAmount);
+
   chosenIndex = -1;
   resultShown = false;
 
@@ -850,8 +867,10 @@ function showCoupons() {
     const div = document.createElement("div");
     div.className = "coupon";
     div.dataset.index = i;
+    // เพิ่ม class "is-grand-prize" ถ้าค่าเป็น 300 (เพื่อแสดง "เสียดาย!")
+    const isGrand = couponPrizes[i] === 300 ? "is-grand-prize" : "";
     div.innerHTML = `
-      <div class="coupon-prize">
+      <div class="coupon-prize ${isGrand}">
         <div class="discount" id="prize-amount-${i}">${couponPrizes[i]}</div>
         <div class="baht">บาท</div>
         <div class="label">ส่วนลด</div>
@@ -868,12 +887,21 @@ function showCoupons() {
   }
 }
 
-function generateFakePrizes() {
-  const arr = [];
-  for (let i = 0; i < TOTAL_COUPONS; i++) {
-    arr.push(fakeDiscounts[Math.floor(Math.random() * fakeDiscounts.length)]);
+// ⭐ สร้างใบ 6 ใบไม่ซ้ำ - หนึ่งใบเป็นรางวัลของ user + 5 ค่าที่เหลือจากชุดรางวัลทั้งหมด
+function generateUniquePrizes(userAmount) {
+  // เริ่มด้วยรางวัลของ user
+  const allValues = [...fakeDiscounts]; // [50, 100, 150, 200, 250, 300]
+  // สุ่มตำแหน่ง (Fisher-Yates shuffle)
+  for (let i = allValues.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [allValues[i], allValues[j]] = [allValues[j], allValues[i]];
   }
-  return arr;
+  // ถ้า user ได้ค่าที่ไม่ตรงกับใน fakeDiscounts (ไม่น่าจะมี แต่กันไว้)
+  // ก็แทรกเข้าไปแทนค่าใดค่าหนึ่ง
+  if (!allValues.includes(userAmount)) {
+    allValues[0] = userAmount;
+  }
+  return allValues;
 }
 
 function showConfirmModal(index) {
@@ -898,25 +926,50 @@ function confirmChoice() {
   const couponDiv = document.querySelector(`.coupon[data-index="${idx}"]`);
   if (couponDiv) couponDiv.classList.add("active-scratch");
 
-  // สุ่มรางวัลจริง
-  const amount = randomDiscount();
-  const code = generateCode();
+  // ⭐ ใช้รางวัลของ user (สุ่มไว้ตั้งแต่ตอน showCoupons)
+  // และ "สลับ" ค่าระหว่างใบที่เลือก กับใบที่มี userPrizeAmount อยู่
+  const targetIdx = couponPrizes.indexOf(userPrizeAmount);
+  if (targetIdx !== -1 && targetIdx !== idx) {
+    // สลับค่าให้ใบที่ผู้ใช้เลือกมี userPrizeAmount
+    const temp = couponPrizes[idx];
+    couponPrizes[idx] = userPrizeAmount;
+    couponPrizes[targetIdx] = temp;
+    // อัพเดท UI
+    document.getElementById(`prize-amount-${idx}`).textContent = couponPrizes[idx];
+    document.getElementById(`prize-amount-${targetIdx}`).textContent = couponPrizes[targetIdx];
+    // อัพเดท class is-grand-prize (300)
+    updateGrandPrizeClass(idx);
+    updateGrandPrizeClass(targetIdx);
+  }
+
   currentCouponData = {
-    amount: amount, code: code,
-    expireDate: "31/05/69", isUsed: false,
+    amount: userPrizeAmount,
+    code: userPrizeCode,
+    expireDate: "31/05/69",
+    isUsed: false,
     date: new Date().toISOString()
   };
-  document.getElementById(`prize-amount-${idx}`).textContent = amount;
-  couponPrizes[idx] = amount;
   savePlayData(currentCouponData);
 
   showToast("✋ ขูดใบที่ " + (idx + 1) + " เพื่อรับรางวัล", "warn");
 
-  // อัพเดทคำแนะนำ
   document.getElementById("instructionBox").innerHTML = `
     <div class="big">✋ กำลังขูดใบที่ ${idx + 1}</div>
     <div>ใช้นิ้วถูเพื่อเปิดเผยรางวัล</div>
   `;
+}
+
+// อัพเดท class "is-grand-prize" ตามค่ารางวัลปัจจุบันของใบนั้น
+function updateGrandPrizeClass(idx) {
+  const couponDiv = document.querySelector(`.coupon[data-index="${idx}"]`);
+  if (!couponDiv) return;
+  const prizeBox = couponDiv.querySelector(".coupon-prize");
+  if (!prizeBox) return;
+  if (couponPrizes[idx] === 300) {
+    prizeBox.classList.add("is-grand-prize");
+  } else {
+    prizeBox.classList.remove("is-grand-prize");
+  }
 }
 
 function setupScratchCanvas(couponDiv, index) {
