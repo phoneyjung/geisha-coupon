@@ -49,7 +49,6 @@
     white-space: nowrap;
   }
 
-  /* ===== โลโก้ใหม่ ===== */
   .logo-box {
     background: linear-gradient(135deg, #d4af37, #f4e5a1, #d4af37);
     padding: 3px;
@@ -144,14 +143,6 @@
     cursor: pointer;
   }
 
-  .coupon.disabled {
-    opacity: 0.5;
-    filter: grayscale(0.4);
-  }
-  .coupon.disabled .scratch-canvas {
-    pointer-events: none;
-  }
-
   .coupon.active-scratch {
     animation: glowActive 1.5s ease-in-out infinite;
   }
@@ -160,7 +151,7 @@
     50% { box-shadow: 0 0 35px rgba(212, 175, 55, 1), 0 5px 20px rgba(0,0,0,0.5); }
   }
 
-  /* ===== รางวัลข้างหลัง — แสดงตอน active หรือ revealed เพื่อให้เห็นตัวเลขตอนขูด ===== */
+  /* รางวัลข้างหลัง */
   .coupon-prize {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
@@ -174,10 +165,10 @@
     background: linear-gradient(135deg, #fff, #fff5e0);
     visibility: hidden;
   }
-  /* ✨ visible เมื่อ active หรือ revealed */
+  /* visible เมื่อ active หรือ revealed */
   .coupon.active-scratch .coupon-prize,
   .coupon.revealed .coupon-prize,
-  .coupon.peek-revealed .coupon-prize {
+  .coupon.show-other .coupon-prize {
     visibility: visible;
   }
 
@@ -229,7 +220,8 @@
     margin-top: 10px;
   }
   .coupon.canvas-ready .coupon-front-label,
-  .coupon.revealed .coupon-front-label {
+  .coupon.revealed .coupon-front-label,
+  .coupon.show-other .coupon-front-label {
     opacity: 0;
   }
 
@@ -243,9 +235,9 @@
     z-index: 2;
   }
   .scratch-canvas:active { cursor: grabbing; }
-  .scratch-canvas.locked { pointer-events: none; }
 
-  .coupon.revealed .scratch-canvas {
+  .coupon.revealed .scratch-canvas,
+  .coupon.show-other .scratch-canvas {
     opacity: 0;
     transition: opacity 0.6s;
     pointer-events: none;
@@ -257,7 +249,17 @@
     100% { transform: scale(1); }
   }
 
-  .coupon.peek-revealed::after {
+  /* ใบที่เหลือ - แสดงรางวัลแบบจางๆ */
+  .coupon.show-other {
+    opacity: 0.65;
+    filter: grayscale(0.4);
+    animation: fadeInOther 0.5s;
+  }
+  @keyframes fadeInOther {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 0.65; transform: scale(1); }
+  }
+  .coupon.show-other::after {
     content: "เสียดาย!";
     position: absolute;
     top: 8px;
@@ -269,10 +271,6 @@
     font-size: 11px;
     font-weight: bold;
     z-index: 5;
-  }
-  .coupon.peek-revealed .coupon-prize {
-    opacity: 0.7;
-    filter: grayscale(0.3);
   }
 
   .coupon.winner {
@@ -415,17 +413,19 @@
   .toast.error { background: #f44336; }
   .toast.warn { background: #ff9800; }
 
-  .peek-hint {
+  .others-banner {
     background: linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(244, 229, 161, 0.2));
     border: 1px solid #d4af37;
-    padding: 10px;
-    border-radius: 8px;
+    padding: 12px;
+    border-radius: 10px;
     margin-top: 15px;
-    font-size: 13px;
+    font-size: 14px;
     color: #f4e5a1;
     display: none;
+    animation: fadeIn 0.6s;
   }
-  .peek-hint.show { display: block; animation: fadeIn 0.5s; }
+  .others-banner.show { display: block; }
+  .others-banner .b1 { font-size: 16px; font-weight: bold; margin-bottom: 5px; }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
   .modal-overlay {
@@ -513,7 +513,6 @@
     <button class="demo-reset" onclick="resetDemoData()">🔄 รีเซ็ต</button>
   </div>
 
-  <!-- โลโก้ Geisha SPA -->
   <div class="logo-box">
     <div class="logo-inner">
       <img src="GS-logo.png" alt="Geisha SPA" class="logo-img">
@@ -552,8 +551,9 @@
       <div class="progress-bar" id="progressBar">
         <div class="progress-fill" id="progressFill"></div>
       </div>
-      <div class="peek-hint" id="peekHint">
-        💡 อยากรู้ใบอื่นได้อะไรไหม? ลองขูดดูได้ (แต่จะได้แค่ใบแรกที่ขูดนะ!)
+      <div class="others-banner" id="othersBanner">
+        <div class="b1">🎯 ใบที่เหลือถ้าคุณเลือก...</div>
+        <div>ดูซิ! รางวัลที่ใบอื่นซ่อนอยู่</div>
       </div>
     </div>
 
@@ -600,9 +600,9 @@
   <div class="modal-box">
     <div class="modal-coupon-num" id="modalCouponNum">1</div>
     <div class="modal-title">เลือกใบนี้ชัวร์นะคะ?</div>
-    <div class="modal-text" id="modalText">
-      ใบที่เลือกขูดเป็นใบแรกจะเป็นรางวัลที่คุณได้รับจริง<br>
-      <strong style="color:#8B0000;">เลือกแล้วเปลี่ยนไม่ได้นะคะ!</strong>
+    <div class="modal-text">
+      ใบที่เลือกจะเป็น<strong style="color:#8B0000;">รางวัลที่คุณได้รับ</strong><br>
+      เลือกแล้วเปลี่ยนไม่ได้นะคะ!
     </div>
     <div class="modal-buttons">
       <button class="modal-btn modal-btn-cancel" onclick="cancelChoice()">❌ ไม่ใช่</button>
@@ -631,13 +631,10 @@ const fakeDiscounts = [50, 100, 150, 200, 250, 300];
 let userLineId = "";
 let isDemoMode = false;
 let currentCouponData = null;
-let winnerIndex = -1;
-let firstScratchedIndex = -1;
 let resultShown = false;
 let couponPrizes = [];
 let pendingChoiceIndex = -1;
-let activeScratchIndex = -1;
-let revealedSet = new Set();
+let chosenIndex = -1; // ใบที่ผู้ใช้เลือกขูด (มีแค่ใบเดียว)
 
 // ===== Audio =====
 let audioCtx = null;
@@ -770,7 +767,7 @@ function resetDemoData() {
 }
 
 function detectMode() {
-  const isInLineApp = navigator.userAgent.includes("Line/") || 
+  const isInLineApp = navigator.userAgent.includes("Line/") ||
                       window.location.hostname === "liff.line.me";
   return !isInLineApp;
 }
@@ -778,7 +775,6 @@ function detectMode() {
 async function main() {
   isDemoMode = detectMode();
   if (isDemoMode) {
-    console.log("🧪 Running in DEMO MODE");
     document.getElementById("demoBanner").classList.remove("hidden");
     userLineId = "demo_user_" + (localStorage.getItem("demo_user_id") || generateDemoId());
     document.getElementById("userName").textContent = "ผู้ทดสอบ (Demo)";
@@ -844,14 +840,11 @@ function showCoupons() {
   document.getElementById("gridSection").classList.remove("hidden");
 
   couponPrizes = generateFakePrizes();
+  chosenIndex = -1;
+  resultShown = false;
 
   const grid = document.getElementById("couponsGrid");
   grid.innerHTML = "";
-  firstScratchedIndex = -1;
-  winnerIndex = -1;
-  resultShown = false;
-  activeScratchIndex = -1;
-  revealedSet = new Set();
 
   for (let i = 0; i < TOTAL_COUPONS; i++) {
     const div = document.createElement("div");
@@ -886,18 +879,6 @@ function generateFakePrizes() {
 function showConfirmModal(index) {
   pendingChoiceIndex = index;
   document.getElementById("modalCouponNum").textContent = index + 1;
-  const modalText = document.getElementById("modalText");
-  if (firstScratchedIndex === -1) {
-    modalText.innerHTML = `
-      ใบที่เลือกขูดเป็นใบแรกจะเป็น<strong style="color:#8B0000;">รางวัลที่คุณได้รับจริง</strong><br>
-      เลือกแล้วเปลี่ยนไม่ได้นะคะ!
-    `;
-  } else {
-    modalText.innerHTML = `
-      ใบนี้เป็นการขูดดู<strong style="color:#666;">เพื่อความสนุก</strong><br>
-      <small>(ไม่ได้รับรางวัลเพิ่มจากใบนี้)</small>
-    `;
-  }
   document.getElementById("confirmModal").classList.add("show");
 }
 
@@ -912,69 +893,30 @@ function confirmChoice() {
   pendingChoiceIndex = -1;
   if (idx === -1) return;
 
-  console.log("👆 User confirmed choice:", idx, "isFirst:", firstScratchedIndex === -1);
-
-  activeScratchIndex = idx;
+  // เลือกใบนี้แล้ว = ใบที่ได้
+  chosenIndex = idx;
   const couponDiv = document.querySelector(`.coupon[data-index="${idx}"]`);
   if (couponDiv) couponDiv.classList.add("active-scratch");
-  updateLockState();
 
-  if (firstScratchedIndex === -1) {
-    firstScratchedIndex = idx;
-    winnerIndex = idx;
-    const amount = randomDiscount();
-    const code = generateCode();
-    currentCouponData = {
-      amount: amount, code: code,
-      expireDate: "31/05/69", isUsed: false,
-      date: new Date().toISOString()
-    };
-    document.getElementById(`prize-amount-${idx}`).textContent = amount;
-    couponPrizes[idx] = amount;
-    savePlayData(currentCouponData);
-    showToast("✋ ขูดใบที่ " + (idx + 1) + " เพื่อรับรางวัล", "warn");
-  } else {
-    showToast("👀 ขูดใบที่ " + (idx + 1) + " ดูเล่น", "warn");
-  }
-  updateInstruction();
-}
+  // สุ่มรางวัลจริง
+  const amount = randomDiscount();
+  const code = generateCode();
+  currentCouponData = {
+    amount: amount, code: code,
+    expireDate: "31/05/69", isUsed: false,
+    date: new Date().toISOString()
+  };
+  document.getElementById(`prize-amount-${idx}`).textContent = amount;
+  couponPrizes[idx] = amount;
+  savePlayData(currentCouponData);
 
-function updateLockState() {
-  document.querySelectorAll(".coupon").forEach((c) => {
-    const i = parseInt(c.dataset.index);
-    const canvas = c.querySelector(".scratch-canvas");
-    if (revealedSet.has(i)) return;
-    if (activeScratchIndex === -1) {
-      c.classList.remove("disabled");
-      canvas.classList.remove("locked");
-    } else if (i === activeScratchIndex) {
-      c.classList.remove("disabled");
-      canvas.classList.remove("locked");
-    } else {
-      c.classList.add("disabled");
-      canvas.classList.add("locked");
-    }
-  });
-}
+  showToast("✋ ขูดใบที่ " + (idx + 1) + " เพื่อรับรางวัล", "warn");
 
-function updateInstruction() {
-  const box = document.getElementById("instructionBox");
-  if (activeScratchIndex !== -1) {
-    box.innerHTML = `
-      <div class="big">✋ กำลังขูดใบที่ ${activeScratchIndex + 1}</div>
-      <div>ขูดให้เสร็จก่อน แล้วค่อยเลือกใบอื่นได้</div>
-    `;
-  } else if (revealedSet.size === 0) {
-    box.innerHTML = `
-      <div class="big">👆 เลือก 1 ใบ แล้วใช้นิ้วถูเพื่อขูด!</div>
-      <div>ขูดให้ได้ 60% ขึ้นไปจะเฉลยอัตโนมัติ</div>
-    `;
-  } else {
-    box.innerHTML = `
-      <div class="big">✨ เลือกใบอื่นมาขูดดูเล่นได้</div>
-      <div>(ไม่เปลี่ยนรางวัลที่ได้รับ)</div>
-    `;
-  }
+  // อัพเดทคำแนะนำ
+  document.getElementById("instructionBox").innerHTML = `
+    <div class="big">✋ กำลังขูดใบที่ ${idx + 1}</div>
+    <div>ใช้นิ้วถูเพื่อเปิดเผยรางวัล</div>
+  `;
 }
 
 function setupScratchCanvas(couponDiv, index) {
@@ -1029,33 +971,24 @@ function setupScratchCanvas(couponDiv, index) {
 
   const onPointerDown = (e) => {
     e.preventDefault();
-    if (resultShown) {
-      console.log("[idx="+index+"] block: resultShown");
-      return;
-    }
-    if (revealedSet.has(index)) {
-      console.log("[idx="+index+"] block: already revealed");
+    if (resultShown) return;
+    if (couponDiv.classList.contains("revealed")) return;
+
+    // ⭐ ถ้ามีใบอื่นที่เลือกไว้แล้ว และไม่ใช่ใบนี้ → block
+    if (chosenIndex !== -1 && chosenIndex !== index) {
+      showToast("⚠️ คุณเลือกใบที่ " + (chosenIndex + 1) + " ไปแล้ว", "warn");
       return;
     }
 
-    // ⭐ ถ้ามีใบกำลังขูดอยู่ และไม่ใช่ใบนี้ → เตือน
-    if (activeScratchIndex !== -1 && activeScratchIndex !== index) {
-      console.log("[idx="+index+"] block: another card active ("+activeScratchIndex+")");
-      showToast("⚠️ ขูดใบที่ " + (activeScratchIndex + 1) + " ให้เสร็จก่อนนะคะ", "warn");
-      return;
-    }
-
-    // ⭐ ใบนี้ยังไม่ active → เก็บข้อมูล tap
-    if (activeScratchIndex !== index) {
-      console.log("[idx="+index+"] start tap detection");
+    // ⭐ ใบนี้ยังไม่ได้เลือก → tap detection
+    if (chosenIndex !== index) {
       touchStartTime = Date.now();
       touchStartPos = getPos(e);
       movedDistance = 0;
       return;
     }
 
-    // ⭐ ใบนี้ active แล้ว → เริ่มขูด
-    console.log("[idx="+index+"] start scratching");
+    // ใบนี้เลือกแล้ว → ขูด
     isDrawing = true;
     lastPos = null;
     const pos = getPos(e);
@@ -1065,9 +998,9 @@ function setupScratchCanvas(couponDiv, index) {
 
   const onPointerMove = (e) => {
     if (resultShown) return;
-    if (revealedSet.has(index)) return;
+    if (couponDiv.classList.contains("revealed")) return;
 
-    if (activeScratchIndex !== index) {
+    if (chosenIndex !== index) {
       if (touchStartPos) {
         const pos = getPos(e);
         const dx = pos.x - touchStartPos.x;
@@ -1086,16 +1019,12 @@ function setupScratchCanvas(couponDiv, index) {
 
   const onPointerUp = (e) => {
     if (resultShown) return;
-    if (revealedSet.has(index)) return;
+    if (couponDiv.classList.contains("revealed")) return;
 
-    if (activeScratchIndex !== index) {
+    if (chosenIndex !== index) {
       const elapsed = Date.now() - touchStartTime;
-      console.log("[idx="+index+"] pointer up, elapsed="+elapsed+", moved="+movedDistance.toFixed(1));
       if (touchStartPos && elapsed < 800 && movedDistance < 15) {
-        console.log("[idx="+index+"] DETECTED TAP - showing modal");
         showConfirmModal(index);
-      } else {
-        console.log("[idx="+index+"] not a tap");
       }
       touchStartPos = null;
       touchStartTime = 0;
@@ -1166,7 +1095,7 @@ function calcScratchedPercent(canvas, ctx) {
 
 let progressUpdateTimer = null;
 function updateProgress(canvas, ctx, couponDiv, index) {
-  if (index !== activeScratchIndex) return;
+  if (index !== chosenIndex) return;
   if (progressUpdateTimer) return;
   progressUpdateTimer = setTimeout(() => {
     const pct = calcScratchedPercent(canvas, ctx);
@@ -1186,41 +1115,33 @@ function checkRevealComplete(canvas, ctx, couponDiv, index) {
 
 function revealCoupon(couponDiv, index) {
   if (couponDiv.classList.contains("revealed")) return;
-  console.log("✨ Revealing coupon", index, "isWinner:", index === winnerIndex);
-
   couponDiv.classList.add("revealed");
   couponDiv.classList.remove("active-scratch");
-  revealedSet.add(index);
-  activeScratchIndex = -1;
+  couponDiv.classList.add("winner");
 
-  // ⭐ ปลดล็อคใบอื่นที่ยังไม่ขูด - ลบ disabled class ทั้งหมด
-  document.querySelectorAll(".coupon").forEach((c) => {
-    const i = parseInt(c.dataset.index);
-    if (!revealedSet.has(i)) {
-      c.classList.remove("disabled");
-      const cv = c.querySelector(".scratch-canvas");
-      if (cv) cv.classList.remove("locked");
-    }
-  });
-
-  updateInstruction();
   document.getElementById("progressBar").classList.remove("show");
   document.getElementById("progressFill").style.width = "0%";
   playRevealSound();
 
-  if (index === winnerIndex) {
-    couponDiv.classList.add("winner");
-    setTimeout(() => {
-      if (currentCouponData) {
-        showResult(currentCouponData.amount, currentCouponData.code, currentCouponData.expireDate, false);
-      }
-    }, 1500);
-  } else {
-    couponDiv.classList.add("peek-revealed");
-    document.getElementById("peekHint").classList.add("show");
-  }
+  // ⭐ โชว์ใบที่เหลือทั้งหมดอัตโนมัติ (ทยอยเปิด ใบละ 200ms)
+  setTimeout(() => {
+    document.getElementById("othersBanner").classList.add("show");
+    let delay = 0;
+    document.querySelectorAll(".coupon").forEach((c, i) => {
+      if (i === index) return; // ข้ามใบที่ขูดแล้ว
+      setTimeout(() => {
+        c.classList.add("show-other");
+      }, delay);
+      delay += 200;
+    });
+  }, 800);
 
-  console.log("✅ Unlocked. activeScratchIndex:", activeScratchIndex, "revealedSet:", [...revealedSet]);
+  // แสดงผลลัพธ์หลังเปิดใบที่เหลือเสร็จ
+  setTimeout(() => {
+    if (currentCouponData) {
+      showResult(currentCouponData.amount, currentCouponData.code, currentCouponData.expireDate, false);
+    }
+  }, 2500);
 }
 
 function showResult(amount, code, expireDate, isUsed) {
