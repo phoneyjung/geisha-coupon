@@ -118,7 +118,8 @@
     overflow: hidden;
     box-shadow: 0 5px 20px rgba(0,0,0,0.5);
     border: 2px solid #d4af37;
-    background: linear-gradient(135deg, #fff, #fff5e0);
+    /* พื้นหลังสีทอง-แดง คล้าย canvas เผื่อ canvas โหลดช้า */
+    background: linear-gradient(135deg, #8B0000 0%, #d4af37 30%, #f4e5a1 60%, #8B0000 100%);
     cursor: pointer;
   }
 
@@ -129,7 +130,7 @@
     filter: grayscale(0.4);
   }
 
-  /* ใบที่กำลังขูดอยู่ - กระพริบเตือนให้ขูดให้เสร็จ */
+  /* ใบที่กำลังขูดอยู่ */
   .coupon.active-scratch {
     animation: glowActive 1.5s ease-in-out infinite;
   }
@@ -138,6 +139,7 @@
     50% { box-shadow: 0 0 35px rgba(212, 175, 55, 1), 0 5px 20px rgba(0,0,0,0.5); }
   }
 
+  /* รางวัลข้างหลัง - ซ่อนจนกว่าจะขูด */
   .coupon-prize {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
@@ -148,7 +150,15 @@
     color: #8B0000;
     text-align: center;
     padding: 10px;
+    background: linear-gradient(135deg, #fff, #fff5e0);
+    visibility: hidden; /* ซ่อนจนกว่าจะขูดเสร็จ */
   }
+  /* แสดงเฉพาะตอน revealed หรือ peek-revealed */
+  .coupon.revealed .coupon-prize,
+  .coupon.peek-revealed .coupon-prize {
+    visibility: visible;
+  }
+
   .coupon-prize .discount {
     font-size: 38px;
     font-weight: bold;
@@ -172,6 +182,37 @@
     margin-top: 6px;
   }
 
+  /* ป้ายตัวเลขด้านหน้า แสดงตอน canvas ยังไม่พร้อม */
+  .coupon-front-label {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #1a0000;
+    z-index: 1;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .coupon-front-label .num {
+    font-size: 60px;
+    font-weight: bold;
+    color: rgba(26, 0, 0, 0.4);
+    line-height: 1;
+  }
+  .coupon-front-label .hint {
+    font-size: 14px;
+    font-weight: bold;
+    color: #1a0000;
+    margin-top: 10px;
+  }
+  /* ซ่อน label เมื่อ canvas พร้อม หรือขูดแล้ว */
+  .coupon.canvas-ready .coupon-front-label,
+  .coupon.revealed .coupon-front-label {
+    opacity: 0;
+  }
+
   .scratch-canvas {
     position: absolute;
     top: 0; left: 0;
@@ -179,21 +220,10 @@
     height: 100%;
     cursor: grab;
     touch-action: none;
+    z-index: 2;
   }
   .scratch-canvas:active { cursor: grabbing; }
-
-  /* canvas ที่ยังไม่ active = เบลอ + รอแตะ */
-  .scratch-canvas.idle {
-    pointer-events: auto;
-  }
-  /* canvas ที่กำลังถูกขูด = พร้อมใช้งาน */
-  .scratch-canvas.active {
-    pointer-events: auto;
-  }
-  /* canvas ที่ถูกล็อค = ห้ามแตะ */
-  .scratch-canvas.locked {
-    pointer-events: none;
-  }
+  .scratch-canvas.locked { pointer-events: none; }
 
   .coupon.revealed .scratch-canvas {
     opacity: 0;
@@ -380,7 +410,7 @@
   .peek-hint.show { display: block; animation: fadeIn 0.5s; }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-  /* ===== Modal ยืนยัน ===== */
+  /* Modal */
   .modal-overlay {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
@@ -413,10 +443,6 @@
   }
   .modal-overlay.show .modal-box {
     transform: scale(1);
-  }
-  .modal-box .modal-icon {
-    font-size: 50px;
-    margin-bottom: 15px;
   }
   .modal-box .modal-title {
     font-size: 20px;
@@ -553,7 +579,7 @@
   </div>
 </div>
 
-<!-- Modal ยืนยัน -->
+<!-- Modal -->
 <div class="modal-overlay" id="confirmModal">
   <div class="modal-box">
     <div class="modal-coupon-num" id="modalCouponNum">1</div>
@@ -570,13 +596,12 @@
 </div>
 
 <script>
-// ===== ตั้งค่าหลัก =====
+// ===== ตั้งค่า =====
 const LIFF_ID = "2009881458-wioPjdS0";
 const REVEAL_THRESHOLD = 0.6;
 const TOTAL_COUPONS = 6;
 const STAFF_CODE = "geisha2569";
 
-// ===== อัตราการสุ่ม =====
 const discountRates = [
   { amount: 50,  chance: 5  },
   { amount: 100, chance: 15 },
@@ -587,18 +612,17 @@ const discountRates = [
 ];
 const fakeDiscounts = [50, 100, 150, 200, 250, 300];
 
-// ===== State =====
 let userLineId = "";
 let currentCouponData = null;
 let winnerIndex = -1;
 let firstScratchedIndex = -1;
 let resultShown = false;
 let couponPrizes = [];
-let pendingChoiceIndex = -1; // ใบที่กำลังจะยืนยัน
-let activeScratchIndex = -1; // ใบที่กำลังขูดอยู่ (ขูดทีละใบ)
-let revealedSet = new Set(); // ใบที่ขูดเสร็จแล้ว
+let pendingChoiceIndex = -1;
+let activeScratchIndex = -1;
+let revealedSet = new Set();
 
-// ===== Audio - เสียงขูด =====
+// ===== Audio =====
 let audioCtx = null;
 let scratchSource = null;
 let scratchGain = null;
@@ -612,14 +636,12 @@ function initAudio() {
   }
 }
 
-// สร้างเสียง white noise ที่ฟังเหมือนการขูด
 function startScratchSound() {
   if (!audioCtx) initAudio();
   if (!audioCtx) return;
-  if (scratchSource) return; // กำลังเล่นอยู่
+  if (scratchSource) return;
 
   try {
-    // resume context (สำคัญบน mobile)
     if (audioCtx.state === "suspended") audioCtx.resume();
 
     const bufferSize = audioCtx.sampleRate * 0.5;
@@ -633,7 +655,6 @@ function startScratchSound() {
     scratchSource.buffer = buffer;
     scratchSource.loop = true;
 
-    // Filter ให้เสียงเหมือนขูด (high-pass + bandpass)
     const filter = audioCtx.createBiquadFilter();
     filter.type = "bandpass";
     filter.frequency.value = 3500;
@@ -653,7 +674,6 @@ function startScratchSound() {
 
     scratchSource.start();
 
-    // fade in
     const now = audioCtx.currentTime;
     scratchGain.gain.cancelScheduledValues(now);
     scratchGain.gain.setValueAtTime(0, now);
@@ -680,7 +700,6 @@ function stopScratchSound() {
   }
 }
 
-// เสียง ding ตอนเฉลย
 function playRevealSound() {
   if (!audioCtx) initAudio();
   if (!audioCtx) return;
@@ -716,7 +735,6 @@ function showToast(msg, type) {
   setTimeout(() => toast.remove(), 3000);
 }
 
-// ===== สุ่ม =====
 function randomDiscount() {
   const total = discountRates.reduce((s, d) => s + d.chance, 0);
   let r = Math.random() * total;
@@ -736,7 +754,6 @@ function generateCode() {
   return code;
 }
 
-// ===== localStorage =====
 function getPlayData() {
   const played = JSON.parse(localStorage.getItem("geisha_played") || "{}");
   return played[userLineId];
@@ -748,7 +765,6 @@ function savePlayData(data) {
   localStorage.setItem("geisha_played", JSON.stringify(played));
 }
 
-// ===== LIFF init =====
 async function main() {
   try {
     await liff.init({ liffId: LIFF_ID });
@@ -784,14 +800,12 @@ async function main() {
   }
 }
 
-// ===== แสดงกริดคูปอง =====
 function showCoupons() {
   if (getPlayData()) {
     showToast("⚠️ คุณเคยสุ่มไปแล้ว", "error");
     return;
   }
 
-  // เริ่ม Audio (ต้อง trigger จาก user action)
   initAudio();
 
   document.getElementById("notPlayedBox").classList.add("hidden");
@@ -811,6 +825,10 @@ function showCoupons() {
     const div = document.createElement("div");
     div.className = "coupon";
     div.dataset.index = i;
+    // ใช้ HTML structure ใหม่:
+    // 1. coupon-prize (ข้างหลัง - ซ่อนไว้ visibility:hidden)
+    // 2. coupon-front-label (ตัวเลข + คำว่าแตะเลย - แสดงตลอดจน canvas พร้อม)
+    // 3. canvas (ขูด - อยู่บนสุด)
     div.innerHTML = `
       <div class="coupon-prize">
         <div class="discount" id="prize-amount-${i}">${couponPrizes[i]}</div>
@@ -818,7 +836,11 @@ function showCoupons() {
         <div class="label">ส่วนลด</div>
         <div class="emoji-prize">🎁</div>
       </div>
-      <canvas class="scratch-canvas idle" id="canvas-${i}"></canvas>
+      <div class="coupon-front-label">
+        <div class="num">${i + 1}</div>
+        <div class="hint">👆 แตะเพื่อเลือก</div>
+      </div>
+      <canvas class="scratch-canvas" id="canvas-${i}"></canvas>
     `;
     grid.appendChild(div);
     setupScratchCanvas(div, i);
@@ -833,12 +855,10 @@ function generateFakePrizes() {
   return arr;
 }
 
-// ===== Modal ยืนยัน =====
 function showConfirmModal(index) {
   pendingChoiceIndex = index;
   document.getElementById("modalCouponNum").textContent = index + 1;
 
-  // ข้อความปรับตามว่าเป็นใบแรกหรือใบหลัง
   const modalText = document.getElementById("modalText");
   if (firstScratchedIndex === -1) {
     modalText.innerHTML = `
@@ -864,20 +884,16 @@ function confirmChoice() {
   document.getElementById("confirmModal").classList.remove("show");
   const idx = pendingChoiceIndex;
   pendingChoiceIndex = -1;
-
   if (idx === -1) return;
 
-  // ตั้งใบที่เลือกเป็น active
   activeScratchIndex = idx;
   const couponDiv = document.querySelector(`.coupon[data-index="${idx}"]`);
   if (couponDiv) {
     couponDiv.classList.add("active-scratch");
   }
 
-  // ล็อคใบอื่นที่ยังไม่ขูด
   updateLockState();
 
-  // ถ้าเป็นใบแรก = สุ่มจริง
   if (firstScratchedIndex === -1) {
     firstScratchedIndex = idx;
     winnerIndex = idx;
@@ -897,43 +913,30 @@ function confirmChoice() {
 
     savePlayData(currentCouponData);
 
-    // แจ้งเตือน
     showToast("✋ ขูดใบที่ " + (idx + 1) + " ให้เสร็จก่อนนะคะ", "warn");
   } else {
     showToast("👀 ขูดใบที่ " + (idx + 1) + " ดูเล่น", "warn");
   }
 
-  // อัพเดทคำแนะนำด้านบน
   updateInstruction();
 }
 
-// ===== ล็อค/ปลดล็อคใบ =====
 function updateLockState() {
   document.querySelectorAll(".coupon").forEach((c) => {
     const i = parseInt(c.dataset.index);
     const canvas = c.querySelector(".scratch-canvas");
 
-    if (revealedSet.has(i)) {
-      // ขูดเสร็จแล้ว ไม่ต้องทำอะไร
-      return;
-    }
+    if (revealedSet.has(i)) return;
 
     if (activeScratchIndex === -1) {
-      // ยังไม่มีใบที่กำลังขูด → ปลดล็อคทุกใบ
       c.classList.remove("disabled");
       canvas.classList.remove("locked");
-      canvas.classList.add("idle");
-      canvas.classList.remove("active");
     } else if (i === activeScratchIndex) {
-      // ใบที่กำลังขูด → active
       c.classList.remove("disabled");
-      canvas.classList.remove("locked", "idle");
-      canvas.classList.add("active");
+      canvas.classList.remove("locked");
     } else {
-      // ใบอื่น → ล็อค
       c.classList.add("disabled");
       canvas.classList.add("locked");
-      canvas.classList.remove("idle", "active");
     }
   });
 }
@@ -958,7 +961,6 @@ function updateInstruction() {
   }
 }
 
-// ===== Canvas =====
 function setupScratchCanvas(couponDiv, index) {
   const canvas = couponDiv.querySelector(".scratch-canvas");
   const ctx = canvas.getContext("2d");
@@ -966,7 +968,7 @@ function setupScratchCanvas(couponDiv, index) {
   function initCanvas() {
     const rect = couponDiv.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) {
-      setTimeout(initCanvas, 50);
+      setTimeout(initCanvas, 30);
       return;
     }
     const dpr = window.devicePixelRatio || 1;
@@ -976,8 +978,14 @@ function setupScratchCanvas(couponDiv, index) {
     canvas.style.height = rect.height + "px";
     ctx.scale(dpr, dpr);
     drawScratchSurface(ctx, rect.width, rect.height, index + 1);
+
+    // ✅ Mark canvas เป็น ready - ทำให้ label ด้านหน้า fade out
+    couponDiv.classList.add("canvas-ready");
   }
-  requestAnimationFrame(() => setTimeout(initCanvas, 100));
+  // ใช้ทั้ง requestAnimationFrame + setTimeout 0 เพื่อให้เร็วที่สุด
+  requestAnimationFrame(() => {
+    initCanvas();
+  });
 
   let isDrawing = false;
   let lastPos = null;
@@ -1007,7 +1015,6 @@ function setupScratchCanvas(couponDiv, index) {
     lastPos = { x, y };
   };
 
-  // ===== Tap detection (สำหรับ modal) =====
   let touchStartTime = 0;
   let touchStartPos = null;
   let movedDistance = 0;
@@ -1015,17 +1022,13 @@ function setupScratchCanvas(couponDiv, index) {
   const onPointerDown = (e) => {
     e.preventDefault();
     if (resultShown) return;
-
-    // ถ้าใบนี้ขูดเสร็จแล้ว ไม่ต้องทำอะไร
     if (revealedSet.has(index)) return;
 
-    // ถ้ามีใบที่กำลังขูดอยู่ และไม่ใช่ใบนี้ → เตือน
     if (activeScratchIndex !== -1 && activeScratchIndex !== index) {
       showToast("⚠️ ขูดใบที่ " + (activeScratchIndex + 1) + " ให้เสร็จก่อนนะคะ", "warn");
       return;
     }
 
-    // ถ้ายังไม่ได้ยืนยันใบนี้ → เก็บข้อมูลรอ tap
     if (activeScratchIndex !== index) {
       touchStartTime = Date.now();
       touchStartPos = getPos(e);
@@ -1033,7 +1036,6 @@ function setupScratchCanvas(couponDiv, index) {
       return;
     }
 
-    // ใบนี้ active แล้ว = ขูดได้
     isDrawing = true;
     lastPos = null;
     const pos = getPos(e);
@@ -1046,7 +1048,6 @@ function setupScratchCanvas(couponDiv, index) {
     if (resultShown) return;
     if (revealedSet.has(index)) return;
 
-    // ยังไม่ active → คำนวณระยะลาก
     if (activeScratchIndex !== index) {
       if (touchStartPos) {
         const pos = getPos(e);
@@ -1057,7 +1058,6 @@ function setupScratchCanvas(couponDiv, index) {
       return;
     }
 
-    // กำลังขูด
     if (!isDrawing) return;
     const pos = getPos(e);
     scratch(pos.x, pos.y);
@@ -1068,18 +1068,15 @@ function setupScratchCanvas(couponDiv, index) {
     if (resultShown) return;
     if (revealedSet.has(index)) return;
 
-    // ยังไม่ active → เช็คว่าเป็น "tap" หรือ "drag"
     if (activeScratchIndex !== index) {
       const elapsed = Date.now() - touchStartTime;
       if (touchStartPos && elapsed < 800 && movedDistance < 15) {
-        // นี่คือ tap → แสดง modal ยืนยัน
         showConfirmModal(index);
       }
       touchStartPos = null;
       return;
     }
 
-    // กำลังขูดอยู่
     isDrawing = false;
     lastPos = null;
     stopScratchSound();
@@ -1172,15 +1169,12 @@ function revealCoupon(couponDiv, index) {
   revealedSet.add(index);
   activeScratchIndex = -1;
 
-  // ปลดล็อคใบอื่นที่ยังไม่ขูด
   updateLockState();
   updateInstruction();
 
-  // ซ่อน progress bar
   document.getElementById("progressBar").classList.remove("show");
   document.getElementById("progressFill").style.width = "0%";
 
-  // เล่นเสียงเฉลย
   playRevealSound();
 
   if (index === winnerIndex) {
