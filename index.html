@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Geisha SPA - สุ่มส่วนลด</title>
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -134,6 +135,36 @@
   }
   .btn:disabled { background: #ccc; color: #888; cursor: not-allowed; }
   .btn-staff { background: linear-gradient(135deg, #6a4a4a, #4a2a2a); color: #fff; }
+
+  /* ปุ่มแชร์ - สีสันสดใส น่ากด */
+  .btn-share {
+    background: linear-gradient(135deg, #ff6b9d, #ffb84d);
+    color: #fff;
+    margin-top: 10px;
+    font-size: 16px;
+    box-shadow: 0 5px 15px rgba(255, 107, 157, 0.4);
+    animation: shareBtnPulse 2.5s ease-in-out infinite;
+  }
+  @keyframes shareBtnPulse {
+    0%, 100% { box-shadow: 0 5px 15px rgba(255, 107, 157, 0.4); transform: scale(1); }
+    50% { box-shadow: 0 5px 25px rgba(255, 107, 157, 0.7); transform: scale(1.02); }
+  }
+  .btn-share:disabled {
+    animation: none;
+    background: #ccc;
+    color: #888;
+  }
+
+  /* กล่องที่จะถูกแคป (ซ่อนตอนปกติ) - คลอน result-box สำหรับ render */
+  .capture-target {
+    background: linear-gradient(135deg, #fff, #fff5f5);
+    color: #d96e87;
+    padding: 30px 25px;
+    border-radius: 20px;
+    border: 3px dashed #ff9eb4;
+    width: 380px;
+    text-align: center;
+  }
 
   .info-box {
     background: rgba(255, 255, 255, 0.7);
@@ -543,6 +574,149 @@
     color: #fff;
   }
   .modal-btn-cancel { background: #eee; color: #888; }
+
+  /* ===== JACKPOT 300 บาท - ฟีเจอร์พิเศษ ===== */
+  /* คอนเฟ็ตตี้ทั้งจอ */
+  .confetti-container {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    z-index: 9998;
+    overflow: hidden;
+  }
+  .confetti {
+    position: absolute;
+    top: -20px;
+    font-size: 24px;
+    animation: confettiFall 4s linear forwards;
+  }
+  @keyframes confettiFall {
+    0% {
+      transform: translateY(-20px) rotate(0deg);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(110vh) rotate(720deg);
+      opacity: 0;
+    }
+  }
+
+  /* กล่องผลลัพธ์ JACKPOT - เปล่งแสง + ขอบทอง */
+  .result-box.jackpot {
+    background: linear-gradient(135deg, #fff8e7, #ffe8ec, #fff0d4);
+    border: 4px double #ffb84d;
+    box-shadow:
+      0 0 30px rgba(255, 184, 77, 0.6),
+      0 0 60px rgba(217, 110, 135, 0.4),
+      inset 0 0 30px rgba(255, 245, 230, 0.5);
+    animation: jackpotPulse 2s ease-in-out infinite;
+    position: relative;
+    overflow: hidden;
+  }
+  @keyframes jackpotPulse {
+    0%, 100% { box-shadow: 0 0 30px rgba(255, 184, 77, 0.6), 0 0 60px rgba(217, 110, 135, 0.4); }
+    50% { box-shadow: 0 0 50px rgba(255, 184, 77, 1), 0 0 100px rgba(217, 110, 135, 0.6); }
+  }
+
+  /* ป้าย JACKPOT */
+  .jackpot-banner {
+    background: linear-gradient(90deg, #ffb84d 0%, #ffd700 25%, #ff9eb4 50%, #ffd700 75%, #ffb84d 100%);
+    background-size: 200% 100%;
+    color: #2a1a1a;
+    padding: 12px 20px;
+    border-radius: 30px;
+    font-weight: bold;
+    font-size: 22px;
+    letter-spacing: 3px;
+    margin-bottom: 15px;
+    display: inline-block;
+    text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.5);
+    animation: shimmer 2s linear infinite, bounceIn 0.8s;
+    box-shadow: 0 4px 15px rgba(255, 184, 77, 0.5);
+  }
+  @keyframes shimmer {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+  }
+  @keyframes bounceIn {
+    0% { transform: scale(0) rotate(-180deg); opacity: 0; }
+    60% { transform: scale(1.2) rotate(10deg); }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  }
+
+  /* ตัวเลข 300 ใหญ่ + เอฟเฟกต์ทอง */
+  .result-box.jackpot .amount {
+    font-size: 80px;
+    background: linear-gradient(135deg, #ff6b9d, #d4af37, #ff6b9d);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradientMove 3s ease infinite;
+    text-shadow: none;
+  }
+  @keyframes gradientMove {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+
+  /* ป้าย "ดวงดีมาก!" */
+  .lucky-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #ff6b9d, #d96e87);
+    color: #fff;
+    padding: 8px 18px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: bold;
+    margin-top: 10px;
+    animation: wiggle 1s ease-in-out infinite;
+    box-shadow: 0 3px 10px rgba(217, 110, 135, 0.4);
+  }
+  @keyframes wiggle {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-3deg); }
+    75% { transform: rotate(3deg); }
+  }
+
+  /* ปุ่ม "แชร์อวดเพื่อน" */
+  .share-btn {
+    background: linear-gradient(135deg, #25d366, #128c7e);
+    color: #fff;
+    border: none;
+    padding: 14px 30px;
+    font-size: 15px;
+    font-weight: bold;
+    border-radius: 30px;
+    cursor: pointer;
+    margin-top: 12px;
+    box-shadow: 0 4px 12px rgba(37, 211, 102, 0.4);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    animation: shareBtnGlow 2s ease-in-out infinite;
+  }
+  @keyframes shareBtnGlow {
+    0%, 100% { box-shadow: 0 4px 12px rgba(37, 211, 102, 0.4); }
+    50% { box-shadow: 0 4px 20px rgba(37, 211, 102, 0.8); }
+  }
+
+  /* รัศมีดาวรอบเลข */
+  .star-burst {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(255, 215, 0, 0.3) 0%, transparent 60%);
+    pointer-events: none;
+    animation: starPulse 2s ease-in-out infinite;
+    z-index: -1;
+  }
+  @keyframes starPulse {
+    0%, 100% { opacity: 0.4; transform: translate(-50%, -50%) scale(1); }
+    50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.2); }
+  }
 </style>
 </head>
 <body>
@@ -553,7 +727,10 @@
       🧪 <strong>โหมดทดสอบ</strong><br>
       <small>กำลังเปิดในเบราว์เซอร์ปกติ (ไม่ได้เปิดผ่าน LINE)</small>
     </div>
-    <button class="demo-reset" onclick="resetDemoData()">🔄 รีเซ็ต</button>
+    <div style="display: flex; flex-direction: column; gap: 6px;">
+      <button class="demo-reset" onclick="resetDemoData()">🔄 รีเซ็ต</button>
+      <button class="demo-reset" onclick="forceJackpot()" style="background: linear-gradient(135deg, #ffd700, #ffb84d); color: #5a2a00;">🏆 บังคับ 300</button>
+    </div>
   </div>
 
   <div class="logo-box">
@@ -619,6 +796,9 @@
         </div>
         <button id="staff-btn" class="btn btn-staff" onclick="useCoupon()">
           🔒 พนักงานกดเพื่อใช้สิทธิ์
+        </button>
+        <button id="share-btn" class="btn btn-share" onclick="shareCoupon()">
+          📸 แคป แชร์ โชว์เพื่อน
         </button>
       </div>
     </div>
@@ -760,6 +940,83 @@ function playRevealSound() {
   } catch (e) {}
 }
 
+// 🎉 เสียง JACKPOT - fanfare ฉลองยาวๆ
+function playJackpotSound() {
+  if (!audioCtx) initAudio();
+  if (!audioCtx) return;
+  try {
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    const now = audioCtx.currentTime;
+    // ทำนอง fanfare: C5, E5, G5, C6, E6 (ยาว)
+    const notes = [
+      { freq: 523,  time: 0,    dur: 0.15 },
+      { freq: 659,  time: 0.12, dur: 0.15 },
+      { freq: 784,  time: 0.24, dur: 0.15 },
+      { freq: 1047, time: 0.36, dur: 0.4  },
+      { freq: 1319, time: 0.7,  dur: 0.7  }
+    ];
+    notes.forEach(n => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.frequency.value = n.freq;
+      osc.type = "triangle";
+      gain.gain.setValueAtTime(0, now + n.time);
+      gain.gain.linearRampToValueAtTime(0.25, now + n.time + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + n.time + n.dur);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now + n.time);
+      osc.stop(now + n.time + n.dur);
+    });
+
+    // เสียงระฆังเอกซ์ตร้าตอนสุดท้าย
+    setTimeout(() => {
+      try {
+        const t = audioCtx.currentTime;
+        [2093, 2637].forEach((freq, i) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.frequency.value = freq;
+          osc.type = "sine";
+          gain.gain.setValueAtTime(0, t + i * 0.05);
+          gain.gain.linearRampToValueAtTime(0.15, t + i * 0.05 + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.05 + 0.8);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(t + i * 0.05);
+          osc.stop(t + i * 0.05 + 0.8);
+        });
+      } catch(e) {}
+    }, 1300);
+  } catch (e) {}
+}
+
+// 🌸 คอนเฟ็ตตี้ดอกซากุระ + emoji ฉลอง
+function launchConfetti() {
+  const container = document.createElement("div");
+  container.className = "confetti-container";
+  document.body.appendChild(container);
+
+  const emojis = ["🌸", "🌸", "🌸", "🎉", "✨", "💖", "🎊", "⭐"];
+  const totalConfetti = 80;
+
+  for (let i = 0; i < totalConfetti; i++) {
+    setTimeout(() => {
+      const c = document.createElement("div");
+      c.className = "confetti";
+      c.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+      c.style.left = Math.random() * 100 + "vw";
+      c.style.fontSize = (16 + Math.random() * 20) + "px";
+      c.style.animationDuration = (3 + Math.random() * 2) + "s";
+      c.style.animationDelay = Math.random() * 0.5 + "s";
+      container.appendChild(c);
+    }, i * 30);
+  }
+
+  // ลบ container ทิ้งหลัง 6 วินาที
+  setTimeout(() => container.remove(), 6500);
+}
+
 function showToast(msg, type) {
   const existing = document.querySelector(".toast");
   if (existing) existing.remove();
@@ -771,6 +1028,12 @@ function showToast(msg, type) {
 }
 
 function randomDiscount() {
+  // 🏆 โหมดทดสอบ - บังคับให้ได้ 300
+  if (localStorage.getItem("force_jackpot") === "1") {
+    localStorage.removeItem("force_jackpot"); // ใช้ครั้งเดียว
+    return 300;
+  }
+
   const total = discountRates.reduce((s, d) => s + d.chance, 0);
   let r = Math.random() * total;
   for (const d of discountRates) {
@@ -801,7 +1064,16 @@ function savePlayData(data) {
 function resetDemoData() {
   if (!confirm("ลบข้อมูลคูปองและสุ่มใหม่?")) return;
   localStorage.removeItem("geisha_played");
+  localStorage.removeItem("force_jackpot");
   showToast("✅ รีเซ็ตเรียบร้อย กำลังโหลดใหม่...");
+  setTimeout(() => location.reload(), 800);
+}
+
+// 🏆 บังคับให้ได้ 300 บาท (สำหรับทดสอบ)
+function forceJackpot() {
+  localStorage.setItem("force_jackpot", "1");
+  localStorage.removeItem("geisha_played");
+  showToast("🏆 ตั้งค่าให้ได้ 300 บาท! กำลังโหลด...", "warn");
   setTimeout(() => location.reload(), 800);
 }
 
@@ -1168,7 +1440,13 @@ function revealCoupon(couponDiv, index) {
 
   document.getElementById("progressBar").classList.remove("show");
   document.getElementById("progressFill").style.width = "0%";
-  playRevealSound();
+
+  // 🎉 ถ้าเป็นรางวัลใหญ่ 300 → เสียง JACKPOT
+  if (currentCouponData && currentCouponData.amount === 300) {
+    playJackpotSound();
+  } else {
+    playRevealSound();
+  }
 
   setTimeout(() => {
     document.getElementById("othersBanner").classList.add("show");
@@ -1190,13 +1468,60 @@ function revealCoupon(couponDiv, index) {
 function showResult(amount, code, expireDate, isUsed) {
   resultShown = true;
   document.getElementById("notPlayedBox").classList.add("hidden");
-  document.getElementById("resultBox").style.display = "block";
+  const resultBox = document.getElementById("resultBox");
+  resultBox.style.display = "block";
+
+  // 🎉 ตรวจว่าเป็น JACKPOT (300 บาท)
+  const isJackpot = amount === 300;
+
+  if (isJackpot) {
+    resultBox.classList.add("jackpot");
+
+    // เปลี่ยน h2 เป็นข้อความพิเศษ + เพิ่ม banner JACKPOT
+    const h2 = resultBox.querySelector("h2");
+    h2.innerHTML = `
+      <div class="jackpot-banner">🏆 JACKPOT! 🏆</div>
+      <div style="font-size: 22px; color: #d96e87; margin-top: 8px;">
+        🎊 ยินดีด้วย! รางวัลใหญ่สุด! 🎊
+      </div>
+    `;
+
+    // เพิ่มป้าย "ดวงดีมาก" ใต้จำนวนเงิน
+    const luckyBadge = document.createElement("div");
+    luckyBadge.className = "lucky-badge";
+    luckyBadge.innerHTML = "✨ ดวงดีมาก! ✨";
+    // ใส่หลังจำนวนเงิน
+    const validDivs = resultBox.querySelectorAll(".valid");
+    if (validDivs.length > 0 && !resultBox.querySelector(".lucky-badge")) {
+      validDivs[0].insertAdjacentElement("beforebegin", luckyBadge);
+    }
+  } else {
+    // กรณีอื่น - ใช้ข้อความปกติ
+    resultBox.classList.remove("jackpot");
+    const h2 = resultBox.querySelector("h2");
+    h2.innerHTML = "🎉 ยินดีด้วย! คุณได้รับส่วนลด 🎉";
+    const existingBadge = resultBox.querySelector(".lucky-badge");
+    if (existingBadge) existingBadge.remove();
+  }
+
+  // 🎊 ยิงคอนเฟ็ตตี้ + เสียงพิเศษ (เฉพาะ JACKPOT)
+  if (isJackpot && !isUsed) {
+    setTimeout(() => {
+      launchConfetti();
+      playJackpotSound();
+    }, 300);
+    // ยิงคอนเฟ็ตตี้รอบที่ 2 หลัง 1.5 วิ
+    setTimeout(() => launchConfetti(), 1800);
+  }
+
   setTimeout(() => {
-    document.getElementById("resultBox").scrollIntoView({ behavior: "smooth", block: "center" });
+    resultBox.scrollIntoView({ behavior: "smooth", block: "center" });
   }, 200);
+
   document.getElementById("amount-display").textContent = amount;
   document.getElementById("couponCodeDisplay").textContent = code || "GEISHA-XXXXXX";
   document.getElementById("expire-display").textContent = expireDate || "31/05/69";
+
   const badge = document.getElementById("statusBadge");
   const staffBtn = document.getElementById("staff-btn");
   if (isUsed) {
@@ -1231,6 +1556,162 @@ function useCoupon() {
   document.getElementById("staff-btn").textContent = "คูปองนี้ถูกใช้งานแล้ว";
   document.getElementById("staff-btn").disabled = true;
   document.querySelector("#staffArea .warning").style.display = "none";
+}
+
+// ===== 📸 ปุ่มแคปแชร์โชว์เพื่อน =====
+async function shareCoupon() {
+  const shareBtn = document.getElementById("share-btn");
+  const originalText = shareBtn.innerHTML;
+
+  try {
+    shareBtn.disabled = true;
+    shareBtn.innerHTML = "⏳ กำลังสร้างรูป...";
+
+    // สร้างกล่องคูปองชั่วคราวสำหรับแคป (ตัด UI ที่ไม่จำเป็นออก)
+    const captureBox = createCaptureCard();
+    document.body.appendChild(captureBox);
+
+    // รอให้ DOM render เสร็จ
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // แปลงเป็น canvas
+    const canvas = await html2canvas(captureBox, {
+      backgroundColor: null,
+      scale: 2, // ความละเอียดสูง
+      logging: false,
+      useCORS: true,
+      allowTaint: true
+    });
+
+    // ลบกล่องชั่วคราวทิ้ง
+    captureBox.remove();
+
+    // แปลง canvas เป็น blob
+    canvas.toBlob(async (blob) => {
+      if (!blob) {
+        showToast("❌ ไม่สามารถสร้างรูปได้", "error");
+        shareBtn.disabled = false;
+        shareBtn.innerHTML = originalText;
+        return;
+      }
+
+      const fileName = `geisha-coupon-${currentCouponData.code}.png`;
+      const file = new File([blob], fileName, { type: "image/png" });
+
+      // ลอง Web Share API (ใช้ได้บน mobile + LINE)
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: "Geisha SPA - คูปองส่วนลด",
+            text: `🎉 ฉันได้ส่วนลด ${currentCouponData.amount} บาทจาก Geisha SPA!`
+          });
+          showToast("✅ แชร์สำเร็จ!");
+        } catch (err) {
+          if (err.name !== "AbortError") {
+            // ถ้า share ไม่ได้ → fallback download
+            downloadImage(blob, fileName);
+          }
+        }
+      } else {
+        // Fallback - download รูปเก็บใน gallery
+        downloadImage(blob, fileName);
+      }
+
+      shareBtn.disabled = false;
+      shareBtn.innerHTML = originalText;
+    }, "image/png");
+
+  } catch (err) {
+    console.error("shareCoupon error:", err);
+    showToast("❌ เกิดข้อผิดพลาด: " + err.message, "error");
+    shareBtn.disabled = false;
+    shareBtn.innerHTML = originalText;
+  }
+}
+
+// สร้างกล่องคูปองสำหรับแคป (เวอร์ชั่นสะอาด ไม่มีปุ่ม)
+function createCaptureCard() {
+  const isJackpot = currentCouponData.amount === 300;
+  const box = document.createElement("div");
+  box.className = "capture-target";
+  box.style.position = "fixed";
+  box.style.top = "-10000px"; // ซ่อนจอ
+  box.style.left = "0";
+
+  const jackpotStyle = isJackpot ? `
+    background: linear-gradient(135deg, #fff8e7, #ffe8ec, #fff0d4);
+    border: 4px double #ffb84d;
+    box-shadow: 0 0 30px rgba(255, 184, 77, 0.6);
+  ` : "";
+
+  const jackpotBanner = isJackpot ? `
+    <div style="background: linear-gradient(90deg, #ffb84d, #ffd700, #ff9eb4, #ffd700, #ffb84d); color: #2a1a1a; padding: 12px 20px; border-radius: 30px; font-weight: bold; font-size: 22px; letter-spacing: 3px; margin-bottom: 15px; display: inline-block;">
+      🏆 JACKPOT! 🏆
+    </div>
+    <div style="font-size: 22px; color: #d96e87; margin-bottom: 8px; font-weight: bold;">
+      🎊 ได้รางวัลใหญ่สุด! 🎊
+    </div>
+  ` : `
+    <div style="font-size: 22px; color: #d96e87; margin-bottom: 10px; font-weight: bold;">
+      🎉 ฉันได้ส่วนลด! 🎉
+    </div>
+  `;
+
+  const luckyBadge = isJackpot ? `
+    <div style="display: inline-block; background: linear-gradient(135deg, #ff6b9d, #d96e87); color: #fff; padding: 8px 18px; border-radius: 20px; font-size: 14px; font-weight: bold; margin-top: 10px;">
+      ✨ ดวงดีมาก! ✨
+    </div>
+  ` : "";
+
+  box.style.cssText += jackpotStyle;
+  box.innerHTML = `
+    <!-- โลโก้ด้านบน -->
+    <div style="margin-bottom: 15px;">
+      <img src="GS-logo.png" alt="Geisha SPA" style="max-width: 220px; width: 100%;">
+    </div>
+
+    ${jackpotBanner}
+
+    <div style="font-size: ${isJackpot ? '80px' : '60px'}; font-weight: bold; color: #d96e87; line-height: 1; margin: 10px 0;">
+      ${currentCouponData.amount}
+    </div>
+    <div style="font-size: 16px; color: #d96e87; font-weight: bold;">บาท</div>
+    <div style="font-size: 14px; color: #8a6a6a; margin-top: 8px;">ส่วนลด</div>
+
+    ${luckyBadge}
+
+    <div style="background: linear-gradient(135deg, #d96e87, #b85070); color: #fff; padding: 12px; border-radius: 10px; margin-top: 15px; font-family: monospace; letter-spacing: 2px; font-size: 16px; font-weight: bold;">
+      ${currentCouponData.code}
+    </div>
+
+    <div style="font-size: 13px; color: #8a6a6a; margin-top: 12px;">
+      📅 หมดอายุ: ${currentCouponData.expireDate}
+    </div>
+    <div style="font-size: 13px; color: #8a6a6a;">
+      🏪 Geisha SPA
+    </div>
+
+    <!-- ลายดอกซากุระประดับ -->
+    <div style="font-size: 24px; margin-top: 15px; letter-spacing: 8px;">
+      🌸 🌸 🌸
+    </div>
+  `;
+
+  return box;
+}
+
+// Fallback: ดาวน์โหลดรูปลงเครื่อง
+function downloadImage(blob, fileName) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast("✅ ดาวน์โหลดรูปแล้ว! ดูในรูปภาพมือถือ");
 }
 
 window.addEventListener("load", main);
