@@ -5,6 +5,34 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Geisha SPA - สุ่มส่วนลด</title>
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, addDoc, serverTimestamp, increment } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBhkUyMQLhWiwGIF7yTSnageSNXmJim6FQ",
+    authDomain: "geisha-coupon.firebaseapp.com",
+    projectId: "geisha-coupon",
+    storageBucket: "geisha-coupon.firebasestorage.app",
+    messagingSenderId: "620548410470",
+    appId: "1:620548410470:web:d85dcc91390882fef4f1a7"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // Export ฟังก์ชัน Firebase ออกไปใช้ใน script ปกติ
+  window.firebaseDB = db;
+  window.firebaseHelpers = {
+    doc, getDoc, setDoc, updateDoc, collection, addDoc, serverTimestamp, increment
+  };
+  window.firebaseReady = true;
+
+  // แจ้งว่า Firebase พร้อม
+  window.dispatchEvent(new Event("firebase-ready"));
+</script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -1059,15 +1087,84 @@ function generateCode() {
   return code;
 }
 
-function getPlayData() {
+// ===== Firebase Helpers =====
+async function getPlayDataFromFirebase() {
+  if (!window.firebaseReady || !userLineId) return null;
+  try {
+    const { doc, getDoc } = window.firebaseHelpers;
+    const docRef = doc(window.firebaseDB, "coupons", userLineId);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      return docSnap.data();
+    }
+    return null;
+  } catch (err) {
+    console.error("Firebase getPlayData error:", err);
+    return null;
+  }
+}
+
+async function savePlayDataToFirebase(data) {
+  if (!window.firebaseReady || !userLineId) return false;
+  try {
+    const { doc, setDoc, serverTimestamp } = window.firebaseHelpers;
+    const docRef = doc(window.firebaseDB, "coupons", userLineId);
+    await setDoc(docRef, {
+      ...data,
+      userLineId: userLineId,
+      createdAt: serverTimestamp(),
+      lastUpdated: serverTimestamp()
+    }, { merge: true });
+    return true;
+  } catch (err) {
+    console.error("Firebase savePlayData error:", err);
+    return false;
+  }
+}
+
+// บันทึกการเปิดเว็บ (สำหรับสถิติ "คนเล่น")
+async function trackVisit() {
+  if (!window.firebaseReady || !userLineId) return;
+  try {
+    const { doc, setDoc, serverTimestamp } = window.firebaseHelpers;
+    const docRef = doc(window.firebaseDB, "coupons", userLineId);
+    await setDoc(docRef, {
+      userLineId: userLineId,
+      firstVisit: serverTimestamp(),
+      visited: true
+    }, { merge: true });
+  } catch (err) {
+    console.error("Firebase trackVisit error:", err);
+  }
+}
+
+// Fallback localStorage (ใช้เมื่อ Firebase fail)
+function getPlayData_local() {
   const played = JSON.parse(localStorage.getItem("geisha_played") || "{}");
   return played[userLineId];
 }
 
-function savePlayData(data) {
+function savePlayData_local(data) {
   const played = JSON.parse(localStorage.getItem("geisha_played") || "{}");
   played[userLineId] = data;
   localStorage.setItem("geisha_played", JSON.stringify(played));
+}
+
+// 🔥 ฟังก์ชันหลัก - ลองใช้ Firebase ก่อน ถ้าไม่ได้ค่อยใช้ localStorage
+async function getPlayData() {
+  // ลอง Firebase ก่อน
+  const firebaseData = await getPlayDataFromFirebase();
+  if (firebaseData && firebaseData.amount) {
+    return firebaseData;
+  }
+  // Fallback - ตรวจ localStorage (เผื่อกรณี migrate ข้อมูลเดิม)
+  return getPlayData_local();
+}
+
+async function savePlayData(data) {
+  // เซฟทั้ง 2 ที่
+  await savePlayDataToFirebase(data);
+  savePlayData_local(data);  // เก็บไว้ด้วยเผื่อ Firebase ล่ม
 }
 
 function resetDemoData() {
@@ -1095,7 +1192,7 @@ function forceJackpot() {
 }
 
 // 👁️ ดูตัวอย่างหน้าจอตอนใช้คูปองแล้ว
-function previewUsedState() {
+async function previewUsedState() {
   // สร้างคูปองตัวอย่างเป็น "ใช้แล้ว"
   const fakeData = {
     amount: 200,
@@ -1105,7 +1202,7 @@ function previewUsedState() {
     date: new Date().toISOString(),
     usedDate: new Date().toISOString()
   };
-  savePlayData(fakeData);
+  await savePlayData(fakeData);
   showToast("👁️ แสดงตัวอย่างคูปองที่ใช้แล้ว", "warn");
   setTimeout(() => location.reload(), 800);
 }
@@ -1123,8 +1220,9 @@ async function main() {
     document.getElementById("userPic").style.display = "none";
     document.getElementById("loadingScreen").classList.add("hidden");
     document.getElementById("mainContent").classList.remove("hidden");
-    const existing = getPlayData();
-    if (existing) {
+    await trackVisit();
+    const existing = await getPlayData();
+    if (existing && existing.amount) {
       currentCouponData = existing;
       showResult(existing.amount, existing.code, existing.expireDate, existing.isUsed);
     }
@@ -1141,12 +1239,14 @@ async function main() {
     else document.getElementById("userPic").style.display = "none";
     document.getElementById("loadingScreen").classList.add("hidden");
     document.getElementById("mainContent").classList.remove("hidden");
-    const existing = getPlayData();
-    if (existing) {
+    await trackVisit();
+    const existing = await getPlayData();
+    if (existing && existing.amount) {
       currentCouponData = existing;
       showResult(existing.amount, existing.code, existing.expireDate, existing.isUsed);
     }
   } catch (err) {
+    console.error("LIFF init error:", err);
     isDemoMode = true;
     document.getElementById("demoBanner").classList.remove("hidden");
     userLineId = "demo_user_" + (localStorage.getItem("demo_user_id") || generateDemoId());
@@ -1154,8 +1254,9 @@ async function main() {
     document.getElementById("userPic").style.display = "none";
     document.getElementById("loadingScreen").classList.add("hidden");
     document.getElementById("mainContent").classList.remove("hidden");
-    const existing = getPlayData();
-    if (existing) {
+    await trackVisit();
+    const existing = await getPlayData();
+    if (existing && existing.amount) {
       currentCouponData = existing;
       showResult(existing.amount, existing.code, existing.expireDate, existing.isUsed);
     }
@@ -1168,8 +1269,9 @@ function generateDemoId() {
   return id;
 }
 
-function showCoupons() {
-  if (getPlayData()) {
+async function showCoupons() {
+  const existing = await getPlayData();
+  if (existing && existing.amount) {
     showToast("⚠️ คุณเคยสุ่มไปแล้ว", "error");
     return;
   }
@@ -1231,7 +1333,7 @@ function cancelChoice() {
   document.getElementById("confirmModal").classList.remove("show");
 }
 
-function confirmChoice() {
+async function confirmChoice() {
   document.getElementById("confirmModal").classList.remove("show");
   const idx = pendingChoiceIndex;
   pendingChoiceIndex = -1;
@@ -1259,7 +1361,7 @@ function confirmChoice() {
     isUsed: false,
     date: new Date().toISOString()
   };
-  savePlayData(currentCouponData);
+  await savePlayData(currentCouponData);
 
   showToast("✋ ขูดใบที่ " + (idx + 1) + " เพื่อรับรางวัล", "warn");
 
@@ -1601,11 +1703,11 @@ function cancelUse() {
   document.getElementById("confirmUseModal").classList.remove("show");
 }
 
-function confirmUse() {
+async function confirmUse() {
   document.getElementById("confirmUseModal").classList.remove("show");
   currentCouponData.isUsed = true;
   currentCouponData.usedDate = new Date().toISOString();
-  savePlayData(currentCouponData);
+  await savePlayData(currentCouponData);
   showToast("✅ ใช้คูปองเรียบร้อย");
   document.getElementById("statusBadge").className = "status-badge status-used";
   document.getElementById("statusBadge").innerHTML = "✅ ใช้แล้ว";

@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Geisha SPA - Admin Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Sarabun', 'Prompt', sans-serif;
+    background: linear-gradient(135deg, #fdf5e8 0%, #fdebe0 50%, #fdf5e8 100%);
+    min-height: 100vh;
+    color: #2a1a1a;
+    padding: 20px;
+  }
+  .container { max-width: 1100px; margin: 0 auto; }
+
+  .header {
+    background: linear-gradient(135deg, #d96e87, #b85070);
+    color: #fff;
+    padding: 20px 25px;
+    border-radius: 15px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 5px 15px rgba(217, 110, 135, 0.3);
+  }
+  .header h1 {
+    font-size: 22px;
+    font-weight: bold;
+  }
+  .header .actions {
+    display: flex;
+    gap: 10px;
+  }
+  .btn-action {
+    background: rgba(255,255,255,0.2);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.4);
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-action:hover { background: rgba(255,255,255,0.3); }
+
+  /* Login Screen */
+  .login-screen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 80vh;
+  }
+  .login-box {
+    background: #fff;
+    padding: 40px 35px;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(217, 110, 135, 0.2);
+    text-align: center;
+    max-width: 400px;
+    width: 100%;
+    border: 2px solid rgba(217, 110, 135, 0.2);
+  }
+  .login-box .logo-text {
+    font-size: 32px;
+    font-weight: bold;
+    color: #d96e87;
+    margin-bottom: 10px;
+  }
+  .login-box .subtitle {
+    color: #8a6a6a;
+    margin-bottom: 30px;
+    font-size: 14px;
+  }
+  .login-input {
+    width: 100%;
+    padding: 14px 18px;
+    font-size: 16px;
+    border: 2px solid #ff9eb4;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    text-align: center;
+    letter-spacing: 3px;
+    outline: none;
+  }
+  .login-input:focus { border-color: #d96e87; }
+  .login-btn {
+    background: linear-gradient(135deg, #ff9eb4, #d96e87);
+    color: #fff;
+    border: none;
+    padding: 14px;
+    width: 100%;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .login-error {
+    color: #d32f2f;
+    font-size: 13px;
+    margin-top: 10px;
+    display: none;
+  }
+
+  /* Dashboard */
+  .dashboard.hidden { display: none; }
+  .login-screen.hidden { display: none; }
+
+  /* Cards Grid */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+  .stat-card {
+    background: #fff;
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(217, 110, 135, 0.15);
+    border: 1px solid rgba(217, 110, 135, 0.2);
+  }
+  .stat-card .label {
+    font-size: 13px;
+    color: #8a6a6a;
+    margin-bottom: 8px;
+    font-weight: bold;
+  }
+  .stat-card .value {
+    font-size: 32px;
+    font-weight: bold;
+    color: #d96e87;
+    line-height: 1;
+  }
+  .stat-card .sub {
+    font-size: 12px;
+    color: #999;
+    margin-top: 5px;
+  }
+  .stat-card.highlight .value {
+    background: linear-gradient(135deg, #ff6b9d, #d4af37);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Progress Bar (Redemption Rate) */
+  .progress-card {
+    grid-column: 1 / -1;
+  }
+  .progress-bar-wrap {
+    background: rgba(217, 110, 135, 0.1);
+    height: 30px;
+    border-radius: 15px;
+    overflow: hidden;
+    margin-top: 10px;
+    position: relative;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ff9eb4, #d96e87, #b85070);
+    border-radius: 15px;
+    transition: width 0.5s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: bold;
+    font-size: 14px;
+    min-width: 60px;
+  }
+
+  /* Charts */
+  .charts-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+  .chart-card {
+    background: #fff;
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(217, 110, 135, 0.15);
+    border: 1px solid rgba(217, 110, 135, 0.2);
+  }
+  .chart-card h3 {
+    color: #d96e87;
+    font-size: 16px;
+    margin-bottom: 15px;
+    font-weight: bold;
+  }
+  .chart-container {
+    position: relative;
+    height: 280px;
+  }
+
+  @media (max-width: 768px) {
+    .charts-row { grid-template-columns: 1fr; }
+  }
+
+  /* Table */
+  .table-card {
+    background: #fff;
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(217, 110, 135, 0.15);
+    border: 1px solid rgba(217, 110, 135, 0.2);
+  }
+  .table-card h3 {
+    color: #d96e87;
+    font-size: 16px;
+    margin-bottom: 15px;
+    font-weight: bold;
+  }
+  .search-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+  }
+  .search-input {
+    flex: 1;
+    min-width: 200px;
+    padding: 10px 15px;
+    border: 2px solid #ff9eb4;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+  }
+  .search-input:focus { border-color: #d96e87; }
+  .filter-btn {
+    padding: 10px 15px;
+    border: 2px solid #ff9eb4;
+    background: #fff;
+    color: #d96e87;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+  .filter-btn.active {
+    background: linear-gradient(135deg, #ff9eb4, #d96e87);
+    color: #fff;
+    border-color: #d96e87;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  thead th {
+    background: linear-gradient(135deg, #fdebe0, #fde0e4);
+    color: #d96e87;
+    padding: 12px 10px;
+    text-align: left;
+    font-size: 13px;
+    font-weight: bold;
+    border-bottom: 2px solid #ff9eb4;
+  }
+  tbody td {
+    padding: 10px;
+    border-bottom: 1px solid #ffe0e4;
+    font-size: 13px;
+  }
+  tbody tr:hover { background: #fff5f5; }
+  .code-cell {
+    font-family: monospace;
+    font-weight: bold;
+    color: #d96e87;
+  }
+  .amount-cell { font-weight: bold; }
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: bold;
+  }
+  .badge-used { background: #4caf50; color: #fff; }
+  .badge-unused { background: #ff9800; color: #fff; }
+  .badge-jackpot { background: linear-gradient(135deg, #ffd700, #ffb84d); color: #5a2a00; }
+
+  .loading {
+    text-align: center;
+    padding: 40px;
+    color: #d96e87;
+  }
+  .spinner {
+    width: 40px; height: 40px;
+    border: 4px solid rgba(217, 110, 135, 0.2);
+    border-top-color: #d96e87;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 15px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #4caf50;
+    color: #fff;
+    padding: 12px 25px;
+    border-radius: 25px;
+    z-index: 9999;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    font-weight: bold;
+  }
+  .toast.error { background: #f44336; }
+  .toast.warn { background: #ff9800; }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #8a6a6a;
+  }
+  .empty-state .emoji { font-size: 60px; margin-bottom: 15px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- ========== Login Screen ========== -->
+  <div id="loginScreen" class="login-screen">
+    <div class="login-box">
+      <div class="logo-text">🌸 Admin Dashboard</div>
+      <div class="subtitle">Geisha SPA - ระบบดูสถิติคูปอง</div>
+      <input type="password" id="adminCodeInput" class="login-input" placeholder="รหัส Admin">
+      <button class="login-btn" onclick="checkAdminCode()">🔓 เข้าสู่ระบบ</button>
+      <div id="loginError" class="login-error">❌ รหัสไม่ถูกต้อง</div>
+    </div>
+  </div>
+
+  <!-- ========== Dashboard ========== -->
+  <div id="dashboard" class="dashboard hidden">
+
+    <div class="header">
+      <h1>🌸 Geisha SPA - Dashboard</h1>
+      <div class="actions">
+        <button class="btn-action" onclick="loadDashboard()">🔄 รีเฟรช</button>
+        <button class="btn-action" onclick="logout()">🚪 ออกจากระบบ</button>
+      </div>
+    </div>
+
+    <div id="loadingDashboard" class="loading">
+      <div class="spinner"></div>
+      <div>กำลังโหลดข้อมูล...</div>
+    </div>
+
+    <div id="dashboardContent" style="display: none;">
+
+      <!-- Stats Cards -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="label">👥 คนเปิดเว็บ</div>
+          <div class="value" id="statVisits">0</div>
+          <div class="sub">รวมทั้งหมด</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">🎁 คนเล่นได้คูปอง</div>
+          <div class="value" id="statPlayed">0</div>
+          <div class="sub">ขูดเสร็จแล้ว</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">✅ ใช้คูปองจริง</div>
+          <div class="value" id="statUsed">0</div>
+          <div class="sub">มาที่ร้าน</div>
+        </div>
+        <div class="stat-card highlight">
+          <div class="label">💰 รวมส่วนลด</div>
+          <div class="value" id="statTotalDiscount">0</div>
+          <div class="sub">บาท (เฉพาะที่ใช้แล้ว)</div>
+        </div>
+      </div>
+
+      <!-- Redemption Rate -->
+      <div class="stat-card progress-card" style="margin-bottom: 20px;">
+        <div class="label">⭐ Redemption Rate (อัตราการแลกใช้)</div>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill" id="redemptionBar" style="width: 0%;">0%</div>
+        </div>
+        <div class="sub" id="redemptionDetails">คนได้คูปองแล้วมาใช้จริง...</div>
+      </div>
+
+      <!-- Charts -->
+      <div class="charts-row">
+        <div class="chart-card">
+          <h3>🎯 สัดส่วนรางวัลที่ออก</h3>
+          <div class="chart-container">
+            <canvas id="prizeChart"></canvas>
+          </div>
+        </div>
+        <div class="chart-card">
+          <h3>📈 จำนวนคนเล่นรายวัน</h3>
+          <div class="chart-container">
+            <canvas id="dailyChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="table-card">
+        <h3>🎫 ประวัติคูปองทั้งหมด</h3>
+        <div class="search-row">
+          <input type="text" id="searchInput" class="search-input" placeholder="🔍 ค้นหารหัสคูปอง เช่น GEISHA-A3K9P">
+          <button class="filter-btn active" data-filter="all" onclick="setFilter('all')">ทั้งหมด</button>
+          <button class="filter-btn" data-filter="used" onclick="setFilter('used')">✅ ใช้แล้ว</button>
+          <button class="filter-btn" data-filter="unused" onclick="setFilter('unused')">⏳ ยังไม่ใช้</button>
+          <button class="filter-btn" data-filter="jackpot" onclick="setFilter('jackpot')">🏆 JACKPOT</button>
+        </div>
+        <div id="tableWrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>รหัสคูปอง</th>
+                <th>ส่วนลด</th>
+                <th>สถานะ</th>
+                <th>วันสุ่ม</th>
+                <th>วันใช้</th>
+              </tr>
+            </thead>
+            <tbody id="couponsTbody"></tbody>
+          </table>
+          <div id="emptyState" class="empty-state" style="display: none;">
+            <div class="emoji">🎫</div>
+            <div>ยังไม่มีคูปองที่ตรงกับเงื่อนไข</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBhkUyMQLhWiwGIF7yTSnageSNXmJim6FQ",
+    authDomain: "geisha-coupon.firebaseapp.com",
+    projectId: "geisha-coupon",
+    storageBucket: "geisha-coupon.firebasestorage.app",
+    messagingSenderId: "620548410470",
+    appId: "1:620548410470:web:d85dcc91390882fef4f1a7"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  window.firebaseDB = db;
+  window.firebaseHelpers = { collection, getDocs, query, orderBy };
+  window.firebaseReady = true;
+</script>
+
+<script>
+const ADMIN_CODE = "admin10961";
+let allCoupons = [];
+let currentFilter = "all";
+let prizeChartInstance = null;
+let dailyChartInstance = null;
+
+// ===== Login =====
+function checkAdminCode() {
+  const input = document.getElementById("adminCodeInput").value;
+  if (input === ADMIN_CODE) {
+    sessionStorage.setItem("admin_logged_in", "1");
+    document.getElementById("loginScreen").classList.add("hidden");
+    document.getElementById("dashboard").classList.remove("hidden");
+    loadDashboard();
+  } else {
+    document.getElementById("loginError").style.display = "block";
+    setTimeout(() => {
+      document.getElementById("loginError").style.display = "none";
+    }, 3000);
+  }
+}
+
+function logout() {
+  sessionStorage.removeItem("admin_logged_in");
+  location.reload();
+}
+
+// Auto-login if session exists
+window.addEventListener("load", () => {
+  if (sessionStorage.getItem("admin_logged_in") === "1") {
+    document.getElementById("loginScreen").classList.add("hidden");
+    document.getElementById("dashboard").classList.remove("hidden");
+    setTimeout(loadDashboard, 500); // รอ Firebase
+  }
+});
+
+// Enter key submit
+document.addEventListener("DOMContentLoaded", () => {
+  const input = document.getElementById("adminCodeInput");
+  if (input) {
+    input.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") checkAdminCode();
+    });
+    input.focus();
+  }
+});
+
+// ===== Toast =====
+function showToast(msg, type) {
+  const existing = document.querySelector(".toast");
+  if (existing) existing.remove();
+  const t = document.createElement("div");
+  t.className = "toast" + (type ? " " + type : "");
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+// ===== Load Data =====
+async function loadDashboard() {
+  if (!window.firebaseReady) {
+    setTimeout(loadDashboard, 500);
+    return;
+  }
+
+  document.getElementById("loadingDashboard").style.display = "block";
+  document.getElementById("dashboardContent").style.display = "none";
+
+  try {
+    const { collection, getDocs } = window.firebaseHelpers;
+    const couponsRef = collection(window.firebaseDB, "coupons");
+    const snapshot = await getDocs(couponsRef);
+
+    allCoupons = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      allCoupons.push({
+        userLineId: doc.id,
+        ...data
+      });
+    });
+
+    console.log("Loaded coupons:", allCoupons.length);
+
+    renderStats();
+    renderCharts();
+    renderTable();
+
+    document.getElementById("loadingDashboard").style.display = "none";
+    document.getElementById("dashboardContent").style.display = "block";
+
+  } catch (err) {
+    console.error("Load error:", err);
+    showToast("❌ โหลดข้อมูลไม่สำเร็จ: " + err.message, "error");
+    document.getElementById("loadingDashboard").innerHTML = `
+      <div style="color: #d32f2f;">
+        ❌ เกิดข้อผิดพลาด<br>
+        <small>${err.message}</small>
+      </div>
+    `;
+  }
+}
+
+// ===== Stats =====
+function renderStats() {
+  // คนเปิดเว็บ = ทุก document ที่มี
+  const visits = allCoupons.length;
+  // คนได้คูปอง = มี amount
+  const played = allCoupons.filter(c => c.amount > 0).length;
+  // ใช้แล้ว
+  const used = allCoupons.filter(c => c.isUsed).length;
+  // รวมส่วนลด (เฉพาะที่ใช้แล้ว)
+  const totalDiscount = allCoupons
+    .filter(c => c.isUsed)
+    .reduce((sum, c) => sum + (c.amount || 0), 0);
+
+  document.getElementById("statVisits").textContent = visits.toLocaleString();
+  document.getElementById("statPlayed").textContent = played.toLocaleString();
+  document.getElementById("statUsed").textContent = used.toLocaleString();
+  document.getElementById("statTotalDiscount").textContent = totalDiscount.toLocaleString();
+
+  // Redemption Rate
+  const rate = played > 0 ? (used / played * 100) : 0;
+  document.getElementById("redemptionBar").style.width = rate.toFixed(1) + "%";
+  document.getElementById("redemptionBar").textContent = rate.toFixed(1) + "%";
+  document.getElementById("redemptionDetails").textContent =
+    `${used.toLocaleString()} จาก ${played.toLocaleString()} คนมาใช้คูปองที่ร้าน`;
+}
+
+// ===== Charts =====
+function renderCharts() {
+  // 1. Pie Chart - สัดส่วนรางวัล
+  const prizeAmounts = [50, 100, 150, 200, 250, 300];
+  const prizeCounts = prizeAmounts.map(amt =>
+    allCoupons.filter(c => c.amount === amt).length
+  );
+
+  const ctx1 = document.getElementById("prizeChart");
+  if (prizeChartInstance) prizeChartInstance.destroy();
+  prizeChartInstance = new Chart(ctx1, {
+    type: "doughnut",
+    data: {
+      labels: prizeAmounts.map(a => `${a} บาท`),
+      datasets: [{
+        data: prizeCounts,
+        backgroundColor: [
+          "#c8a8d8",  // 50 - ม่วงอ่อน
+          "#8ec5e8",  // 100 - ฟ้า
+          "#a8d8b8",  // 150 - เขียว
+          "#f4c4a0",  // 200 - ส้ม
+          "#ff9eb4",  // 250 - ชมพู
+          "#ffb84d"   // 300 - ทอง 🏆
+        ],
+        borderWidth: 2,
+        borderColor: "#fff"
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: "right",
+          labels: { font: { size: 13 } }
+        },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              const total = prizeCounts.reduce((a,b) => a+b, 0);
+              const pct = total > 0 ? (ctx.raw / total * 100).toFixed(1) : 0;
+              return `${ctx.label}: ${ctx.raw} ใบ (${pct}%)`;
+            }
+          }
+        }
+      }
+    }
+  });
+
+  // 2. Bar Chart - คนเล่นรายวัน
+  const dailyData = {};
+  allCoupons.forEach(c => {
+    if (c.amount && c.date) {
+      // แปลง date เป็น YYYY-MM-DD
+      let dateStr;
+      if (typeof c.date === "string") {
+        dateStr = c.date.substring(0, 10);
+      } else if (c.date.toDate) {
+        dateStr = c.date.toDate().toISOString().substring(0, 10);
+      } else {
+        return;
+      }
+      dailyData[dateStr] = (dailyData[dateStr] || 0) + 1;
+    }
+  });
+
+  const sortedDates = Object.keys(dailyData).sort();
+  const ctx2 = document.getElementById("dailyChart");
+  if (dailyChartInstance) dailyChartInstance.destroy();
+  dailyChartInstance = new Chart(ctx2, {
+    type: "bar",
+    data: {
+      labels: sortedDates.map(d => {
+        const parts = d.split("-");
+        return `${parts[2]}/${parts[1]}`;
+      }),
+      datasets: [{
+        label: "จำนวนคนเล่น",
+        data: sortedDates.map(d => dailyData[d]),
+        backgroundColor: "rgba(217, 110, 135, 0.7)",
+        borderColor: "#d96e87",
+        borderWidth: 2,
+        borderRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { stepSize: 1 }
+        }
+      }
+    }
+  });
+}
+
+// ===== Table =====
+function setFilter(filter) {
+  currentFilter = filter;
+  document.querySelectorAll(".filter-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.filter === filter);
+  });
+  renderTable();
+}
+
+function renderTable() {
+  const search = document.getElementById("searchInput").value.toUpperCase();
+  let filtered = allCoupons.filter(c => c.amount); // ที่ได้คูปองแล้ว
+
+  // Apply filter
+  if (currentFilter === "used") filtered = filtered.filter(c => c.isUsed);
+  else if (currentFilter === "unused") filtered = filtered.filter(c => !c.isUsed);
+  else if (currentFilter === "jackpot") filtered = filtered.filter(c => c.amount === 300);
+
+  // Search
+  if (search) {
+    filtered = filtered.filter(c =>
+      (c.code || "").toUpperCase().includes(search)
+    );
+  }
+
+  // Sort - ล่าสุดก่อน
+  filtered.sort((a, b) => {
+    const dateA = a.date ? new Date(a.date).getTime() : 0;
+    const dateB = b.date ? new Date(b.date).getTime() : 0;
+    return dateB - dateA;
+  });
+
+  const tbody = document.getElementById("couponsTbody");
+  const emptyState = document.getElementById("emptyState");
+  const table = document.querySelector(".table-card table");
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = "";
+    emptyState.style.display = "block";
+    table.style.display = "none";
+    return;
+  }
+
+  emptyState.style.display = "none";
+  table.style.display = "table";
+
+  tbody.innerHTML = filtered.map(c => {
+    const isJackpot = c.amount === 300;
+    const usedDate = c.usedDate ? formatDate(c.usedDate) : "-";
+    return `
+      <tr>
+        <td class="code-cell">${c.code || "-"}</td>
+        <td class="amount-cell">
+          ${isJackpot ? "🏆 " : ""}${c.amount} บาท
+        </td>
+        <td>
+          ${c.isUsed
+            ? '<span class="badge badge-used">✅ ใช้แล้ว</span>'
+            : '<span class="badge badge-unused">⏳ ยังไม่ใช้</span>'}
+        </td>
+        <td>${formatDate(c.date)}</td>
+        <td>${usedDate}</td>
+      </tr>
+    `;
+  }).join("");
+}
+
+function formatDate(dateInput) {
+  if (!dateInput) return "-";
+  try {
+    let d;
+    if (typeof dateInput === "string") {
+      d = new Date(dateInput);
+    } else if (dateInput.toDate) {
+      d = dateInput.toDate();
+    } else {
+      return "-";
+    }
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = String(d.getFullYear() + 543).slice(-2);
+    const hh = String(d.getHours()).padStart(2, "0");
+    const mm = String(d.getMinutes()).padStart(2, "0");
+    return `${day}/${month}/${year} ${hh}:${mm}`;
+  } catch (e) {
+    return "-";
+  }
+}
+
+// Search input listener
+document.addEventListener("DOMContentLoaded", () => {
+  const search = document.getElementById("searchInput");
+  if (search) {
+    search.addEventListener("input", renderTable);
+  }
+});
+</script>
+
+</body>
+</html>
