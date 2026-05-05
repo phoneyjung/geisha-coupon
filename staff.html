@@ -415,23 +415,86 @@ function startScanner() {
     html5QrCode = new Html5Qrcode("qr-reader");
   }
 
+  // ⭐ Config ที่ปรับปรุงแล้ว - สแกนเร็ว+แม่นขึ้น
   const config = {
-    fps: 10,
-    qrbox: { width: 240, height: 240 },
-    aspectRatio: 1.0
+    fps: 30,                                  // เพิ่มจาก 10 เป็น 30 (สแกนถี่ขึ้น 3 เท่า)
+    qrbox: function(viewfinderWidth, viewfinderHeight) {
+      // กรอบสแกนขนาดเหมาะสม - 70% ของ viewfinder
+      const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+      const size = Math.floor(minEdge * 0.7);
+      return { width: size, height: size };
+    },
+    aspectRatio: 1.0,
+    disableFlip: false,                       // อนุญาต flip → สแกน QR กลับด้านได้
+    experimentalFeatures: {
+      useBarCodeDetectorIfSupported: true     // ใช้ native API ถ้ามือถือรองรับ (เร็วขึ้นมาก)
+    },
+    videoConstraints: {
+      facingMode: "environment",
+      width: { ideal: 1920 },                 // ความละเอียดสูง → จับได้ดีขึ้น
+      height: { ideal: 1080 }
+    }
   };
 
+  // เพิ่ม formatsToSupport ถ้า library รองรับ
+  if (typeof Html5QrcodeSupportedFormats !== "undefined") {
+    config.formatsToSupport = [ Html5QrcodeSupportedFormats.QR_CODE ];
+  }
+
   html5QrCode.start(
-    { facingMode: "environment" }, // กล้องหลัง
+    { facingMode: "environment" },
     config,
     onScanSuccess,
-    () => {} // ไม่ต้องแสดง error ระหว่างสแกน
+    () => {}
   ).then(() => {
     status.textContent = "🟢 พร้อมสแกน - เล็งที่ QR Code";
+    // ⭐ ลอง enable torch (ไฟฉาย) ถ้ามือถือรองรับ
+    setTimeout(() => addTorchButton(), 1000);
   }).catch((err) => {
     console.error("Camera error:", err);
-    status.innerHTML = "❌ เปิดกล้องไม่ได้<br><small>กรุณาอนุญาตการเข้าถึงกล้อง</small>";
+    status.innerHTML = "❌ เปิดกล้องไม่ได้<br><small>" + err.message + "</small>";
   });
+}
+
+// ⭐ เพิ่มปุ่มไฟฉาย (Torch) ถ้ามือถือรองรับ
+function addTorchButton() {
+  if (!html5QrCode) return;
+  try {
+    const cap = html5QrCode.getRunningTrackCapabilities();
+    if (cap && cap.torch) {
+      // มือถือรองรับ torch → เพิ่มปุ่ม
+      const existingBtn = document.getElementById("torchBtn");
+      if (existingBtn) return; // มีแล้ว
+
+      const btn = document.createElement("button");
+      btn.id = "torchBtn";
+      btn.textContent = "🔦 เปิดไฟฉาย";
+      btn.style.cssText = "position:absolute;bottom:15px;right:15px;padding:10px 16px;background:#fbbf24;color:#000;border:none;border-radius:25px;font-weight:bold;cursor:pointer;z-index:10;box-shadow:0 4px 12px rgba(0,0,0,0.3);";
+
+      let torchOn = false;
+      btn.onclick = async () => {
+        try {
+          torchOn = !torchOn;
+          await html5QrCode.applyVideoConstraints({
+            advanced: [{ torch: torchOn }]
+          });
+          btn.textContent = torchOn ? "💡 ปิดไฟฉาย" : "🔦 เปิดไฟฉาย";
+          btn.style.background = torchOn ? "#374151" : "#fbbf24";
+          btn.style.color = torchOn ? "#fff" : "#000";
+        } catch (e) {
+          console.warn("Torch toggle failed:", e);
+        }
+      };
+
+      const reader = document.getElementById("qr-reader");
+      if (reader) {
+        reader.style.position = "relative";
+        reader.appendChild(btn);
+      }
+    }
+  } catch (e) {
+    // ไม่ support — ไม่ต้องทำอะไร
+  }
 }
 
 function stopScanner() {

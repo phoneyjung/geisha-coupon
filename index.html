@@ -1873,11 +1873,11 @@ function generateQRCode(amount, code) {
   try {
     new QRCode(qrContainer, {
       text: qrData,
-      width: 180,
-      height: 180,
-      colorDark: "#d96e87",
+      width: 220,                // ขยายจาก 180 → 220
+      height: 220,
+      colorDark: "#000000",      // เปลี่ยนเป็นดำเข้ม → กล้องอ่านง่าย
       colorLight: "#ffffff",
-      correctLevel: QRCode.CorrectLevel.H
+      correctLevel: QRCode.CorrectLevel.H  // High error correction
     });
   } catch (e) {
     console.error("QR generation error:", e);
