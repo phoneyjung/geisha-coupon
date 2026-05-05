@@ -659,7 +659,7 @@ function switchTab(tabName) {
     c.classList.toggle("active", c.id === "tab-" + tabName);
   });
 
-  if (tabName === "customers" && allCustomers.length === 0) loadCustomers();
+  if (tabName === "customers") loadCustomers();
   if (tabName === "compare") loadCompare();
   if (tabName === "actions") renderActions();
 }
@@ -701,6 +701,10 @@ async function loadDashboard() {
     renderCharts();
     renderHeatmap();
     renderTable();
+
+    // 🔄 โหลด customers + compare ทุกครั้งเพื่อให้ข้อมูลใหม่ล่าสุด
+    loadCustomers();
+    loadCompare();
 
     document.getElementById("loadingDashboard").style.display = "none";
     document.getElementById("dashboardContent").style.display = "block";

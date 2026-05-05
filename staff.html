@@ -4,13 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Staff Portal - Geisha SPA</title>
-<link rel="icon" type="image/png" href="staff-logo.png">
-<link rel="apple-touch-icon" href="staff-logo.png">
+<link rel="icon" type="image/png" sizes="192x192" href="staff-icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="staff-icon-512.png">
+<link rel="apple-touch-icon" href="staff-icon-512.png">
 <link rel="manifest" href="staff-manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Staff Geisha">
-<meta name="theme-color" content="#1f7a3f">
+<meta name="theme-color" content="#15532b">
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -607,12 +608,27 @@ async function confirmUseFromScan() {
     const { doc, setDoc } = window.firebaseHelpers;
     const collectionName = "coupons_geisha_" + (currentScannedData.campaign || "may2026");
     const docRef = doc(window.firebaseDB, collectionName, currentScannedData.lineId);
+    const usedDateStr = new Date().toISOString();
 
+    // 1. อัพเดท collection หลัก (coupons_geisha_xxx)
     await setDoc(docRef, {
       isUsed: true,
-      usedDate: new Date().toISOString(),
+      usedDate: usedDateStr,
       usedByStaff: true
     }, { merge: true });
+
+    // 2. อัพเดท customers collection ด้วย (เพื่อให้ Owner Dashboard เห็น)
+    try {
+      const custRef = doc(window.firebaseDB, "customers", currentScannedData.lineId);
+      await setDoc(custRef, {
+        geisha_isUsed: true,
+        geisha_usedDate: usedDateStr,
+        lastUpdated: usedDateStr
+      }, { merge: true });
+    } catch (custErr) {
+      console.warn("customers update warning:", custErr);
+      // ไม่ throw - ให้บันทึกหลักผ่านไปได้แม้ customers fail
+    }
 
     showResult("success", "🎉", "ใช้คูปองสำเร็จ!", currentScannedData.amount, "บันทึกในระบบเรียบร้อย");
     confirmBtn.style.display = "none";
