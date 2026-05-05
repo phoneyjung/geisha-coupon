@@ -563,6 +563,84 @@
         <h3>📊 Insights สำคัญ</h3>
         <div id="insightsList" style="display: grid; gap: 12px;"></div>
       </div>
+
+      <!-- 🗑️ ล้างข้อมูล (Danger Zone) -->
+      <div class="card" style="border: 2px dashed #fca5a5; background: #fef9f9;">
+        <h3 style="color: #b91c1c;">⚠️ ล้างข้อมูล (Danger Zone)</h3>
+        <div style="font-size: 13px; color: #666; margin-bottom: 18px;">
+          ใช้สำหรับล้างข้อมูลทดสอบก่อนบรอดแคสต์จริง หรือเริ่มแคมเปญใหม่
+        </div>
+
+        <div style="display: grid; gap: 12px;">
+          <!-- ปุ่มลบ Demo -->
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px; background: #fff; border-radius: 10px; border: 1px solid #f0e8e8;">
+            <div style="flex: 1;">
+              <div style="font-weight: bold; color: #2d1b3d; margin-bottom: 4px;">
+                🧪 ล้างข้อมูล Demo
+              </div>
+              <div style="font-size: 12px; color: #888;">
+                ลบเฉพาะ demo_user_* (ใช้สำหรับล้างข้อมูลทดสอบ)
+              </div>
+            </div>
+            <button onclick="confirmCleanup('demo')" style="
+              padding: 10px 18px; background: #f59e0b; color: #fff;
+              border: none; border-radius: 10px; font-weight: bold; cursor: pointer;
+              white-space: nowrap;
+            ">🧪 ล้าง Demo</button>
+          </div>
+
+          <!-- ปุ่มลบ Geisha -->
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px; background: #fff; border-radius: 10px; border: 1px solid #f0e8e8;">
+            <div style="flex: 1;">
+              <div style="font-weight: bold; color: #be185d; margin-bottom: 4px;">
+                🌸 ล้างข้อมูล Geisha (เฉพาะแคมเปญปัจจุบัน)
+              </div>
+              <div style="font-size: 12px; color: #888;">
+                ลบทุก doc ใน <code id="cleanupGeishaName">coupons_geisha_may2026</code>
+              </div>
+            </div>
+            <button onclick="confirmCleanup('geisha')" style="
+              padding: 10px 18px; background: #d96e87; color: #fff;
+              border: none; border-radius: 10px; font-weight: bold; cursor: pointer;
+              white-space: nowrap;
+            ">🌸 ล้าง Geisha</button>
+          </div>
+
+          <!-- ปุ่มลบ Yoshi -->
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px; background: #fff; border-radius: 10px; border: 1px solid #f0e8e8;">
+            <div style="flex: 1;">
+              <div style="font-weight: bold; color: #92400e; margin-bottom: 4px;">
+                🍱 ล้างข้อมูล Yoshi (เฉพาะแคมเปญปัจจุบัน)
+              </div>
+              <div style="font-size: 12px; color: #888;">
+                ลบทุก doc ใน <code id="cleanupYoshiName">coupons_yoshi_may2026</code>
+              </div>
+            </div>
+            <button onclick="confirmCleanup('yoshi')" style="
+              padding: 10px 18px; background: #d4a04d; color: #fff;
+              border: none; border-radius: 10px; font-weight: bold; cursor: pointer;
+              white-space: nowrap;
+            ">🍱 ล้าง Yoshi</button>
+          </div>
+
+          <!-- ปุ่มลบทุกอย่าง (อันตรายสุด) -->
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px; background: #fef2f2; border-radius: 10px; border: 1px solid #fca5a5;">
+            <div style="flex: 1;">
+              <div style="font-weight: bold; color: #b91c1c; margin-bottom: 4px;">
+                🗑️ ล้างทั้งหมด (Geisha + Yoshi + Customers)
+              </div>
+              <div style="font-size: 12px; color: #888;">
+                ⚠️ อันตราย! ลบทุก collection — ใช้ตอนเริ่ม campaign ใหม่ทั้งหมด
+              </div>
+            </div>
+            <button onclick="confirmCleanup('all')" style="
+              padding: 10px 18px; background: #dc2626; color: #fff;
+              border: none; border-radius: 10px; font-weight: bold; cursor: pointer;
+              white-space: nowrap;
+            ">🗑️ ล้างทั้งหมด</button>
+          </div>
+        </div>
+      </div>
     </div>
 
   </div>
@@ -572,7 +650,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getFirestore, collection, getDocs, query, orderBy, doc, deleteDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyBhkUyMQLhWiwGIF7yTSnageSNXmJim6FQ",
@@ -586,7 +664,7 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
   window.firebaseDB = db;
-  window.firebaseHelpers = { collection, getDocs, query, orderBy };
+  window.firebaseHelpers = { collection, getDocs, query, orderBy, doc, deleteDoc, writeBatch };
   window.firebaseReady = true;
 </script>
 
@@ -676,7 +754,16 @@ function showToast(msg, type) {
 
 function changeCampaign() {
   currentCollection = document.getElementById("campaignSelector").value;
+  updateCleanupLabels();
   loadDashboard();
+}
+
+function updateCleanupLabels() {
+  const campaign = currentCollection.split("_").slice(2).join("_") || "may2026";
+  const gName = document.getElementById("cleanupGeishaName");
+  const yName = document.getElementById("cleanupYoshiName");
+  if (gName) gName.textContent = "coupons_geisha_" + campaign;
+  if (yName) yName.textContent = "coupons_yoshi_" + campaign;
 }
 
 async function loadDashboard() {
@@ -690,11 +777,26 @@ async function loadDashboard() {
     const snapshot = await getDocs(ref);
 
     allCoupons = [];
+    let totalDocs = 0;
+    let skippedDeleted = 0;
+    let skippedDemo = 0;
     snapshot.forEach(doc => {
+      totalDocs++;
       const data = doc.data();
-      if (data.deleted || data.isDemo) return;
+      if (data.deleted) { skippedDeleted++; return; }
+      if (data.isDemo) { skippedDemo++; return; }
       allCoupons.push({ userLineId: doc.id, ...data });
     });
+
+    console.log("📊 Loaded from collection:", currentCollection);
+    console.log("   Total docs:", totalDocs);
+    console.log("   Skipped (deleted):", skippedDeleted);
+    console.log("   Skipped (isDemo):", skippedDemo);
+    console.log("   Used coupons:", allCoupons.length);
+    console.log("   Sample data:", allCoupons[0]);
+
+    // แสดงสถานะให้เห็นบนหน้าจอ
+    showToast("📊 โหลด " + totalDocs + " รายการ (แสดง " + allCoupons.length + ")");
 
     renderKPIs();
     renderFunnel();
@@ -1303,6 +1405,147 @@ function renderInsights() {
     '<div class="action-item ' + i.type + '">' +
     '<div class="text"><strong>' + i.title + '</strong><br>' + i.text + '</div></div>'
   ).join("");
+}
+
+// ===== 🗑️ Cleanup Functions =====
+async function confirmCleanup(type) {
+  let title = "";
+  let desc = "";
+  let collections = [];
+
+  // ดึงชื่อ collection ปัจจุบัน
+  const campaign = currentCollection.split("_").slice(2).join("_") || "may2026";
+
+  if (type === "demo") {
+    title = "🧪 ล้างข้อมูล Demo";
+    desc = "ลบเฉพาะ demo_user_* ในทั้ง 2 ร้าน + customers";
+    collections = ["coupons_geisha_" + campaign, "coupons_yoshi_" + campaign, "customers"];
+  } else if (type === "geisha") {
+    title = "🌸 ล้างข้อมูล Geisha";
+    desc = "ลบ <strong>ทุก doc</strong> ใน <code>coupons_geisha_" + campaign + "</code><br>" +
+           "และข้อมูล Geisha ใน <code>customers</code>";
+    collections = ["coupons_geisha_" + campaign];
+  } else if (type === "yoshi") {
+    title = "🍱 ล้างข้อมูล Yoshi";
+    desc = "ลบ <strong>ทุก doc</strong> ใน <code>coupons_yoshi_" + campaign + "</code><br>" +
+           "และข้อมูล Yoshi ใน <code>customers</code>";
+    collections = ["coupons_yoshi_" + campaign];
+  } else if (type === "all") {
+    title = "🗑️ ล้างทั้งหมด";
+    desc = "<strong style='color:#dc2626;'>⚠️ อันตราย!</strong> จะลบทั้ง:<br>" +
+           "• <code>coupons_geisha_" + campaign + "</code><br>" +
+           "• <code>coupons_yoshi_" + campaign + "</code><br>" +
+           "• <code>customers</code>";
+    collections = ["coupons_geisha_" + campaign, "coupons_yoshi_" + campaign, "customers"];
+  }
+
+  // ขั้นยืนยัน 1
+  const confirm1 = confirm(title + "\n\n" + desc.replace(/<[^>]+>/g, "") + "\n\nต้องการดำเนินการต่อ?");
+  if (!confirm1) return;
+
+  // ขั้นยืนยัน 2 - พิมพ์คำว่า "ลบ"
+  const confirm2 = prompt('⚠️ ยืนยันอีกครั้ง\n\nพิมพ์คำว่า "ลบ" (ลอ-บอ) เพื่อยืนยัน:');
+  if (confirm2 !== "ลบ") {
+    showToast("❌ ยกเลิกการลบ");
+    return;
+  }
+
+  // ดำเนินการลบ
+  await performCleanup(type, collections);
+}
+
+async function performCleanup(type, collections) {
+  showToast("⏳ กำลังลบข้อมูล...");
+
+  try {
+    const { collection: col, getDocs, doc, deleteDoc } = window.firebaseHelpers;
+    let totalDeleted = 0;
+
+    for (const collName of collections) {
+      try {
+        const ref = col(window.firebaseDB, collName);
+        const snapshot = await getDocs(ref);
+
+        for (const docSnap of snapshot.docs) {
+          const data = docSnap.data();
+          const docId = docSnap.id;
+
+          let shouldDelete = false;
+
+          if (type === "demo") {
+            // ลบเฉพาะ demo
+            shouldDelete = docId.startsWith("demo_user_") || data.isDemo === true;
+          } else if (type === "geisha") {
+            if (collName === "customers") {
+              // ใน customers - ลบเฉพาะคนที่เล่นแค่ Geisha
+              const shops = data.shops || [];
+              if (shops.includes("geisha") && !shops.includes("yoshi")) {
+                shouldDelete = true;
+              }
+            } else {
+              shouldDelete = true;
+            }
+          } else if (type === "yoshi") {
+            if (collName === "customers") {
+              const shops = data.shops || [];
+              if (shops.includes("yoshi") && !shops.includes("geisha")) {
+                shouldDelete = true;
+              }
+            } else {
+              shouldDelete = true;
+            }
+          } else if (type === "all") {
+            shouldDelete = true;
+          }
+
+          if (shouldDelete) {
+            await deleteDoc(doc(window.firebaseDB, collName, docId));
+            totalDeleted++;
+          }
+        }
+      } catch (err) {
+        console.warn("ลบ " + collName + " ล้มเหลว:", err);
+      }
+    }
+
+    // ถ้าลบ Geisha หรือ Yoshi เฉพาะ → อัพเดท customers (เอา flag ของร้านนั้นออก)
+    if (type === "geisha" || type === "yoshi") {
+      const shop = type;
+      const otherShop = type === "geisha" ? "yoshi" : "geisha";
+      try {
+        const custRef = col(window.firebaseDB, "customers");
+        const custSnap = await getDocs(custRef);
+        for (const docSnap of custSnap.docs) {
+          const data = docSnap.data();
+          const shops = data.shops || [];
+          if (shops.includes(shop) && shops.includes(otherShop)) {
+            // เป็น VIP - ลบเฉพาะ field ของร้านที่ลบ
+            const updateData = {
+              shops: shops.filter(s => s !== shop)
+            };
+            updateData[shop + "_amount"] = null;
+            updateData[shop + "_code"] = null;
+            updateData[shop + "_isUsed"] = null;
+            updateData[shop + "_date"] = null;
+            updateData[shop + "_usedDate"] = null;
+            const { setDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+            await setDoc(doc(window.firebaseDB, "customers", docSnap.id), updateData, { merge: true });
+          }
+        }
+      } catch (err) {
+        console.warn("Update customers warning:", err);
+      }
+    }
+
+    showToast("✅ ลบสำเร็จ! ลบไป " + totalDeleted + " รายการ");
+
+    // โหลด dashboard ใหม่
+    setTimeout(() => loadDashboard(), 1000);
+
+  } catch (err) {
+    console.error(err);
+    showToast("❌ ลบไม่สำเร็จ: " + err.message, "error");
+  }
 }
 
 function exportExcel() {
