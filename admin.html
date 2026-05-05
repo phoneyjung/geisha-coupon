@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Geisha SPA - Admin Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -322,6 +323,61 @@
     color: #8a6a6a;
   }
   .empty-state .emoji { font-size: 60px; margin-bottom: 15px; }
+
+  /* ===== Heatmap ===== */
+  .heatmap-table {
+    border-collapse: separate;
+    border-spacing: 3px;
+    margin: 0 auto;
+    min-width: 700px;
+  }
+  .heatmap-table th {
+    font-size: 11px;
+    color: #8a6a6a;
+    font-weight: bold;
+    padding: 5px;
+    background: transparent;
+    border: none;
+    text-align: center;
+  }
+  .heatmap-table th.day-label {
+    text-align: right;
+    padding-right: 8px;
+    width: 50px;
+  }
+  .heatmap-cell {
+    width: 28px;
+    height: 28px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: transform 0.15s;
+    text-align: center;
+    font-size: 10px;
+    font-weight: bold;
+    color: #fff;
+    line-height: 28px;
+    background: #f5e6e9;
+  }
+  .heatmap-cell:hover {
+    transform: scale(1.3);
+    box-shadow: 0 2px 8px rgba(217, 110, 135, 0.4);
+    z-index: 10;
+    position: relative;
+  }
+  .heatmap-legend {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 15px;
+    font-size: 12px;
+    color: #8a6a6a;
+  }
+  .heatmap-legend-box {
+    width: 18px;
+    height: 18px;
+    border-radius: 3px;
+  }
 </style>
 </head>
 <body>
@@ -344,8 +400,25 @@
     <div class="header">
       <h1>🌸 Geisha SPA - Dashboard</h1>
       <div class="actions">
+        <select id="campaignSelector" onchange="changeCampaign()" style="
+          background: rgba(255,255,255,0.2);
+          color: #fff;
+          border: 1px solid rgba(255,255,255,0.4);
+          padding: 8px 12px;
+          border-radius: 20px;
+          font-size: 13px;
+          font-weight: bold;
+          cursor: pointer;
+        ">
+          <option value="coupons_may2026">📅 พ.ค. 2026</option>
+          <option value="coupons_june2026">📅 มิ.ย. 2026</option>
+          <option value="coupons_july2026">📅 ก.ค. 2026</option>
+          <option value="coupons_xmas2026">🎄 Xmas 2026</option>
+          <option value="coupons">📦 ข้อมูลเก่า (รวม)</option>
+        </select>
         <button class="btn-action" onclick="loadDashboard()">🔄 รีเฟรช</button>
-        <button class="btn-action" onclick="logout()">🚪 ออกจากระบบ</button>
+        <button class="btn-action" onclick="exportExcel()">📥 Export Excel</button>
+        <button class="btn-action" onclick="logout()">🚪 ออก</button>
       </div>
     </div>
 
@@ -402,6 +475,17 @@
           <div class="chart-container">
             <canvas id="dailyChart"></canvas>
           </div>
+        </div>
+      </div>
+
+      <!-- Heatmap -->
+      <div class="chart-card" style="margin-bottom: 20px;">
+        <h3>🔥 Heatmap เวลาที่คนเล่น</h3>
+        <div style="font-size: 12px; color: #8a6a6a; margin-bottom: 15px;">
+          💡 ช่องสีเข้ม = คนเล่นเยอะ → ใช้บอกเวลาที่ดีในการบรอดแคสต์ครั้งหน้า
+        </div>
+        <div id="heatmapWrapper" style="overflow-x: auto;">
+          <div id="heatmapContainer"></div>
         </div>
       </div>
 
@@ -463,10 +547,116 @@
 
 <script>
 const ADMIN_CODE = "admin10961";
+let currentCollection = "coupons_may2026"; // default
 let allCoupons = [];
 let currentFilter = "all";
 let prizeChartInstance = null;
 let dailyChartInstance = null;
+
+function changeCampaign() {
+  currentCollection = document.getElementById("campaignSelector").value;
+  loadDashboard();
+}
+
+// 📥 Export Excel (.xlsx) - 3 sheets: ภาพรวม, ประวัติ, สถิติรางวัล
+function exportExcel() {
+  if (allCoupons.length === 0) {
+    showToast("ไม่มีข้อมูลให้ export", "error");
+    return;
+  }
+
+  const playedCoupons = allCoupons.filter(c => c.amount);
+  const usedCoupons = playedCoupons.filter(c => c.isUsed);
+  const totalDiscount = usedCoupons.reduce((s, c) => s + (c.amount || 0), 0);
+  const redemptionRate = playedCoupons.length > 0
+    ? (usedCoupons.length / playedCoupons.length * 100).toFixed(1)
+    : 0;
+
+  // ===== Sheet 1: ภาพรวม =====
+  const summaryData = [
+    ["รายการ", "จำนวน"],
+    ["คนเปิดเว็บ", allCoupons.length],
+    ["คนได้คูปอง", playedCoupons.length],
+    ["ใช้คูปองจริง", usedCoupons.length],
+    ["ยังไม่ใช้", playedCoupons.length - usedCoupons.length],
+    ["รวมส่วนลด (บาท)", totalDiscount],
+    ["Redemption Rate (%)", redemptionRate + "%"],
+    [],
+    ["แคมเปญ", currentCollection],
+    ["วันที่ Export", new Date().toLocaleString("th-TH")]
+  ];
+
+  // ===== Sheet 2: ประวัติคูปอง =====
+  const historyHeader = [
+    "Line ID", "รหัสคูปอง", "ส่วนลด (บาท)", "สถานะ", "วันที่สุ่ม", "วันที่ใช้"
+  ];
+  const historyData = [historyHeader];
+  playedCoupons
+    .sort((a, b) => {
+      const da = a.date ? new Date(a.date).getTime() : 0;
+      const db = b.date ? new Date(b.date).getTime() : 0;
+      return db - da;
+    })
+    .forEach(c => {
+      historyData.push([
+        c.userLineId || "",
+        c.code || "",
+        c.amount || 0,
+        c.isUsed ? "ใช้แล้ว" : "ยังไม่ใช้",
+        formatDate(c.date),
+        c.usedDate ? formatDate(c.usedDate) : "-"
+      ]);
+    });
+
+  // ===== Sheet 3: สถิติรางวัล =====
+  const prizeAmounts = [50, 100, 150, 200, 250, 300];
+  const prizeStatsData = [
+    ["ส่วนลด (บาท)", "ออกได้กี่ครั้ง", "ใช้แล้ว", "ยังไม่ใช้", "% ของทั้งหมด"]
+  ];
+  prizeAmounts.forEach(amt => {
+    const got = playedCoupons.filter(c => c.amount === amt);
+    const used = got.filter(c => c.isUsed);
+    const pct = playedCoupons.length > 0
+      ? (got.length / playedCoupons.length * 100).toFixed(1) + "%"
+      : "0%";
+    prizeStatsData.push([
+      amt,
+      got.length,
+      used.length,
+      got.length - used.length,
+      pct
+    ]);
+  });
+  prizeStatsData.push([
+    "รวม",
+    playedCoupons.length,
+    usedCoupons.length,
+    playedCoupons.length - usedCoupons.length,
+    "100%"
+  ]);
+
+  // ===== สร้าง Workbook =====
+  const wb = XLSX.utils.book_new();
+
+  const ws1 = XLSX.utils.aoa_to_sheet(summaryData);
+  ws1["!cols"] = [{ wch: 25 }, { wch: 20 }];
+  XLSX.utils.book_append_sheet(wb, ws1, "📊 ภาพรวม");
+
+  const ws2 = XLSX.utils.aoa_to_sheet(historyData);
+  ws2["!cols"] = [
+    { wch: 32 }, { wch: 18 }, { wch: 14 },
+    { wch: 14 }, { wch: 18 }, { wch: 18 }
+  ];
+  XLSX.utils.book_append_sheet(wb, ws2, "🎫 ประวัติคูปอง");
+
+  const ws3 = XLSX.utils.aoa_to_sheet(prizeStatsData);
+  ws3["!cols"] = [{ wch: 14 }, { wch: 16 }, { wch: 12 }, { wch: 14 }, { wch: 14 }];
+  XLSX.utils.book_append_sheet(wb, ws3, "🎯 สถิติรางวัล");
+
+  const fileName = `Geisha_Dashboard_${currentCollection}_${new Date().toISOString().substring(0, 10)}.xlsx`;
+  XLSX.writeFile(wb, fileName);
+  showToast("✅ ดาวน์โหลด Excel เรียบร้อย");
+}
 
 // ===== Login =====
 function checkAdminCode() {
@@ -532,12 +722,14 @@ async function loadDashboard() {
 
   try {
     const { collection, getDocs } = window.firebaseHelpers;
-    const couponsRef = collection(window.firebaseDB, "coupons");
+    const couponsRef = collection(window.firebaseDB, currentCollection);
     const snapshot = await getDocs(couponsRef);
 
     allCoupons = [];
     snapshot.forEach(doc => {
       const data = doc.data();
+      // ข้ามข้อมูลที่ถูก mark ว่าลบ หรือเป็น demo
+      if (data.deleted || data.isDemo) return;
       allCoupons.push({
         userLineId: doc.id,
         ...data
@@ -548,6 +740,7 @@ async function loadDashboard() {
 
     renderStats();
     renderCharts();
+    renderHeatmap();
     renderTable();
 
     document.getElementById("loadingDashboard").style.display = "none";
@@ -692,7 +885,91 @@ function renderCharts() {
   });
 }
 
-// ===== Table =====
+// ===== 🔥 Heatmap (วัน x ชั่วโมง) =====
+function renderHeatmap() {
+  // matrix[day][hour] = count
+  // day: 0=อาทิตย์, 1=จันทร์, ... 6=เสาร์
+  const matrix = Array.from({length: 7}, () => Array(24).fill(0));
+  let maxCount = 0;
+
+  allCoupons.forEach(c => {
+    if (!c.amount || !c.date) return;
+    let d;
+    try {
+      if (typeof c.date === "string") d = new Date(c.date);
+      else if (c.date.toDate) d = c.date.toDate();
+      else return;
+
+      const day = d.getDay();
+      const hour = d.getHours();
+      matrix[day][hour]++;
+      if (matrix[day][hour] > maxCount) maxCount = matrix[day][hour];
+    } catch (e) {}
+  });
+
+  const dayNames = ["อา", "จ", "อ", "พ", "พฤ", "ศ", "ส"];
+  const container = document.getElementById("heatmapContainer");
+
+  // ถ้ายังไม่มีข้อมูล
+  if (maxCount === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="emoji">📊</div>
+        <div>ยังไม่มีข้อมูลพอแสดง Heatmap</div>
+        <div style="font-size: 12px; margin-top: 5px;">รอลูกค้ามาเล่นบ้างก่อนนะ</div>
+      </div>`;
+    return;
+  }
+
+  // สร้าง HTML Table
+  let html = '<table class="heatmap-table"><thead><tr>';
+  html += '<th class="day-label"></th>';
+  for (let h = 0; h < 24; h++) {
+    html += `<th>${h}</th>`;
+  }
+  html += '</tr></thead><tbody>';
+
+  for (let d = 0; d < 7; d++) {
+    html += `<tr><th class="day-label">${dayNames[d]}</th>`;
+    for (let h = 0; h < 24; h++) {
+      const count = matrix[d][h];
+      const intensity = count / maxCount;
+      const color = getHeatmapColor(intensity);
+      const txt = count > 0 ? count : "";
+      const tooltip = `วัน${dayNames[d]} ${h}:00 - ${count} คน`;
+      html += `<td>
+        <div class="heatmap-cell" style="background:${color}" title="${tooltip}">
+          ${count >= 1 ? txt : ""}
+        </div>
+      </td>`;
+    }
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+
+  // Legend
+  html += `
+    <div class="heatmap-legend">
+      <span>น้อย</span>
+      <div class="heatmap-legend-box" style="background:#f5e6e9"></div>
+      <div class="heatmap-legend-box" style="background:#ffc6d0"></div>
+      <div class="heatmap-legend-box" style="background:#ff9eb4"></div>
+      <div class="heatmap-legend-box" style="background:#d96e87"></div>
+      <div class="heatmap-legend-box" style="background:#a83a5a"></div>
+      <span>มาก</span>
+    </div>
+  `;
+
+  container.innerHTML = html;
+}
+
+function getHeatmapColor(intensity) {
+  if (intensity === 0) return "#f5e6e9";
+  if (intensity < 0.25) return "#ffc6d0";
+  if (intensity < 0.5) return "#ff9eb4";
+  if (intensity < 0.75) return "#d96e87";
+  return "#a83a5a";
+}
 function setFilter(filter) {
   currentFilter = filter;
   document.querySelectorAll(".filter-btn").forEach(btn => {

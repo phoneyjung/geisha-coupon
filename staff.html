@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Geisha SPA - พนักงานสแกน QR</title>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Sarabun', 'Prompt', sans-serif;
+    background: linear-gradient(135deg, #fdf5e8 0%, #fdebe0 50%, #fdf5e8 100%);
+    min-height: 100vh;
+    color: #2a1a1a;
+    padding: 15px;
+  }
+  .container { max-width: 480px; margin: 0 auto; }
+
+  .header {
+    background: linear-gradient(135deg, #d96e87, #b85070);
+    color: #fff;
+    padding: 18px 22px;
+    border-radius: 15px;
+    margin-bottom: 18px;
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(217, 110, 135, 0.3);
+  }
+  .header h1 { font-size: 20px; font-weight: bold; }
+  .header .sub { font-size: 12px; opacity: 0.9; margin-top: 3px; }
+
+  /* Login */
+  .login-box {
+    background: #fff;
+    padding: 35px 28px;
+    border-radius: 18px;
+    box-shadow: 0 10px 30px rgba(217, 110, 135, 0.2);
+    text-align: center;
+    border: 2px solid rgba(217, 110, 135, 0.2);
+  }
+  .login-box .icon { font-size: 60px; margin-bottom: 15px; }
+  .login-box h2 {
+    font-size: 22px;
+    color: #d96e87;
+    margin-bottom: 8px;
+  }
+  .login-box .desc {
+    color: #8a6a6a;
+    margin-bottom: 25px;
+    font-size: 13px;
+  }
+  .login-input {
+    width: 100%;
+    padding: 14px 18px;
+    font-size: 16px;
+    border: 2px solid #ff9eb4;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    text-align: center;
+    letter-spacing: 3px;
+    outline: none;
+  }
+  .login-input:focus { border-color: #d96e87; }
+  .btn-primary {
+    background: linear-gradient(135deg, #ff9eb4, #d96e87);
+    color: #fff;
+    border: none;
+    padding: 14px;
+    width: 100%;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .btn-success {
+    background: linear-gradient(135deg, #4caf50, #2e7d32);
+    color: #fff;
+  }
+  .btn-cancel {
+    background: #888;
+    color: #fff;
+  }
+  .login-error {
+    color: #d32f2f;
+    font-size: 13px;
+    margin-top: 10px;
+    display: none;
+  }
+
+  /* Scanner */
+  .scanner-section.hidden { display: none; }
+  .login-section.hidden { display: none; }
+  .result-section.hidden { display: none; }
+
+  .scanner-box {
+    background: #fff;
+    padding: 18px;
+    border-radius: 18px;
+    box-shadow: 0 5px 20px rgba(217, 110, 135, 0.2);
+    border: 2px solid rgba(217, 110, 135, 0.2);
+  }
+  #qr-reader {
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  #qr-reader video {
+    border-radius: 10px;
+  }
+  .scanner-status {
+    text-align: center;
+    padding: 12px;
+    margin-top: 12px;
+    font-size: 13px;
+    color: #d96e87;
+    font-weight: bold;
+  }
+
+  .manual-entry {
+    background: rgba(217, 110, 135, 0.05);
+    padding: 15px;
+    border-radius: 12px;
+    margin-top: 15px;
+  }
+  .manual-entry .title {
+    font-size: 13px;
+    color: #8a6a6a;
+    margin-bottom: 10px;
+    font-weight: bold;
+  }
+  .manual-entry input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #ff9eb4;
+    border-radius: 8px;
+    font-size: 14px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    outline: none;
+  }
+  .manual-entry button {
+    width: 100%;
+    padding: 12px;
+    background: #fff;
+    border: 2px solid #d96e87;
+    color: #d96e87;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  /* Result */
+  .result-box {
+    background: #fff;
+    padding: 25px 22px;
+    border-radius: 18px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(217, 110, 135, 0.2);
+    border: 2px solid rgba(217, 110, 135, 0.2);
+  }
+  .result-box.success {
+    border-color: #4caf50;
+    background: linear-gradient(135deg, #f1f8e9, #fff);
+  }
+  .result-box.error {
+    border-color: #d32f2f;
+    background: linear-gradient(135deg, #ffebee, #fff);
+  }
+  .result-box.warn {
+    border-color: #ff9800;
+    background: linear-gradient(135deg, #fff8e1, #fff);
+  }
+
+  .result-icon { font-size: 64px; margin-bottom: 10px; }
+  .result-title {
+    font-size: 22px;
+    font-weight: bold;
+    margin-bottom: 8px;
+  }
+  .result-amount {
+    font-size: 48px;
+    font-weight: bold;
+    color: #d96e87;
+    margin: 12px 0;
+  }
+  .result-detail {
+    background: rgba(217, 110, 135, 0.05);
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 13px;
+    color: #5a3a3a;
+    margin-bottom: 15px;
+    text-align: left;
+  }
+  .result-detail .row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+  }
+  .result-detail .label { color: #8a6a6a; }
+  .result-detail .value { font-weight: bold; color: #d96e87; }
+
+  .btn-row {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 18px;
+  }
+
+  .toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #4caf50;
+    color: #fff;
+    padding: 12px 25px;
+    border-radius: 25px;
+    z-index: 9999;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    font-weight: bold;
+    font-size: 14px;
+  }
+  .toast.error { background: #d32f2f; }
+  .toast.warn { background: #ff9800; }
+
+  .footer {
+    text-align: center;
+    padding: 18px;
+    color: #999;
+    font-size: 12px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>🌸 Geisha SPA</h1>
+    <div class="sub">ระบบสแกน QR Code สำหรับพนักงาน</div>
+  </div>
+
+  <!-- ===== Login ===== -->
+  <div id="loginSection" class="login-section">
+    <div class="login-box">
+      <div class="icon">🔒</div>
+      <h2>รหัสพนักงาน</h2>
+      <div class="desc">กรุณากรอกรหัสเพื่อเข้าใช้งาน<br>(จะจำไว้ 8 ชั่วโมง)</div>
+      <input type="password" id="staffCodeInput" class="login-input" placeholder="••••••••">
+      <button class="btn-primary" onclick="checkStaffCode()">🔓 เข้าสู่ระบบ</button>
+      <div id="loginError" class="login-error">❌ รหัสไม่ถูกต้อง</div>
+    </div>
+  </div>
+
+  <!-- ===== Scanner ===== -->
+  <div id="scannerSection" class="scanner-section hidden">
+    <div class="scanner-box">
+      <h2 style="text-align:center;color:#d96e87;font-size:18px;margin-bottom:12px;">
+        📷 เล็งกล้องที่ QR Code
+      </h2>
+      <div id="qr-reader"></div>
+      <div id="scannerStatus" class="scanner-status"></div>
+
+      <div class="manual-entry">
+        <div class="title">หรือกรอกรหัสคูปองด้วยมือ:</div>
+        <input type="text" id="manualCode" placeholder="GEISHA-XXXXXX">
+        <button onclick="lookupByCode()">🔍 ค้นหา</button>
+      </div>
+    </div>
+
+    <button onclick="logout()" style="
+      background: transparent;
+      border: 2px solid #888;
+      color: #888;
+      padding: 10px;
+      border-radius: 12px;
+      width: 100%;
+      margin-top: 15px;
+      font-weight: bold;
+      cursor: pointer;
+    ">🚪 ออกจากระบบ</button>
+  </div>
+
+  <!-- ===== Result ===== -->
+  <div id="resultSection" class="result-section hidden">
+    <div id="resultBox" class="result-box"></div>
+    <div class="btn-row">
+      <button class="btn-primary btn-success" id="confirmUseBtn" onclick="confirmUseFromScan()">
+        ✅ ยืนยันใช้คูปอง
+      </button>
+      <button class="btn-primary btn-cancel" onclick="backToScanner()">
+        ↩️ กลับไปสแกน
+      </button>
+    </div>
+  </div>
+
+  <div class="footer">
+    🌸 Geisha SPA - Staff Portal v1.0
+  </div>
+</div>
+
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, doc, getDoc, setDoc, collection, getDocs, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBhkUyMQLhWiwGIF7yTSnageSNXmJim6FQ",
+    authDomain: "geisha-coupon.firebaseapp.com",
+    projectId: "geisha-coupon",
+    storageBucket: "geisha-coupon.firebasestorage.app",
+    messagingSenderId: "620548410470",
+    appId: "1:620548410470:web:d85dcc91390882fef4f1a7"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  window.firebaseDB = db;
+  window.firebaseHelpers = { doc, getDoc, setDoc, collection, getDocs, query, where, serverTimestamp };
+  window.firebaseReady = true;
+</script>
+
+<script>
+const STAFF_CODE = "geisha2569";
+const SESSION_HOURS = 8;
+let html5QrCode = null;
+let currentScannedData = null;
+let currentCollection = "coupons_may2026"; // ⭐ เปลี่ยนตาม campaign ปัจจุบัน
+
+// ===== Toast =====
+function showToast(msg, type) {
+  const existing = document.querySelector(".toast");
+  if (existing) existing.remove();
+  const t = document.createElement("div");
+  t.className = "toast" + (type ? " " + type : "");
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+// ===== Login =====
+function checkStaffCode() {
+  const code = document.getElementById("staffCodeInput").value;
+  if (code === STAFF_CODE) {
+    const expiry = Date.now() + SESSION_HOURS * 60 * 60 * 1000;
+    localStorage.setItem("staff_session", expiry);
+    showScanner();
+  } else {
+    document.getElementById("loginError").style.display = "block";
+    setTimeout(() => {
+      document.getElementById("loginError").style.display = "none";
+    }, 3000);
+  }
+}
+
+function logout() {
+  localStorage.removeItem("staff_session");
+  if (html5QrCode) {
+    html5QrCode.stop().catch(() => {});
+  }
+  location.reload();
+}
+
+function isLoggedIn() {
+  const expiry = localStorage.getItem("staff_session");
+  if (!expiry) return false;
+  if (Date.now() > parseInt(expiry)) {
+    localStorage.removeItem("staff_session");
+    return false;
+  }
+  return true;
+}
+
+// ===== Scanner =====
+function showScanner() {
+  document.getElementById("loginSection").classList.add("hidden");
+  document.getElementById("resultSection").classList.add("hidden");
+  document.getElementById("scannerSection").classList.remove("hidden");
+  startScanner();
+}
+
+function startScanner() {
+  const status = document.getElementById("scannerStatus");
+  status.textContent = "⏳ กำลังเปิดกล้อง...";
+
+  if (!html5QrCode) {
+    html5QrCode = new Html5Qrcode("qr-reader");
+  }
+
+  const config = {
+    fps: 10,
+    qrbox: { width: 240, height: 240 },
+    aspectRatio: 1.0
+  };
+
+  html5QrCode.start(
+    { facingMode: "environment" }, // กล้องหลัง
+    config,
+    onScanSuccess,
+    () => {} // ไม่ต้องแสดง error ระหว่างสแกน
+  ).then(() => {
+    status.textContent = "🟢 พร้อมสแกน - เล็งที่ QR Code";
+  }).catch((err) => {
+    console.error("Camera error:", err);
+    status.innerHTML = "❌ เปิดกล้องไม่ได้<br><small>กรุณาอนุญาตการเข้าถึงกล้อง</small>";
+  });
+}
+
+function stopScanner() {
+  if (html5QrCode) {
+    return html5QrCode.stop().catch(() => {});
+  }
+  return Promise.resolve();
+}
+
+async function onScanSuccess(decodedText) {
+  await stopScanner();
+
+  let data;
+  try {
+    data = JSON.parse(decodedText);
+  } catch (e) {
+    showResult("error", "❌", "QR Code ไม่ถูกต้อง", null, "นี่ไม่ใช่ QR ของคูปอง Geisha SPA");
+    return;
+  }
+
+  if (data.type !== "geisha_coupon") {
+    showResult("error", "❌", "QR Code ไม่ถูกต้อง", null, "นี่ไม่ใช่ QR ของคูปอง Geisha SPA");
+    return;
+  }
+
+  await verifyAndShow(data);
+}
+
+// ค้นหาด้วยรหัสคูปอง (manual)
+async function lookupByCode() {
+  const code = document.getElementById("manualCode").value.trim().toUpperCase();
+  if (!code) {
+    showToast("กรุณากรอกรหัสคูปอง", "error");
+    return;
+  }
+
+  showToast("⏳ กำลังค้นหา...");
+  await stopScanner();
+
+  if (!window.firebaseReady) {
+    showToast("Firebase ยังไม่พร้อม", "error");
+    showScanner();
+    return;
+  }
+
+  try {
+    const { collection, getDocs } = window.firebaseHelpers;
+    const colRef = collection(window.firebaseDB, currentCollection);
+    const snapshot = await getDocs(colRef);
+
+    let found = null;
+    snapshot.forEach(doc => {
+      const d = doc.data();
+      if (d.code === code) {
+        found = { ...d, userLineId: doc.id };
+      }
+    });
+
+    if (!found) {
+      showResult("error", "❌", "ไม่พบคูปอง", null, `ไม่พบรหัส ${code} ในระบบ`);
+      return;
+    }
+
+    currentScannedData = {
+      type: "geisha_coupon",
+      code: found.code,
+      lineId: found.userLineId,
+      amount: found.amount,
+      campaign: currentCollection.replace("coupons_", "")
+    };
+
+    if (found.isUsed) {
+      const usedTime = found.usedDate ? formatDate(found.usedDate) : "ไม่ทราบ";
+      showResult("warn", "⚠️", "คูปองนี้ใช้ไปแล้ว!", found.amount,
+        `ใช้เมื่อ: ${usedTime}`);
+    } else {
+      showResult("success", "✅", "คูปองพร้อมใช้!", found.amount, "");
+    }
+  } catch (err) {
+    console.error(err);
+    showResult("error", "❌", "เกิดข้อผิดพลาด", null, err.message);
+  }
+}
+
+// ตรวจสอบ + แสดงผล
+async function verifyAndShow(data) {
+  currentScannedData = data;
+  showToast("⏳ กำลังตรวจสอบ...");
+
+  if (!window.firebaseReady) {
+    showToast("Firebase ยังไม่พร้อม", "error");
+    showScanner();
+    return;
+  }
+
+  try {
+    const { doc, getDoc } = window.firebaseHelpers;
+    const collectionName = "coupons_" + (data.campaign || "may2026");
+    const docRef = doc(window.firebaseDB, collectionName, data.lineId);
+    const docSnap = await getDoc(docRef);
+
+    if (!docSnap.exists()) {
+      showResult("error", "❌", "ไม่พบคูปองในระบบ", null, "QR อาจถูกปลอม");
+      return;
+    }
+
+    const couponData = docSnap.data();
+
+    // ตรวจว่ารหัสตรงกับใน DB
+    if (couponData.code !== data.code) {
+      showResult("error", "❌", "รหัสคูปองไม่ตรง", null, "QR อาจถูกแก้ไข");
+      return;
+    }
+
+    if (couponData.isUsed) {
+      const usedTime = couponData.usedDate ? formatDate(couponData.usedDate) : "ไม่ทราบ";
+      showResult("warn", "⚠️", "คูปองนี้ใช้ไปแล้ว!", couponData.amount,
+        `ใช้เมื่อ: ${usedTime}`);
+      return;
+    }
+
+    showResult("success", "✅", "คูปองพร้อมใช้!", couponData.amount, "");
+
+  } catch (err) {
+    console.error(err);
+    showResult("error", "❌", "เกิดข้อผิดพลาด", null, err.message);
+  }
+}
+
+function showResult(type, icon, title, amount, detail) {
+  document.getElementById("scannerSection").classList.add("hidden");
+  document.getElementById("resultSection").classList.remove("hidden");
+
+  const box = document.getElementById("resultBox");
+  box.className = "result-box " + type;
+
+  let html = `
+    <div class="result-icon">${icon}</div>
+    <div class="result-title">${title}</div>
+  `;
+
+  if (amount) {
+    html += `<div class="result-amount">${amount} บาท</div>`;
+  }
+
+  if (currentScannedData) {
+    html += `
+      <div class="result-detail">
+        <div class="row"><span class="label">รหัสคูปอง:</span><span class="value">${currentScannedData.code || "-"}</span></div>
+        <div class="row"><span class="label">แคมเปญ:</span><span class="value">${currentScannedData.campaign || "-"}</span></div>
+      </div>
+    `;
+  }
+
+  if (detail) {
+    html += `<div style="font-size:13px;color:#666;">${detail}</div>`;
+  }
+
+  box.innerHTML = html;
+
+  const confirmBtn = document.getElementById("confirmUseBtn");
+  confirmBtn.style.display = (type === "success") ? "block" : "none";
+}
+
+// ยืนยันใช้คูปอง
+async function confirmUseFromScan() {
+  if (!currentScannedData) return;
+
+  const confirmBtn = document.getElementById("confirmUseBtn");
+  confirmBtn.disabled = true;
+  confirmBtn.textContent = "⏳ กำลังบันทึก...";
+
+  try {
+    const { doc, setDoc } = window.firebaseHelpers;
+    const collectionName = "coupons_" + (currentScannedData.campaign || "may2026");
+    const docRef = doc(window.firebaseDB, collectionName, currentScannedData.lineId);
+
+    await setDoc(docRef, {
+      isUsed: true,
+      usedDate: new Date().toISOString(),
+      usedByStaff: true
+    }, { merge: true });
+
+    showResult("success", "🎉", "ใช้คูปองสำเร็จ!", currentScannedData.amount, "บันทึกในระบบเรียบร้อย");
+    confirmBtn.style.display = "none";
+    showToast("✅ บันทึกสำเร็จ!");
+
+    // กลับไปสแกนต่ออัตโนมัติ 3 วินาที
+    setTimeout(() => backToScanner(), 3000);
+
+  } catch (err) {
+    console.error(err);
+    showToast("❌ บันทึกไม่สำเร็จ: " + err.message, "error");
+    confirmBtn.disabled = false;
+    confirmBtn.textContent = "✅ ยืนยันใช้คูปอง";
+  }
+}
+
+function backToScanner() {
+  currentScannedData = null;
+  document.getElementById("manualCode").value = "";
+  document.getElementById("resultSection").classList.add("hidden");
+  document.getElementById("scannerSection").classList.remove("hidden");
+  startScanner();
+}
+
+// ===== Helper =====
+function formatDate(dateInput) {
+  if (!dateInput) return "-";
+  try {
+    let d;
+    if (typeof dateInput === "string") d = new Date(dateInput);
+    else if (dateInput.toDate) d = dateInput.toDate();
+    else return "-";
+
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = String(d.getFullYear() + 543).slice(-2);
+    const hh = String(d.getHours()).padStart(2, "0");
+    const mm = String(d.getMinutes()).padStart(2, "0");
+    return `${day}/${month}/${year} ${hh}:${mm}`;
+  } catch (e) {
+    return "-";
+  }
+}
+
+// ===== Init =====
+window.addEventListener("load", () => {
+  if (isLoggedIn()) {
+    setTimeout(showScanner, 300);
+  }
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  const input = document.getElementById("staffCodeInput");
+  if (input) {
+    input.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") checkStaffCode();
+    });
+    input.focus();
+  }
+
+  const manual = document.getElementById("manualCode");
+  if (manual) {
+    manual.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") lookupByCode();
+    });
+  }
+});
+</script>
+
+</body>
+</html>
