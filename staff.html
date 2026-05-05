@@ -17,16 +17,36 @@
   .container { max-width: 480px; margin: 0 auto; }
 
   .header {
-    background: linear-gradient(135deg, #d96e87, #b85070);
+    background: linear-gradient(135deg, #1f7a3f, #15532b);
     color: #fff;
-    padding: 18px 22px;
+    padding: 22px 22px 20px;
     border-radius: 15px;
     margin-bottom: 18px;
     text-align: center;
-    box-shadow: 0 5px 15px rgba(217, 110, 135, 0.3);
+    box-shadow: 0 5px 18px rgba(31, 122, 63, 0.35);
+  }
+  .header .staff-logo {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: #fff;
+    padding: 6px;
+    margin: 0 auto 10px;
+    display: block;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
   .header h1 { font-size: 20px; font-weight: bold; }
-  .header .sub { font-size: 12px; opacity: 0.9; margin-top: 3px; }
+  .header .sub { font-size: 12px; opacity: 0.9; margin-top: 4px; }
+  .header .shop-tag {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.18);
+    padding: 3px 12px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: bold;
+    margin-top: 6px;
+    letter-spacing: 0.5px;
+  }
 
   /* Login */
   .login-box {
@@ -234,8 +254,10 @@
 <div class="container">
 
   <div class="header">
-    <h1>🌸 Geisha SPA</h1>
+    <img src="staff-logo.png" alt="Staff" class="staff-logo">
+    <h1>Staff Portal</h1>
     <div class="sub">ระบบสแกน QR Code สำหรับพนักงาน</div>
+    <div class="shop-tag">🌸 Geisha SPA</div>
   </div>
 
   <!-- ===== Login ===== -->
@@ -323,7 +345,7 @@ const STAFF_CODE = "0000";
 const SESSION_HOURS = 8;
 let html5QrCode = null;
 let currentScannedData = null;
-let currentCollection = "coupons_may2026"; // ⭐ เปลี่ยนตาม campaign ปัจจุบัน
+let currentCollection = "coupons_geisha_may2026"; // ⭐ เปลี่ยนตาม campaign ปัจจุบัน
 
 // ===== Toast =====
 function showToast(msg, type) {
@@ -470,7 +492,7 @@ async function lookupByCode() {
       code: found.code,
       lineId: found.userLineId,
       amount: found.amount,
-      campaign: currentCollection.replace("coupons_", "")
+      campaign: currentCollection.replace("coupons_geisha_", "")
     };
 
     if (found.isUsed) {
@@ -499,7 +521,7 @@ async function verifyAndShow(data) {
 
   try {
     const { doc, getDoc } = window.firebaseHelpers;
-    const collectionName = "coupons_" + (data.campaign || "may2026");
+    const collectionName = "coupons_geisha_" + (data.campaign || "may2026");
     const docRef = doc(window.firebaseDB, collectionName, data.lineId);
     const docSnap = await getDoc(docRef);
 
@@ -576,7 +598,7 @@ async function confirmUseFromScan() {
 
   try {
     const { doc, setDoc } = window.firebaseHelpers;
-    const collectionName = "coupons_" + (currentScannedData.campaign || "may2026");
+    const collectionName = "coupons_geisha_" + (currentScannedData.campaign || "may2026");
     const docRef = doc(window.firebaseDB, collectionName, currentScannedData.lineId);
 
     await setDoc(docRef, {

@@ -10,7 +10,7 @@
 <!-- Firebase SDK -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, addDoc, serverTimestamp, increment } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, addDoc, serverTimestamp, increment, arrayUnion } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyBhkUyMQLhWiwGIF7yTSnageSNXmJim6FQ",
@@ -27,7 +27,7 @@
   // Export ฟังก์ชัน Firebase ออกไปใช้ใน script ปกติ
   window.firebaseDB = db;
   window.firebaseHelpers = {
-    doc, getDoc, setDoc, updateDoc, deleteDoc, collection, addDoc, serverTimestamp, increment
+    doc, getDoc, setDoc, updateDoc, deleteDoc, collection, addDoc, serverTimestamp, increment, arrayUnion
   };
   window.firebaseReady = true;
 
@@ -912,8 +912,9 @@ const STAFF_CODE = "geisha2569";
 // ⭐ Campaign ID - เปลี่ยนทุกครั้งที่จัดแคมเปญใหม่
 // ตัวอย่าง: "may2026" (พ.ค.), "june2026" (มิ.ย.), "xmas2026" (คริสต์มาส)
 // แต่ละแคมเปญข้อมูลแยกกัน ลูกค้าเล่นได้แคมเปญละ 1 ครั้ง
-const CAMPAIGN_ID = "may2026";
-const COLLECTION_NAME = "coupons_" + CAMPAIGN_ID;
+const SHOP_ID = "geisha";  // ⭐ ระบุร้าน
+const CAMPAIGN_ID = "may2026";  // ⭐ แคมเปญ
+const COLLECTION_NAME = "coupons_" + SHOP_ID + "_" + CAMPAIGN_ID;
 
 const discountRates = [
   { amount: 50,  chance: 5  },
@@ -1150,9 +1151,23 @@ async function savePlayDataToFirebase(data) {
     await setDoc(docRef, {
       ...data,
       userLineId: userLineId,
+      shop: SHOP_ID,
       createdAt: serverTimestamp(),
       lastUpdated: serverTimestamp()
     }, { merge: true });
+
+    // 🌟 อัพเดท customers collection
+    const custRef = doc(window.firebaseDB, "customers", userLineId);
+    const updateData = {
+      [SHOP_ID + "_amount"]: data.amount || 0,
+      [SHOP_ID + "_code"]: data.code || "",
+      [SHOP_ID + "_isUsed"]: data.isUsed || false,
+      [SHOP_ID + "_date"]: data.date || "",
+      lastUpdated: serverTimestamp()
+    };
+    if (data.usedDate) updateData[SHOP_ID + "_usedDate"] = data.usedDate;
+    await setDoc(custRef, updateData, { merge: true });
+
     return true;
   } catch (err) {
     console.error("Firebase savePlayData error:", err);
@@ -1167,21 +1182,47 @@ async function trackVisit() {
     const { doc, getDoc, setDoc, serverTimestamp } = window.firebaseHelpers;
     const docRef = doc(window.firebaseDB, COLLECTION_NAME, userLineId);
 
-    // เช็คก่อนว่ามี document นี้แล้วหรือยัง
     const snap = await getDoc(docRef);
     if (snap.exists()) {
-      // มีแล้ว - update lastVisit เท่านั้น (ไม่ทับ firstVisit)
       await setDoc(docRef, {
         lastVisit: serverTimestamp(),
         visited: true
       }, { merge: true });
     } else {
-      // ครั้งแรก - สร้างใหม่
       await setDoc(docRef, {
         userLineId: userLineId,
         firstVisit: serverTimestamp(),
         lastVisit: serverTimestamp(),
-        visited: true
+        visited: true,
+        shop: SHOP_ID
+      });
+    }
+
+    // 🌟 บันทึกใน customers collection (master list)
+    const custRef = doc(window.firebaseDB, "customers", userLineId);
+    const custSnap = await getDoc(custRef);
+    if (custSnap.exists()) {
+      const data = custSnap.data();
+      const shops = data.shops || [];
+      if (!shops.includes(SHOP_ID)) {
+        shops.push(SHOP_ID);
+        await setDoc(custRef, {
+          shops: shops,
+          lastVisit: serverTimestamp(),
+          [SHOP_ID + "_visited"]: true
+        }, { merge: true });
+      } else {
+        await setDoc(custRef, {
+          lastVisit: serverTimestamp()
+        }, { merge: true });
+      }
+    } else {
+      await setDoc(custRef, {
+        userLineId: userLineId,
+        firstVisit: serverTimestamp(),
+        lastVisit: serverTimestamp(),
+        shops: [SHOP_ID],
+        [SHOP_ID + "_visited"]: true
       });
     }
   } catch (err) {

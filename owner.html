@@ -1,0 +1,1349 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>👑 Owner Dashboard - Geisha & Yoshi SPA</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Sarabun', 'Prompt', sans-serif;
+    background: #faf6f0;
+    min-height: 100vh;
+    color: #2a1a1a;
+  }
+  .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+
+  .hero {
+    background: linear-gradient(135deg, #1a1a2e 0%, #2d1b3d 50%, #4a2545 100%);
+    color: #fff;
+    padding: 25px 30px;
+    border-radius: 18px;
+    margin-bottom: 25px;
+    box-shadow: 0 10px 30px rgba(74, 37, 69, 0.3);
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: "";
+    position: absolute;
+    top: -50px; right: -50px;
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(255, 215, 100, 0.15), transparent);
+    border-radius: 50%;
+  }
+  .hero-row {
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 15px; position: relative;
+  }
+  .hero h1 { font-size: 26px; font-weight: bold; margin-bottom: 5px; }
+  .hero .subtitle { font-size: 14px; opacity: 0.85; }
+  .hero-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .btn-hero {
+    background: rgba(255,255,255,0.12); color: #fff;
+    border: 1px solid rgba(255,255,255,0.25);
+    padding: 8px 14px; border-radius: 22px;
+    font-size: 13px; font-weight: bold; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-hero:hover { background: rgba(255,255,255,0.22); transform: translateY(-1px); }
+  .btn-hero.primary {
+    background: linear-gradient(135deg, #ffd86b, #f4a949);
+    color: #4a2a00; border-color: transparent;
+  }
+  .shop-selector {
+    background: rgba(255,255,255,0.12); color: #fff;
+    border: 1px solid rgba(255,255,255,0.25);
+    padding: 8px 14px; border-radius: 22px;
+    font-size: 13px; font-weight: bold; cursor: pointer;
+  }
+  .shop-selector option { color: #2a1a1a; }
+
+  .login-screen { display: flex; align-items: center; justify-content: center; min-height: 90vh; }
+  .login-box {
+    background: #fff; padding: 50px 40px; border-radius: 22px;
+    box-shadow: 0 20px 60px rgba(74, 37, 69, 0.2);
+    text-align: center; max-width: 400px; width: 100%;
+  }
+  .login-box .logo { font-size: 50px; margin-bottom: 12px; }
+  .login-box h2 { font-size: 24px; color: #2d1b3d; margin-bottom: 8px; font-weight: bold; }
+  .login-box .desc { color: #888; margin-bottom: 28px; font-size: 13px; }
+  .login-input {
+    width: 100%; padding: 15px 20px; font-size: 16px;
+    border: 2px solid #e8d5dc; border-radius: 14px;
+    margin-bottom: 14px; text-align: center;
+    letter-spacing: 4px; outline: none;
+  }
+  .login-input:focus { border-color: #4a2545; }
+  .btn-login {
+    background: linear-gradient(135deg, #4a2545, #2d1b3d);
+    color: #fff; border: none; padding: 15px; width: 100%;
+    border-radius: 14px; font-size: 16px; font-weight: bold; cursor: pointer;
+    box-shadow: 0 5px 15px rgba(74, 37, 69, 0.3);
+  }
+  .login-error { color: #d32f2f; font-size: 13px; margin-top: 12px; display: none; }
+
+  .dashboard.hidden { display: none; }
+  .login-screen.hidden { display: none; }
+
+  .kpi-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 15px; margin-bottom: 25px;
+  }
+  .kpi-card {
+    background: #fff; border-radius: 16px; padding: 22px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+    position: relative; overflow: hidden;
+    transition: transform 0.2s; border: 1px solid #f0e8e8;
+  }
+  .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+  .kpi-card .icon-wrap {
+    position: absolute; top: 15px; right: 15px;
+    width: 42px; height: 42px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+  .kpi-card .label {
+    font-size: 12px; color: #888; margin-bottom: 8px;
+    font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .kpi-card .value { font-size: 32px; font-weight: bold; line-height: 1; margin-bottom: 6px; }
+  .kpi-card .change { font-size: 12px; color: #888; }
+  .kpi-revenue .icon-wrap { background: linear-gradient(135deg, #fef3c7, #fde68a); }
+  .kpi-revenue .value { color: #92400e; }
+  .kpi-customers .icon-wrap { background: linear-gradient(135deg, #dbeafe, #bfdbfe); }
+  .kpi-customers .value { color: #1e40af; }
+  .kpi-coupons .icon-wrap { background: linear-gradient(135deg, #fce7f3, #fbcfe8); }
+  .kpi-coupons .value { color: #be185d; }
+  .kpi-vip .icon-wrap { background: linear-gradient(135deg, #fef3c7, #fcd34d); }
+  .kpi-vip .value {
+    background: linear-gradient(135deg, #d4a017, #92400e);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .card {
+    background: #fff; border-radius: 16px; padding: 22px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    border: 1px solid #f0e8e8; margin-bottom: 20px;
+  }
+  .card h3 {
+    font-size: 16px; color: #2d1b3d; margin-bottom: 18px;
+    font-weight: bold;
+  }
+
+  .tabs {
+    display: flex; gap: 8px; margin-bottom: 22px;
+    flex-wrap: wrap; border-bottom: 2px solid #f0e8e8;
+  }
+  .tab-btn {
+    background: transparent; border: none; color: #888;
+    padding: 12px 18px; font-size: 14px; font-weight: bold;
+    cursor: pointer; transition: all 0.2s;
+    border-bottom: 3px solid transparent; margin-bottom: -2px;
+  }
+  .tab-btn:hover { color: #4a2545; }
+  .tab-btn.active { color: #4a2545; border-bottom-color: #4a2545; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  .shop-compare {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 15px;
+  }
+  @media (max-width: 768px) { .shop-compare { grid-template-columns: 1fr; } }
+  .shop-card {
+    background: #fff; border-radius: 14px; padding: 20px;
+    border: 2px solid #f0e8e8;
+  }
+  .shop-card.geisha { border-left: 4px solid #d96e87; }
+  .shop-card.yoshi { border-left: 4px solid #d4a04d; }
+  .shop-card .shop-name {
+    font-size: 16px; font-weight: bold; margin-bottom: 12px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .shop-card .shop-name .badge {
+    font-size: 11px; padding: 3px 10px; border-radius: 10px;
+    background: #fef3c7; color: #92400e;
+  }
+  .shop-card.geisha .shop-name { color: #be185d; }
+  .shop-card.yoshi .shop-name { color: #92400e; }
+  .shop-stat-row {
+    display: flex; justify-content: space-between;
+    padding: 8px 0; border-bottom: 1px solid #f5f0f0; font-size: 13px;
+  }
+  .shop-stat-row:last-child { border-bottom: none; }
+  .shop-stat-row .label { color: #666; }
+  .shop-stat-row .value { font-weight: bold; color: #2d1b3d; }
+
+  .charts-row {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 15px; margin-bottom: 20px;
+  }
+  @media (max-width: 768px) { .charts-row { grid-template-columns: 1fr; } }
+  .chart-container { position: relative; height: 280px; }
+
+  .action-list { display: grid; gap: 10px; }
+  .action-item {
+    background: linear-gradient(135deg, #fff, #fffbf5);
+    border-radius: 12px; padding: 15px 18px;
+    border-left: 4px solid #f4a949;
+    display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  }
+  .action-item.urgent { border-left-color: #dc2626; }
+  .action-item.info { border-left-color: #2563eb; }
+  .action-item.success { border-left-color: #16a34a; }
+  .action-item .text { flex: 1; font-size: 13px; color: #2d1b3d; }
+  .action-item .text strong { color: #4a2545; }
+  .action-item .count {
+    font-size: 20px; font-weight: bold;
+    color: #f4a949; margin-left: 12px;
+  }
+  .action-item.urgent .count { color: #dc2626; }
+  .action-item.info .count { color: #2563eb; }
+  .action-item.success .count { color: #16a34a; }
+
+  .heatmap-table { border-collapse: separate; border-spacing: 3px; margin: 0 auto; min-width: 700px; }
+  .heatmap-table th { font-size: 11px; color: #888; font-weight: bold; padding: 5px; text-align: center; }
+  .heatmap-table th.day-label { text-align: right; padding-right: 8px; width: 50px; }
+  .heatmap-cell {
+    width: 28px; height: 28px; border-radius: 5px;
+    cursor: pointer; transition: transform 0.15s;
+    text-align: center; font-size: 10px; font-weight: bold;
+    color: #fff; line-height: 28px; background: #f5e6e9;
+  }
+  .heatmap-cell:hover { transform: scale(1.3); z-index: 10; position: relative; }
+  .heatmap-legend { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 15px; font-size: 12px; color: #888; }
+  .heatmap-legend-box { width: 18px; height: 18px; border-radius: 3px; }
+
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    background: linear-gradient(135deg, #fef3f5, #fef0e8);
+    color: #4a2545; padding: 12px 10px;
+    text-align: left; font-size: 12px; font-weight: bold;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    border-bottom: 2px solid #f0d0d8;
+  }
+  tbody td { padding: 12px 10px; border-bottom: 1px solid #f5f0f0; font-size: 13px; }
+  tbody tr:hover { background: #fafafa; }
+  .badge {
+    display: inline-block; padding: 3px 10px; border-radius: 12px;
+    font-size: 11px; font-weight: bold;
+  }
+  .badge-used { background: #dcfce7; color: #166534; }
+  .badge-unused { background: #fef3c7; color: #92400e; }
+  .badge-jackpot { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #4a2a00; }
+  .badge-geisha { background: #fce7f3; color: #be185d; }
+  .badge-yoshi { background: #fef3c7; color: #92400e; }
+
+  .vip-row {
+    background: linear-gradient(90deg, rgba(251, 191, 36, 0.08), rgba(217, 110, 135, 0.05)) !important;
+  }
+  .vip-row:hover {
+    background: linear-gradient(90deg, rgba(251, 191, 36, 0.15), rgba(217, 110, 135, 0.1)) !important;
+  }
+
+  .filter-row { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
+  .search-input {
+    flex: 1; min-width: 200px;
+    padding: 11px 16px; border: 2px solid #f0e8e8;
+    border-radius: 10px; font-size: 14px; outline: none;
+  }
+  .search-input:focus { border-color: #4a2545; }
+  .filter-btn {
+    padding: 10px 16px; border: 2px solid #f0e8e8;
+    background: #fff; color: #4a2545; border-radius: 10px;
+    font-size: 13px; cursor: pointer; font-weight: bold;
+  }
+  .filter-btn.active {
+    background: linear-gradient(135deg, #4a2545, #2d1b3d);
+    color: #fff; border-color: #2d1b3d;
+  }
+
+  .loading { text-align: center; padding: 60px; }
+  .spinner {
+    width: 50px; height: 50px;
+    border: 4px solid #e8d5dc;
+    border-top-color: #4a2545;
+    border-radius: 50%; animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .toast {
+    position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+    background: #16a34a; color: #fff; padding: 12px 25px;
+    border-radius: 25px; z-index: 9999;
+    font-weight: bold;
+  }
+  .toast.error { background: #dc2626; }
+  .empty-state { text-align: center; padding: 50px 20px; color: #999; }
+  .empty-state .emoji { font-size: 50px; margin-bottom: 12px; }
+
+  .progress-bar { background: #f0e8e8; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 8px; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, #f4a949, #d4a017); border-radius: 4px; transition: width 0.5s; }
+
+  .vip-section { background: linear-gradient(135deg, #fef9e7, #fff); border: 1px solid #fcd34d; }
+  .vip-section h3 { color: #92400e; }
+</style>
+</head>
+<body>
+
+<div id="loginScreen" class="login-screen">
+  <div class="login-box">
+    <div class="logo">👑</div>
+    <h2>Owner Dashboard</h2>
+    <div class="desc">เข้าสู่ระบบเจ้าของกิจการ<br>Geisha &amp; Yoshi SPA</div>
+    <input type="password" id="ownerCodeInput" class="login-input" placeholder="รหัสเจ้าของ">
+    <button class="btn-login" onclick="checkOwnerCode()">เข้าสู่ระบบ</button>
+    <div id="loginError" class="login-error">รหัสไม่ถูกต้อง</div>
+  </div>
+</div>
+
+<div id="dashboard" class="dashboard hidden">
+<div class="container">
+
+  <div class="hero">
+    <div class="hero-row">
+      <div>
+        <h1>👑 ภาพรวมธุรกิจ</h1>
+        <div class="subtitle">ยินดีต้อนรับ • <span id="todayDate"></span></div>
+      </div>
+      <div class="hero-actions">
+        <select id="campaignSelector" class="shop-selector" onchange="changeCampaign()">
+          <optgroup label="🌸 Geisha SPA">
+            <option value="coupons_geisha_may2026">📅 Geisha พ.ค. 2026</option>
+            <option value="coupons_geisha_june2026">📅 Geisha มิ.ย. 2026</option>
+          </optgroup>
+          <optgroup label="🍱 Yoshi SPA">
+            <option value="coupons_yoshi_may2026">📅 Yoshi พ.ค. 2026</option>
+            <option value="coupons_yoshi_june2026">📅 Yoshi มิ.ย. 2026</option>
+          </optgroup>
+        </select>
+        <button class="btn-hero" onclick="loadDashboard()">🔄 รีเฟรช</button>
+        <button class="btn-hero primary" onclick="exportExcel()">📥 Export</button>
+        <button class="btn-hero" onclick="logout()">🚪 ออก</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="loadingDashboard" class="loading">
+    <div class="spinner"></div>
+    <div style="color: #4a2545; font-weight: bold;">กำลังโหลดข้อมูล...</div>
+  </div>
+
+  <div id="dashboardContent" style="display: none;">
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="overview" onclick="switchTab('overview')">🏠 ภาพรวม</button>
+      <button class="tab-btn" data-tab="compare" onclick="switchTab('compare')">🏪 เทียบ 2 ร้าน</button>
+      <button class="tab-btn" data-tab="customers" onclick="switchTab('customers')">👥 ลูกค้า</button>
+      <button class="tab-btn" data-tab="campaign" onclick="switchTab('campaign')">🎫 คูปอง</button>
+      <button class="tab-btn" data-tab="actions" onclick="switchTab('actions')">🎯 ที่ต้องทำ</button>
+    </div>
+
+    <div id="tab-overview" class="tab-content active">
+      <div class="kpi-grid">
+        <div class="kpi-card kpi-revenue">
+          <div class="icon-wrap">💰</div>
+          <div class="label">ส่วนลดที่จ่ายไปแล้ว</div>
+          <div class="value" id="kpiDiscountPaid">0</div>
+          <div class="change">บาท (ใช้คูปองจริง)</div>
+        </div>
+        <div class="kpi-card kpi-customers">
+          <div class="icon-wrap">👥</div>
+          <div class="label">ลูกค้าที่เข้าถึง</div>
+          <div class="value" id="kpiVisits">0</div>
+          <div class="change" id="kpiVisitsSub">คนเปิดเว็บ</div>
+        </div>
+        <div class="kpi-card kpi-coupons">
+          <div class="icon-wrap">🎫</div>
+          <div class="label">Conversion Rate</div>
+          <div class="value" id="kpiConversion">0%</div>
+          <div class="change" id="kpiConversionSub">ขูด → ใช้จริง</div>
+        </div>
+        <div class="kpi-card kpi-vip">
+          <div class="icon-wrap">⭐</div>
+          <div class="label">ลูกค้า VIP</div>
+          <div class="value" id="kpiVip">0</div>
+          <div class="change">เล่น 2 ร้าน</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>📊 Funnel การเล่นคูปอง</h3>
+        <div style="display: grid; gap: 15px;">
+          <div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 13px;">
+              <span><strong>Step 1:</strong> เปิดเว็บ</span>
+              <span id="funnelStep1Count" style="font-weight: bold;">0 คน</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" id="funnelStep1" style="width: 100%;"></div></div>
+          </div>
+          <div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 13px;">
+              <span><strong>Step 2:</strong> ขูดได้คูปอง <span id="funnelStep2Pct" style="color: #888; font-size: 11px;"></span></span>
+              <span id="funnelStep2Count" style="font-weight: bold;">0 คน</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" id="funnelStep2" style="width: 0%;"></div></div>
+          </div>
+          <div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 13px;">
+              <span><strong>Step 3:</strong> มาใช้ที่ร้าน <span id="funnelStep3Pct" style="color: #888; font-size: 11px;"></span></span>
+              <span id="funnelStep3Count" style="font-weight: bold;">0 คน</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" id="funnelStep3" style="width: 0%;"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="charts-row">
+        <div class="card">
+          <h3>🎯 สัดส่วนรางวัล</h3>
+          <div class="chart-container"><canvas id="prizeChart"></canvas></div>
+        </div>
+        <div class="card">
+          <h3>📈 จำนวนคนเล่นรายวัน</h3>
+          <div class="chart-container"><canvas id="dailyChart"></canvas></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>🔥 Heatmap เวลาที่ลูกค้าเล่น</h3>
+        <div style="font-size: 12px; color: #888; margin-bottom: 15px;">
+          💡 ช่องสีเข้ม = คนเล่นเยอะ → ใช้ตัดสินใจเวลาบรอดแคสต์ครั้งหน้า
+        </div>
+        <div style="overflow-x: auto;"><div id="heatmapContainer"></div></div>
+      </div>
+    </div>
+
+    <div id="tab-compare" class="tab-content">
+      <div style="background: linear-gradient(135deg, #f3e8ff, #fce7f3); padding: 18px; border-radius: 12px; margin-bottom: 20px;">
+        <strong>📊 เปรียบเทียบประสิทธิภาพ 2 ร้าน</strong>
+        <div style="font-size: 12px; color: #666; margin-top: 4px;">ใช้ข้อมูล campaign ที่เลือก (เปลี่ยนแคมเปญด้านบนได้)</div>
+      </div>
+
+      <div id="compareLoading" class="loading" style="display: none;">
+        <div class="spinner"></div>
+        <div>กำลังเปรียบเทียบ...</div>
+      </div>
+
+      <div id="compareContent">
+        <div class="shop-compare">
+          <div class="shop-card geisha">
+            <div class="shop-name">🌸 Geisha SPA <span class="badge" id="geishaWinner" style="display:none;">🏆 ผู้นำ</span></div>
+            <div class="shop-stat-row"><span class="label">👥 คนเปิดเว็บ</span><span class="value" id="cmpGeishaVisits">-</span></div>
+            <div class="shop-stat-row"><span class="label">🎫 ได้คูปอง</span><span class="value" id="cmpGeishaPlayed">-</span></div>
+            <div class="shop-stat-row"><span class="label">✅ ใช้จริง</span><span class="value" id="cmpGeishaUsed">-</span></div>
+            <div class="shop-stat-row"><span class="label">📊 Conversion</span><span class="value" id="cmpGeishaConv">-</span></div>
+            <div class="shop-stat-row"><span class="label">💰 ส่วนลดจ่ายไป</span><span class="value" id="cmpGeishaPaid">-</span></div>
+            <div class="shop-stat-row"><span class="label">🎯 รางวัลเฉลี่ย</span><span class="value" id="cmpGeishaAvg">-</span></div>
+          </div>
+
+          <div class="shop-card yoshi">
+            <div class="shop-name">🍱 Yoshi SPA <span class="badge" id="yoshiWinner" style="display:none;">🏆 ผู้นำ</span></div>
+            <div class="shop-stat-row"><span class="label">👥 คนเปิดเว็บ</span><span class="value" id="cmpYoshiVisits">-</span></div>
+            <div class="shop-stat-row"><span class="label">🎫 ได้คูปอง</span><span class="value" id="cmpYoshiPlayed">-</span></div>
+            <div class="shop-stat-row"><span class="label">✅ ใช้จริง</span><span class="value" id="cmpYoshiUsed">-</span></div>
+            <div class="shop-stat-row"><span class="label">📊 Conversion</span><span class="value" id="cmpYoshiConv">-</span></div>
+            <div class="shop-stat-row"><span class="label">💰 ส่วนลดจ่ายไป</span><span class="value" id="cmpYoshiPaid">-</span></div>
+            <div class="shop-stat-row"><span class="label">🎯 รางวัลเฉลี่ย</span><span class="value" id="cmpYoshiAvg">-</span></div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top: 20px;">
+          <h3>📊 เปรียบเทียบ Conversion Rate</h3>
+          <div class="chart-container"><canvas id="compareChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-customers" class="tab-content">
+      <div class="kpi-grid">
+        <div class="kpi-card kpi-customers">
+          <div class="icon-wrap">👥</div>
+          <div class="label">ลูกค้าทั้งหมด</div>
+          <div class="value" id="custTotal">0</div>
+          <div class="change">รวม 2 ร้าน</div>
+        </div>
+        <div class="kpi-card kpi-coupons">
+          <div class="icon-wrap">🌸</div>
+          <div class="label">เฉพาะ Geisha</div>
+          <div class="value" id="custGeishaOnly">0</div>
+          <div class="change">ยังไม่ลอง Yoshi</div>
+        </div>
+        <div class="kpi-card kpi-revenue">
+          <div class="icon-wrap">🍱</div>
+          <div class="label">เฉพาะ Yoshi</div>
+          <div class="value" id="custYoshiOnly">0</div>
+          <div class="change">ยังไม่ลอง Geisha</div>
+        </div>
+        <div class="kpi-card kpi-vip">
+          <div class="icon-wrap">⭐</div>
+          <div class="label">VIP (เล่น 2 ร้าน)</div>
+          <div class="value" id="custBoth">0</div>
+          <div class="change">ลูกค้าประจำที่สุด</div>
+        </div>
+      </div>
+
+      <div class="card vip-section">
+        <h3>👑 Top 10 ลูกค้าใช้จ่ายสูงสุด</h3>
+        <div id="topCustomersList" style="display: grid; gap: 8px;"></div>
+      </div>
+
+      <div class="card">
+        <h3>👥 รายชื่อลูกค้าทั้งหมด</h3>
+        <div class="filter-row">
+          <input type="text" id="custSearchInput" class="search-input" placeholder="🔍 ค้นหา Line ID หรือรหัส">
+          <button class="filter-btn active" data-filter="all" onclick="setCustFilter('all')">ทั้งหมด</button>
+          <button class="filter-btn" data-filter="both" onclick="setCustFilter('both')">⭐ VIP</button>
+          <button class="filter-btn" data-filter="geisha" onclick="setCustFilter('geisha')">🌸 Geisha</button>
+          <button class="filter-btn" data-filter="yoshi" onclick="setCustFilter('yoshi')">🍱 Yoshi</button>
+          <button class="filter-btn" data-filter="unused" onclick="setCustFilter('unused')">⏳ ยังไม่ใช้</button>
+        </div>
+        <div id="custTableWrapper">
+          <table>
+            <thead><tr>
+              <th>Line ID</th>
+              <th>🌸 Geisha</th>
+              <th>🍱 Yoshi</th>
+              <th>รวมส่วนลด</th>
+              <th>เริ่มเล่น</th>
+            </tr></thead>
+            <tbody id="customersTbody"></tbody>
+          </table>
+          <div id="custEmptyState" class="empty-state" style="display: none;">
+            <div class="emoji">👥</div>
+            <div>ยังไม่มีข้อมูลลูกค้า</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-campaign" class="tab-content">
+      <div class="card">
+        <h3>🎫 ประวัติคูปอง</h3>
+        <div class="filter-row">
+          <input type="text" id="searchInput" class="search-input" placeholder="🔍 ค้นหารหัส">
+          <button class="filter-btn active" data-filter="all" onclick="setFilter('all')">ทั้งหมด</button>
+          <button class="filter-btn" data-filter="used" onclick="setFilter('used')">✅ ใช้แล้ว</button>
+          <button class="filter-btn" data-filter="unused" onclick="setFilter('unused')">⏳ ยังไม่ใช้</button>
+          <button class="filter-btn" data-filter="jackpot" onclick="setFilter('jackpot')">🏆 JACKPOT</button>
+        </div>
+        <div id="tableWrapper">
+          <table>
+            <thead><tr>
+              <th>รหัสคูปอง</th>
+              <th>ส่วนลด</th>
+              <th>สถานะ</th>
+              <th>วันสุ่ม</th>
+              <th>วันใช้</th>
+            </tr></thead>
+            <tbody id="couponsTbody"></tbody>
+          </table>
+          <div id="emptyState" class="empty-state" style="display: none;">
+            <div class="emoji">🎫</div>
+            <div>ยังไม่มีคูปอง</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-actions" class="tab-content">
+      <div class="card">
+        <h3>🎯 สิ่งที่ควรทำตอนนี้</h3>
+        <div style="font-size: 13px; color: #666; margin-bottom: 20px;">
+          💡 รายการแนะนำที่จะช่วยเพิ่มยอดและรักษาลูกค้า
+        </div>
+        <div id="actionsList" class="action-list"></div>
+      </div>
+
+      <div class="card">
+        <h3>📊 Insights สำคัญ</h3>
+        <div id="insightsList" style="display: grid; gap: 12px;"></div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBhkUyMQLhWiwGIF7yTSnageSNXmJim6FQ",
+    authDomain: "geisha-coupon.firebaseapp.com",
+    projectId: "geisha-coupon",
+    storageBucket: "geisha-coupon.firebasestorage.app",
+    messagingSenderId: "620548410470",
+    appId: "1:620548410470:web:d85dcc91390882fef4f1a7"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  window.firebaseDB = db;
+  window.firebaseHelpers = { collection, getDocs, query, orderBy };
+  window.firebaseReady = true;
+</script>
+
+<script>
+const OWNER_CODE = "admin10961";
+let currentCollection = "coupons_geisha_may2026";
+let allCoupons = [];
+let allCustomers = [];
+let geishaCoupons = [];
+let yoshiCoupons = [];
+let currentFilter = "all";
+let currentCustFilter = "all";
+let prizeChartInstance = null;
+let dailyChartInstance = null;
+let compareChartInstance = null;
+
+function checkOwnerCode() {
+  const input = document.getElementById("ownerCodeInput").value;
+  if (input === OWNER_CODE) {
+    sessionStorage.setItem("owner_logged_in", "1");
+    document.getElementById("loginScreen").classList.add("hidden");
+    document.getElementById("dashboard").classList.remove("hidden");
+    setTodayDate();
+    loadDashboard();
+  } else {
+    document.getElementById("loginError").style.display = "block";
+    setTimeout(() => { document.getElementById("loginError").style.display = "none"; }, 3000);
+  }
+}
+
+function logout() {
+  sessionStorage.removeItem("owner_logged_in");
+  location.reload();
+}
+
+function setTodayDate() {
+  const d = new Date();
+  const days = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+  const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+  const txt = `วัน${days[d.getDay()]}ที่ ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear() + 543}`;
+  document.getElementById("todayDate").textContent = txt;
+}
+
+window.addEventListener("load", () => {
+  if (sessionStorage.getItem("owner_logged_in") === "1") {
+    document.getElementById("loginScreen").classList.add("hidden");
+    document.getElementById("dashboard").classList.remove("hidden");
+    setTodayDate();
+    setTimeout(loadDashboard, 500);
+  }
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  const input = document.getElementById("ownerCodeInput");
+  if (input) {
+    input.addEventListener("keypress", (e) => { if (e.key === "Enter") checkOwnerCode(); });
+    input.focus();
+  }
+  const search = document.getElementById("searchInput");
+  if (search) search.addEventListener("input", renderTable);
+  const custSearch = document.getElementById("custSearchInput");
+  if (custSearch) custSearch.addEventListener("input", renderCustomerTable);
+});
+
+function switchTab(tabName) {
+  document.querySelectorAll(".tab-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.tab === tabName);
+  });
+  document.querySelectorAll(".tab-content").forEach(c => {
+    c.classList.toggle("active", c.id === "tab-" + tabName);
+  });
+
+  if (tabName === "customers" && allCustomers.length === 0) loadCustomers();
+  if (tabName === "compare") loadCompare();
+  if (tabName === "actions") renderActions();
+}
+
+function showToast(msg, type) {
+  const existing = document.querySelector(".toast");
+  if (existing) existing.remove();
+  const t = document.createElement("div");
+  t.className = "toast" + (type ? " " + type : "");
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+function changeCampaign() {
+  currentCollection = document.getElementById("campaignSelector").value;
+  loadDashboard();
+}
+
+async function loadDashboard() {
+  if (!window.firebaseReady) { setTimeout(loadDashboard, 500); return; }
+  document.getElementById("loadingDashboard").style.display = "block";
+  document.getElementById("dashboardContent").style.display = "none";
+
+  try {
+    const { collection, getDocs } = window.firebaseHelpers;
+    const ref = collection(window.firebaseDB, currentCollection);
+    const snapshot = await getDocs(ref);
+
+    allCoupons = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      if (data.deleted || data.isDemo) return;
+      allCoupons.push({ userLineId: doc.id, ...data });
+    });
+
+    renderKPIs();
+    renderFunnel();
+    renderCharts();
+    renderHeatmap();
+    renderTable();
+
+    document.getElementById("loadingDashboard").style.display = "none";
+    document.getElementById("dashboardContent").style.display = "block";
+  } catch (err) {
+    console.error(err);
+    showToast("❌ โหลดข้อมูลไม่สำเร็จ: " + err.message, "error");
+    document.getElementById("loadingDashboard").innerHTML = '<div style="color:#dc2626;">❌ เกิดข้อผิดพลาด<br><small>' + err.message + '</small></div>';
+  }
+}
+
+function renderKPIs() {
+  const visits = allCoupons.length;
+  const played = allCoupons.filter(c => c.amount > 0).length;
+  const used = allCoupons.filter(c => c.isUsed).length;
+  const totalDiscount = allCoupons.filter(c => c.isUsed).reduce((s, c) => s + (c.amount || 0), 0);
+  const conversion = played > 0 ? (used / played * 100) : 0;
+
+  document.getElementById("kpiDiscountPaid").textContent = totalDiscount.toLocaleString();
+  document.getElementById("kpiVisits").textContent = visits.toLocaleString();
+  document.getElementById("kpiVisitsSub").textContent = played.toLocaleString() + " คนเล่นจริง";
+  document.getElementById("kpiConversion").textContent = conversion.toFixed(1) + "%";
+  document.getElementById("kpiConversionSub").textContent = used + " จาก " + played + " คน";
+}
+
+function renderFunnel() {
+  const visits = allCoupons.length;
+  const played = allCoupons.filter(c => c.amount > 0).length;
+  const used = allCoupons.filter(c => c.isUsed).length;
+
+  const playedPct = visits > 0 ? (played / visits * 100) : 0;
+  const usedPct = visits > 0 ? (used / visits * 100) : 0;
+
+  document.getElementById("funnelStep1Count").textContent = visits.toLocaleString() + " คน";
+  document.getElementById("funnelStep2Count").textContent = played.toLocaleString() + " คน";
+  document.getElementById("funnelStep3Count").textContent = used.toLocaleString() + " คน";
+  document.getElementById("funnelStep2Pct").textContent = "(" + playedPct.toFixed(1) + "%)";
+  document.getElementById("funnelStep3Pct").textContent = "(" + usedPct.toFixed(1) + "%)";
+  document.getElementById("funnelStep2").style.width = playedPct + "%";
+  document.getElementById("funnelStep3").style.width = usedPct + "%";
+}
+
+function renderCharts() {
+  const prizeAmounts = [50, 100, 150, 200, 250, 300];
+  const prizeCounts = prizeAmounts.map(a => allCoupons.filter(c => c.amount === a).length);
+
+  if (prizeChartInstance) prizeChartInstance.destroy();
+  prizeChartInstance = new Chart(document.getElementById("prizeChart"), {
+    type: "doughnut",
+    data: {
+      labels: prizeAmounts.map(a => a + " บ."),
+      datasets: [{
+        data: prizeCounts,
+        backgroundColor: ["#c8a8d8", "#8ec5e8", "#a8d8b8", "#f4c4a0", "#ff9eb4", "#ffb84d"],
+        borderWidth: 2, borderColor: "#fff"
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: "right", labels: { font: { size: 12 } } },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              const total = prizeCounts.reduce((a,b) => a+b, 0);
+              const pct = total > 0 ? (ctx.raw / total * 100).toFixed(1) : 0;
+              return ctx.label + ": " + ctx.raw + " ใบ (" + pct + "%)";
+            }
+          }
+        }
+      }
+    }
+  });
+
+  const dailyData = {};
+  allCoupons.forEach(c => {
+    if (c.amount && c.date) {
+      let dateStr;
+      if (typeof c.date === "string") dateStr = c.date.substring(0, 10);
+      else if (c.date.toDate) dateStr = c.date.toDate().toISOString().substring(0, 10);
+      else return;
+      dailyData[dateStr] = (dailyData[dateStr] || 0) + 1;
+    }
+  });
+  const sortedDates = Object.keys(dailyData).sort();
+
+  if (dailyChartInstance) dailyChartInstance.destroy();
+  dailyChartInstance = new Chart(document.getElementById("dailyChart"), {
+    type: "bar",
+    data: {
+      labels: sortedDates.map(d => { const p = d.split("-"); return p[2] + "/" + p[1]; }),
+      datasets: [{
+        label: "คนเล่น",
+        data: sortedDates.map(d => dailyData[d]),
+        backgroundColor: "rgba(74, 37, 69, 0.7)",
+        borderColor: "#4a2545",
+        borderWidth: 2, borderRadius: 6
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+    }
+  });
+}
+
+function renderHeatmap() {
+  const matrix = Array.from({length: 7}, () => Array(24).fill(0));
+  let maxCount = 0;
+  allCoupons.forEach(c => {
+    if (!c.amount || !c.date) return;
+    let d;
+    try {
+      if (typeof c.date === "string") d = new Date(c.date);
+      else if (c.date.toDate) d = c.date.toDate();
+      else return;
+      const day = d.getDay();
+      const hour = d.getHours();
+      matrix[day][hour]++;
+      if (matrix[day][hour] > maxCount) maxCount = matrix[day][hour];
+    } catch (e) {}
+  });
+
+  const dayNames = ["อา", "จ", "อ", "พ", "พฤ", "ศ", "ส"];
+  const container = document.getElementById("heatmapContainer");
+  if (maxCount === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="emoji">📊</div><div>ยังไม่มีข้อมูลพอแสดง Heatmap</div></div>';
+    return;
+  }
+
+  let html = '<table class="heatmap-table"><thead><tr><th class="day-label"></th>';
+  for (let h = 0; h < 24; h++) html += "<th>" + h + "</th>";
+  html += '</tr></thead><tbody>';
+  for (let d = 0; d < 7; d++) {
+    html += '<tr><th class="day-label">' + dayNames[d] + '</th>';
+    for (let h = 0; h < 24; h++) {
+      const count = matrix[d][h];
+      const intensity = count / maxCount;
+      const color = getHeatmapColor(intensity);
+      const tooltip = "วัน" + dayNames[d] + " " + h + ":00 - " + count + " คน";
+      html += '<td><div class="heatmap-cell" style="background:' + color + '" title="' + tooltip + '">' + (count >= 1 ? count : "") + '</div></td>';
+    }
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  html += '<div class="heatmap-legend"><span>น้อย</span>';
+  ["#f5e6e9","#ffc6d0","#ff9eb4","#d96e87","#a83a5a"].forEach(c => {
+    html += '<div class="heatmap-legend-box" style="background:' + c + '"></div>';
+  });
+  html += '<span>มาก</span></div>';
+  container.innerHTML = html;
+}
+
+function getHeatmapColor(intensity) {
+  if (intensity === 0) return "#f5e6e9";
+  if (intensity < 0.25) return "#ffc6d0";
+  if (intensity < 0.5) return "#ff9eb4";
+  if (intensity < 0.75) return "#d96e87";
+  return "#a83a5a";
+}
+
+async function loadCompare() {
+  document.getElementById("compareLoading").style.display = "block";
+  document.getElementById("compareContent").style.display = "none";
+
+  try {
+    const { collection, getDocs } = window.firebaseHelpers;
+    const parts = currentCollection.split("_");
+    const campaign = parts.length >= 3 ? parts.slice(2).join("_") : "may2026";
+    const geishaRef = collection(window.firebaseDB, "coupons_geisha_" + campaign);
+    const yoshiRef = collection(window.firebaseDB, "coupons_yoshi_" + campaign);
+
+    const [gSnap, ySnap] = await Promise.all([getDocs(geishaRef), getDocs(yoshiRef)]);
+
+    geishaCoupons = [];
+    gSnap.forEach(doc => {
+      const d = doc.data();
+      if (!d.deleted && !d.isDemo) geishaCoupons.push({ userLineId: doc.id, ...d });
+    });
+    yoshiCoupons = [];
+    ySnap.forEach(doc => {
+      const d = doc.data();
+      if (!d.deleted && !d.isDemo) yoshiCoupons.push({ userLineId: doc.id, ...d });
+    });
+
+    renderCompareStats();
+    renderCompareChart();
+    document.getElementById("compareLoading").style.display = "none";
+    document.getElementById("compareContent").style.display = "block";
+  } catch (err) {
+    console.error(err);
+    document.getElementById("compareLoading").style.display = "none";
+    document.getElementById("compareContent").style.display = "block";
+    showToast("❌ โหลดข้อมูลร้านไม่สำเร็จ", "error");
+  }
+}
+
+function calcShopStats(coupons) {
+  const visits = coupons.length;
+  const played = coupons.filter(c => c.amount > 0);
+  const used = played.filter(c => c.isUsed);
+  const totalAmount = used.reduce((s, c) => s + (c.amount || 0), 0);
+  const conversion = played.length > 0 ? (used.length / played.length * 100) : 0;
+  const avgPrize = played.length > 0 ? played.reduce((s, c) => s + (c.amount || 0), 0) / played.length : 0;
+  return { visits, played: played.length, used: used.length, totalDiscount: totalAmount, conversion, avgPrize };
+}
+
+function renderCompareStats() {
+  const g = calcShopStats(geishaCoupons);
+  const y = calcShopStats(yoshiCoupons);
+
+  document.getElementById("cmpGeishaVisits").textContent = g.visits.toLocaleString();
+  document.getElementById("cmpGeishaPlayed").textContent = g.played.toLocaleString();
+  document.getElementById("cmpGeishaUsed").textContent = g.used.toLocaleString();
+  document.getElementById("cmpGeishaConv").textContent = g.conversion.toFixed(1) + "%";
+  document.getElementById("cmpGeishaPaid").textContent = g.totalDiscount.toLocaleString() + " บ.";
+  document.getElementById("cmpGeishaAvg").textContent = g.avgPrize.toFixed(0) + " บ.";
+
+  document.getElementById("cmpYoshiVisits").textContent = y.visits.toLocaleString();
+  document.getElementById("cmpYoshiPlayed").textContent = y.played.toLocaleString();
+  document.getElementById("cmpYoshiUsed").textContent = y.used.toLocaleString();
+  document.getElementById("cmpYoshiConv").textContent = y.conversion.toFixed(1) + "%";
+  document.getElementById("cmpYoshiPaid").textContent = y.totalDiscount.toLocaleString() + " บ.";
+  document.getElementById("cmpYoshiAvg").textContent = y.avgPrize.toFixed(0) + " บ.";
+
+  document.getElementById("geishaWinner").style.display = (g.conversion > y.conversion && g.played > 0) ? "" : "none";
+  document.getElementById("yoshiWinner").style.display = (y.conversion > g.conversion && y.played > 0) ? "" : "none";
+}
+
+function renderCompareChart() {
+  const g = calcShopStats(geishaCoupons);
+  const y = calcShopStats(yoshiCoupons);
+
+  if (compareChartInstance) compareChartInstance.destroy();
+  compareChartInstance = new Chart(document.getElementById("compareChart"), {
+    type: "bar",
+    data: {
+      labels: ['คนเปิดเว็บ', 'ได้คูปอง', 'ใช้จริง', 'Conversion %'],
+      datasets: [
+        { label: '🌸 Geisha', data: [g.visits, g.played, g.used, parseFloat(g.conversion.toFixed(1))],
+          backgroundColor: 'rgba(217, 110, 135, 0.7)', borderColor: '#d96e87', borderWidth: 2 },
+        { label: '🍱 Yoshi', data: [y.visits, y.played, y.used, parseFloat(y.conversion.toFixed(1))],
+          backgroundColor: 'rgba(212, 160, 77, 0.7)', borderColor: '#d4a04d', borderWidth: 2 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'top' } },
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+}
+
+async function loadCustomers() {
+  if (!window.firebaseReady) { setTimeout(loadCustomers, 500); return; }
+  try {
+    const { collection, getDocs } = window.firebaseHelpers;
+    const ref = collection(window.firebaseDB, "customers");
+    const snapshot = await getDocs(ref);
+    allCustomers = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      if (data.deleted || data.isDemo) return;
+      allCustomers.push({ userLineId: doc.id, ...data });
+    });
+    renderCustomerStats();
+    renderTopCustomers();
+    renderCustomerTable();
+  } catch (err) {
+    console.error(err);
+    showToast("❌ โหลดข้อมูลลูกค้าไม่สำเร็จ", "error");
+  }
+}
+
+function renderCustomerStats() {
+  const total = allCustomers.length;
+  const both = allCustomers.filter(c => (c.shops||[]).includes("geisha") && (c.shops||[]).includes("yoshi")).length;
+  const geishaOnly = allCustomers.filter(c => (c.shops||[]).includes("geisha") && !(c.shops||[]).includes("yoshi")).length;
+  const yoshiOnly = allCustomers.filter(c => !(c.shops||[]).includes("geisha") && (c.shops||[]).includes("yoshi")).length;
+
+  document.getElementById("custTotal").textContent = total.toLocaleString();
+  document.getElementById("custGeishaOnly").textContent = geishaOnly.toLocaleString();
+  document.getElementById("custYoshiOnly").textContent = yoshiOnly.toLocaleString();
+  document.getElementById("custBoth").textContent = both.toLocaleString();
+  document.getElementById("kpiVip").textContent = both.toLocaleString();
+}
+
+function renderTopCustomers() {
+  const sorted = allCustomers
+    .map(c => ({ ...c, total: (c.geisha_amount || 0) + (c.yoshi_amount || 0) }))
+    .filter(c => c.total > 0)
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 10);
+
+  const container = document.getElementById("topCustomersList");
+  if (sorted.length === 0) {
+    container.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">ยังไม่มีข้อมูล</div>';
+    return;
+  }
+  container.innerHTML = sorted.map((c, i) => {
+    const lineIdShort = (c.userLineId || "").substring(0, 12) + "...";
+    const isVip = (c.shops || []).length >= 2;
+    const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : (i+1) + ".";
+    const shopBadges = (c.shops || []).map(s => {
+      return s === "geisha" ? '<span class="badge badge-geisha">Geisha</span>' : '<span class="badge badge-yoshi">Yoshi</span>';
+    }).join(" ");
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#fff;border-radius:10px;border:1px solid #f0e8e8;">' +
+      '<div style="display:flex;align-items:center;gap:10px;">' +
+      '<span style="font-size:18px;width:30px;">' + medal + '</span>' +
+      '<div><div style="font-family:monospace;font-size:11px;color:#666;">' + lineIdShort + '</div>' +
+      '<div style="font-size:11px;margin-top:2px;">' + shopBadges + (isVip ? ' <span style="color:#d4a017;">⭐</span>' : '') + '</div></div></div>' +
+      '<div style="font-weight:bold;color:#92400e;font-size:16px;">' + c.total.toLocaleString() + ' บ.</div></div>';
+  }).join("");
+}
+
+function setCustFilter(filter) {
+  currentCustFilter = filter;
+  document.querySelectorAll('#tab-customers .filter-btn').forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.filter === filter);
+  });
+  renderCustomerTable();
+}
+
+function renderCustomerTable() {
+  const search = (document.getElementById("custSearchInput").value || "").toUpperCase();
+  let filtered = [...allCustomers];
+
+  if (currentCustFilter === "both") {
+    filtered = filtered.filter(c => (c.shops||[]).includes("geisha") && (c.shops||[]).includes("yoshi"));
+  } else if (currentCustFilter === "geisha") {
+    filtered = filtered.filter(c => (c.shops||[]).includes("geisha"));
+  } else if (currentCustFilter === "yoshi") {
+    filtered = filtered.filter(c => (c.shops||[]).includes("yoshi"));
+  } else if (currentCustFilter === "unused") {
+    filtered = filtered.filter(c => (c.geisha_amount && !c.geisha_isUsed) || (c.yoshi_amount && !c.yoshi_isUsed));
+  }
+
+  if (search) {
+    filtered = filtered.filter(c =>
+      (c.userLineId || "").toUpperCase().includes(search) ||
+      (c.geisha_code || "").toUpperCase().includes(search) ||
+      (c.yoshi_code || "").toUpperCase().includes(search)
+    );
+  }
+
+  filtered.sort((a, b) => {
+    const av = (a.shops||[]).length;
+    const bv = (b.shops||[]).length;
+    if (av !== bv) return bv - av;
+    return ((b.geisha_amount||0) + (b.yoshi_amount||0)) - ((a.geisha_amount||0) + (a.yoshi_amount||0));
+  });
+
+  const tbody = document.getElementById("customersTbody");
+  const empty = document.getElementById("custEmptyState");
+  const table = document.querySelector("#tab-customers table");
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = "";
+    empty.style.display = "block";
+    table.style.display = "none";
+    return;
+  }
+  empty.style.display = "none";
+  table.style.display = "table";
+
+  tbody.innerHTML = filtered.map(c => {
+    const isVip = (c.shops || []).length >= 2;
+    const lineIdShort = (c.userLineId || "").substring(0, 12) + "...";
+    const total = (c.geisha_amount || 0) + (c.yoshi_amount || 0);
+    return '<tr class="' + (isVip ? 'vip-row' : '') + '" title="' + c.userLineId + '">' +
+      '<td>' + (isVip ? '⭐ ' : '') + '<span style="font-family:monospace;font-size:11px;">' + lineIdShort + '</span></td>' +
+      '<td>' + (c.geisha_amount ?
+        '<span class="badge badge-geisha">' + c.geisha_amount + ' บ.</span>' + (c.geisha_isUsed ? '✅' : '⏳') :
+        '<span style="color:#ccc;">-</span>') + '</td>' +
+      '<td>' + (c.yoshi_amount ?
+        '<span class="badge badge-yoshi">' + c.yoshi_amount + ' บ.</span>' + (c.yoshi_isUsed ? '✅' : '⏳') :
+        '<span style="color:#ccc;">-</span>') + '</td>' +
+      '<td style="font-weight:bold;color:' + (isVip ? '#92400e' : '#666') + ';">' + (total > 0 ? total + ' บ.' : '-') + '</td>' +
+      '<td style="font-size:11px;color:#888;">' + formatFirstVisit(c.firstVisit) + '</td></tr>';
+  }).join("");
+}
+
+function formatFirstVisit(ts) {
+  if (!ts) return "-";
+  try {
+    let d;
+    if (ts.toDate) d = ts.toDate();
+    else if (typeof ts === "string") d = new Date(ts);
+    else return "-";
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    return day + "/" + month;
+  } catch (e) { return "-"; }
+}
+
+function setFilter(filter) {
+  currentFilter = filter;
+  document.querySelectorAll('#tab-campaign .filter-btn').forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.filter === filter);
+  });
+  renderTable();
+}
+
+function renderTable() {
+  const search = (document.getElementById("searchInput").value || "").toUpperCase();
+  let filtered = allCoupons.filter(c => c.amount);
+
+  if (currentFilter === "used") filtered = filtered.filter(c => c.isUsed);
+  else if (currentFilter === "unused") filtered = filtered.filter(c => !c.isUsed);
+  else if (currentFilter === "jackpot") filtered = filtered.filter(c => c.amount === 300);
+
+  if (search) {
+    filtered = filtered.filter(c => (c.code || "").toUpperCase().includes(search));
+  }
+
+  filtered.sort((a, b) => {
+    const da = a.date ? new Date(a.date).getTime() : 0;
+    const db = b.date ? new Date(b.date).getTime() : 0;
+    return db - da;
+  });
+
+  const tbody = document.getElementById("couponsTbody");
+  const empty = document.getElementById("emptyState");
+  const table = document.querySelector("#tab-campaign table");
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = "";
+    empty.style.display = "block";
+    table.style.display = "none";
+    return;
+  }
+  empty.style.display = "none";
+  table.style.display = "table";
+
+  tbody.innerHTML = filtered.map(c => {
+    const isJackpot = c.amount === 300;
+    return '<tr><td><span style="font-family:monospace;font-weight:bold;color:#4a2545;">' + (c.code || "-") + '</span></td>' +
+      '<td><strong>' + (isJackpot ? "🏆 " : "") + c.amount + ' บ.</strong></td>' +
+      '<td>' + (c.isUsed ? '<span class="badge badge-used">✅ ใช้แล้ว</span>' : '<span class="badge badge-unused">⏳ ยังไม่ใช้</span>') + '</td>' +
+      '<td>' + formatDate(c.date) + '</td>' +
+      '<td>' + (c.usedDate ? formatDate(c.usedDate) : "-") + '</td></tr>';
+  }).join("");
+}
+
+function formatDate(dateInput) {
+  if (!dateInput) return "-";
+  try {
+    let d;
+    if (typeof dateInput === "string") d = new Date(dateInput);
+    else if (dateInput.toDate) d = dateInput.toDate();
+    else return "-";
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = String(d.getFullYear() + 543).slice(-2);
+    const hh = String(d.getHours()).padStart(2, "0");
+    const mm = String(d.getMinutes()).padStart(2, "0");
+    return day + "/" + month + "/" + year + " " + hh + ":" + mm;
+  } catch (e) { return "-"; }
+}
+
+function renderActions() {
+  const visits = allCoupons.length;
+  const played = allCoupons.filter(c => c.amount > 0);
+  const used = played.filter(c => c.isUsed);
+  const unused = played.filter(c => !c.isUsed);
+  const conversion = played.length > 0 ? (used.length / played.length * 100) : 0;
+
+  const actions = [];
+
+  if (unused.length > 5) {
+    actions.push({
+      type: 'urgent', icon: '🔔',
+      text: '<strong>' + unused.length + ' คน</strong> ได้คูปองแล้ว แต่ยังไม่มาใช้บริการ → แนะนำส่ง LINE OA เตือน',
+      count: unused.length
+    });
+  }
+
+  if (played.length > 20 && conversion < 30) {
+    actions.push({
+      type: 'urgent', icon: '📉',
+      text: 'Conversion เพียง <strong>' + conversion.toFixed(1) + '%</strong> → ลูกค้าได้คูปองแต่ไม่มาใช้ ลองส่งโปรกระตุ้น',
+      count: conversion.toFixed(0) + '%'
+    });
+  }
+
+  if (played.length > 20 && conversion >= 50) {
+    actions.push({
+      type: 'success', icon: '🎉',
+      text: 'Conversion สูงถึง <strong>' + conversion.toFixed(1) + '%</strong> → แคมเปญนี้ได้ผลดี! พิจารณาทำซ้ำเดือนหน้า',
+      count: conversion.toFixed(0) + '%'
+    });
+  }
+
+  const noPlay = visits - played.length;
+  if (noPlay > 10) {
+    actions.push({
+      type: 'info', icon: '👀',
+      text: '<strong>' + noPlay + ' คน</strong> เปิดเว็บแล้วไม่เล่น → อาจกลัวเสียเวลา ทำ UX ให้เร็วขึ้น',
+      count: noPlay
+    });
+  }
+
+  const jackpots = played.filter(c => c.amount === 300).length;
+  if (jackpots > 0) {
+    const jackpotRate = played.length > 0 ? (jackpots / played.length * 100) : 0;
+    actions.push({
+      type: 'info', icon: '🏆',
+      text: 'JACKPOT 300 บาท ออกแล้ว <strong>' + jackpots + ' ครั้ง</strong> (' + jackpotRate.toFixed(1) + '%) → ลูกค้าโชคดี',
+      count: jackpots
+    });
+  }
+
+  const vipCount = allCustomers.filter(c => (c.shops||[]).length >= 2).length;
+  if (vipCount > 0) {
+    actions.push({
+      type: 'success', icon: '⭐',
+      text: 'มีลูกค้า VIP <strong>' + vipCount + ' คน</strong> เล่นทั้ง 2 ร้าน → ดูแลพิเศษ ส่งโปรพิเศษ',
+      count: vipCount
+    });
+  }
+
+  if (visits < 10) {
+    actions.push({
+      type: 'info', icon: '📢',
+      text: 'ยังมีคนเล่นน้อย (' + visits + ' คน) → บรอดแคสต์อีกครั้ง หรือโพสต์ Story กระตุ้น',
+      count: visits
+    });
+  }
+
+  if (actions.length === 0) {
+    actions.push({
+      type: 'success', icon: '✨',
+      text: 'ทุกอย่างกำลังไปได้ดี! กลับมาเช็คอีกครั้งพรุ่งนี้',
+      count: '✓'
+    });
+  }
+
+  document.getElementById("actionsList").innerHTML = actions.map(a =>
+    '<div class="action-item ' + a.type + '">' +
+    '<div class="text">' + a.icon + ' ' + a.text + '</div>' +
+    '<div class="count">' + a.count + '</div></div>'
+  ).join("");
+
+  renderInsights();
+}
+
+function renderInsights() {
+  const insights = [];
+  const played = allCoupons.filter(c => c.amount > 0);
+
+  if (played.length > 0) {
+    const hourCount = {};
+    played.forEach(c => {
+      if (c.date) {
+        let d = typeof c.date === "string" ? new Date(c.date) : (c.date.toDate ? c.date.toDate() : null);
+        if (d) {
+          const h = d.getHours();
+          hourCount[h] = (hourCount[h] || 0) + 1;
+        }
+      }
+    });
+    const peakHour = Object.entries(hourCount).sort((a,b) => b[1] - a[1])[0];
+    if (peakHour) {
+      insights.push({
+        type: 'success', title: '⏰ Peak Hour',
+        text: 'ลูกค้าเล่นเยอะที่สุดช่วง <strong>' + peakHour[0] + ':00 น.</strong> (' + peakHour[1] + ' คน) → บรอดแคสต์ครั้งหน้าโพสใกล้เวลานี้'
+      });
+    }
+
+    const prizeCount = {};
+    played.forEach(c => prizeCount[c.amount] = (prizeCount[c.amount] || 0) + 1);
+    const topPrize = Object.entries(prizeCount).sort((a,b) => b[1] - a[1])[0];
+    if (topPrize) {
+      const pct = (topPrize[1] / played.length * 100).toFixed(0);
+      insights.push({
+        type: 'info', title: '🎯 รางวัลฮิต',
+        text: 'รางวัล <strong>' + topPrize[0] + ' บาท</strong> ออกบ่อยที่สุด (' + pct + '%) → คุมต้นทุนได้ตามแผน'
+      });
+    }
+
+    const avgDiscount = played.reduce((s, c) => s + (c.amount || 0), 0) / played.length;
+    insights.push({
+      type: 'info', title: '💰 ส่วนลดเฉลี่ย/คน',
+      text: 'เฉลี่ย <strong>' + avgDiscount.toFixed(0) + ' บาท/คน</strong> → ใช้ตัดสินใจว่าโปรนี้คุ้มไหม'
+    });
+  }
+
+  if (insights.length === 0) {
+    insights.push({
+      type: 'info', title: '⏳ รอข้อมูลเพิ่ม',
+      text: 'มีลูกค้ามาเล่นมากขึ้น แล้วผมจะวิเคราะห์ insights ให้อัตโนมัติ'
+    });
+  }
+
+  document.getElementById("insightsList").innerHTML = insights.map(i =>
+    '<div class="action-item ' + i.type + '">' +
+    '<div class="text"><strong>' + i.title + '</strong><br>' + i.text + '</div></div>'
+  ).join("");
+}
+
+function exportExcel() {
+  if (allCoupons.length === 0) { showToast("ไม่มีข้อมูลให้ export", "error"); return; }
+
+  const playedCoupons = allCoupons.filter(c => c.amount);
+  const usedCoupons = playedCoupons.filter(c => c.isUsed);
+  const totalDiscount = usedCoupons.reduce((s, c) => s + (c.amount || 0), 0);
+  const conversion = playedCoupons.length > 0 ? (usedCoupons.length / playedCoupons.length * 100).toFixed(1) : 0;
+
+  const summaryData = [
+    ["รายงานเจ้าของกิจการ", currentCollection],
+    ["วันที่ Export", new Date().toLocaleString("th-TH")],
+    [],
+    ["📊 ตัวชี้วัดหลัก (KPI)", ""],
+    ["คนเปิดเว็บ", allCoupons.length],
+    ["คนได้คูปอง", playedCoupons.length],
+    ["ใช้คูปองจริง", usedCoupons.length],
+    ["Conversion Rate", conversion + "%"],
+    ["💰 ส่วนลดที่จ่ายไปแล้ว", totalDiscount + " บาท"]
+  ];
+
+  const historyData = [["Line ID", "รหัสคูปอง", "ส่วนลด", "สถานะ", "วันที่สุ่ม", "วันที่ใช้"]];
+  playedCoupons.forEach(c => {
+    historyData.push([
+      c.userLineId || "", c.code || "", c.amount || 0,
+      c.isUsed ? "ใช้แล้ว" : "ยังไม่ใช้",
+      formatDate(c.date), c.usedDate ? formatDate(c.usedDate) : "-"
+    ]);
+  });
+
+  const wb = XLSX.utils.book_new();
+  const ws1 = XLSX.utils.aoa_to_sheet(summaryData);
+  ws1["!cols"] = [{ wch: 25 }, { wch: 30 }];
+  XLSX.utils.book_append_sheet(wb, ws1, "📊 รายงานเจ้าของ");
+
+  const ws2 = XLSX.utils.aoa_to_sheet(historyData);
+  ws2["!cols"] = [{ wch: 32 }, { wch: 18 }, { wch: 14 }, { wch: 14 }, { wch: 18 }, { wch: 18 }];
+  XLSX.utils.book_append_sheet(wb, ws2, "🎫 ประวัติคูปอง");
+
+  const fileName = "Owner_Report_" + currentCollection + "_" + new Date().toISOString().substring(0, 10) + ".xlsx";
+  XLSX.writeFile(wb, fileName);
+  showToast("✅ ดาวน์โหลด Excel เรียบร้อย");
+}
+</script>
+
+</body>
+</html>
