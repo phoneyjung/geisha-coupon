@@ -21754,10 +21754,10 @@ function _showBackfillChoiceModal(bk, ctx = {}) {
   const hasOverridableConflict = ctx.liveSlotConflict && ctx.liveSlotCanOverride;
   const nowDisabled = ctx.liveSlotConflict && !ctx.liveSlotCanOverride;
   
+  // ⭐ r38r15www: ใช้ class "modal" + structure ที่ปกติ (เดิมใช้ modal-overlay/modal-content ที่ไม่มี CSS → modal invisible)
   const modalHTML = `
-    <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
-      <div class="modal-content" style="max-width:480px;">
-        <div style="background:linear-gradient(135deg,#0ea5e9,#0284c7); color:#fff; padding:18px 20px; border-radius:12px 12px 0 0;">
+    <div class="modal" style="max-width:480px; overflow:hidden; padding:0;">
+        <div style="background:linear-gradient(135deg,#0ea5e9,#0284c7); color:#fff; padding:18px 20px;">
           <h3 style="margin:0; font-size:18px;">${headerTitle}</h3>
           ${headerSub ? `<div style="font-size:13px; opacity:0.92; margin-top:4px;">${headerSub}</div>` : ''}
         </div>
@@ -21799,13 +21799,12 @@ function _showBackfillChoiceModal(bk, ctx = {}) {
             </div>
           </button>
           
-          <button id="backfill-cancel-btn" style="
+          <button id="backfill-cancel-btn" class="modal-close" style="
             width:100%; padding:10px; margin-top:8px;
             background:transparent; color:#64748b; border:1px solid #cbd5e1; border-radius:10px;
             cursor:pointer; font-family:inherit; font-size:13px;
           ">◀ ยกเลิก</button>
         </div>
-      </div>
     </div>
   `;
   
