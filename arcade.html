@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Geisha SPA - ARCADE DROP 🕹️</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;600;800&family=Sarabun:wght@400;600;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+
+<!-- LINE LIFF SDK -->
+<script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<!-- QR Code Generator (self-host + CDN fallback) -->
+<script src="qrcode.min.js" onerror="var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';document.head.appendChild(s);"></script>
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import {
+    getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc,
+    collection, addDoc, serverTimestamp, increment, arrayUnion, onSnapshot
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  const firebaseConfig = {
+    apiKey: "AIzaSyBhkUyMQLhWiwGIF7yTSnageSNXmJim6FQ",
+    authDomain: "geisha-coupon.firebaseapp.com",
+    projectId: "geisha-coupon",
+    storageBucket: "geisha-coupon.firebasestorage.app",
+    messagingSenderId: "620548410470",
+    appId: "1:620548410470:web:d85dcc91390882fef4f1a7"
+  };
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  window.firebaseDB = db;
+  window.firebaseHelpers = { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, addDoc, serverTimestamp, increment, arrayUnion, onSnapshot };
+  window.firebaseReady = true;
+  console.log("[firebase] Ready ✓");
+</script>
+<style>
+  :root{
+    --bg0:#0a0118; --bg1:#160830;
+    --neon-pink:#ff2e9a; --neon-purple:#a855f7; --neon-cyan:#22d3ee;
+    --emerald:#a855f7; --emerald-bright:#ff2e9a;   /* alias เก่า → ใช้ม่วง/ชมพู */
+    --gold:#ffe14d; --gold-deep:#ff8a00;
+    --red:#ff3b6b; --cream:#fdeaff;
+    --line:rgba(255,255,255,.78);
+    --shadow:0 0 40px rgba(168,85,247,.5);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    font-family:'Sarabun',sans-serif; color:var(--cream);
+    background:
+      radial-gradient(900px 500px at 50% -8%, rgba(168,85,247,.35) 0%, transparent 60%),
+      radial-gradient(800px 460px at 50% 115%, rgba(255,46,154,.28) 0%, transparent 58%),
+      linear-gradient(180deg, var(--bg1), var(--bg0) 75%);
+    min-height:100dvh; overflow-x:hidden; position:relative;
+    display:flex; flex-direction:column; align-items:center;
+  }
+  /* กริดเปอร์สเปกทีฟเรืองแสง (พื้นตู้เกม) */
+  body::before{ content:''; position:fixed; left:0; right:0; bottom:0; height:42vh; pointer-events:none; z-index:0;
+    background:
+      repeating-linear-gradient(90deg, transparent 0 38px, rgba(34,211,238,.18) 38px 40px),
+      repeating-linear-gradient(0deg, transparent 0 38px, rgba(255,46,154,.16) 38px 40px);
+    transform:perspective(280px) rotateX(62deg); transform-origin:bottom; mask-image:linear-gradient(to top, #000, transparent); }
+  /* scanline จอ CRT */
+  body::after{ content:''; position:fixed; inset:0; pointer-events:none; z-index:70; opacity:.5;
+    background:repeating-linear-gradient(0deg, rgba(0,0,0,.16) 0 1px, transparent 1px 3px); }
+  .wrap{ width:100%; max-width:480px; min-height:100dvh; padding:14px 14px 28px; display:flex; flex-direction:column; position:relative; z-index:1; }
+
+  .screen{ display:none; flex-direction:column; flex:1; animation:fade .4s ease; }
+  .screen.on{ display:flex; }
+  @keyframes fade{ from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:none;} }
+
+  /* ---- header ---- */
+  .top{ text-align:center; padding:8px 0 4px; }
+  .wc-bar{ display:inline-flex; gap:7px; align-items:center; font-family:'Press Start 2P', monospace;
+    font-size:10px; letter-spacing:.02em; color:var(--neon-cyan);
+    background:rgba(34,211,238,.08);
+    border:1px solid rgba(34,211,238,.6); padding:8px 14px; border-radius:6px;
+    box-shadow:0 0 14px rgba(34,211,238,.45), inset 0 0 10px rgba(34,211,238,.15);
+    text-shadow:0 0 8px var(--neon-cyan); animation:coinBlink 1.4s steps(1) infinite; }
+  @keyframes coinBlink{ 0%,70%{opacity:1;} 71%,100%{opacity:.45;} }
+  h1{ font-family:'Kanit'; font-weight:800; font-size:30px; line-height:1.15; margin:14px 0 6px;
+    color:#fff; text-shadow:0 0 10px var(--neon-pink), 0 0 26px var(--neon-purple), 0 2px 0 #4a1d6e; }
+  h1 .hl{ color:var(--neon-cyan); text-shadow:0 0 10px var(--neon-cyan), 0 0 24px rgba(34,211,238,.6); }
+  .sub{ font-size:14.5px; opacity:.92; line-height:1.55; max-width:330px; margin:6px auto 0; }
+  .cap{ display:inline-block; margin-top:14px; font-family:'Kanit'; font-weight:700; font-size:15px;
+    color:#fff; background:linear-gradient(135deg,var(--neon-pink),var(--neon-purple));
+    padding:8px 22px; border-radius:8px; box-shadow:0 0 18px rgba(255,46,154,.55), inset 0 0 8px rgba(255,255,255,.2);
+    text-shadow:0 0 8px rgba(255,255,255,.5); border:1px solid rgba(255,255,255,.3); }
+  .cap b{ color:var(--gold); text-shadow:0 0 10px var(--gold); }
+
+  /* ---- buttons ---- */
+  .btn{ width:100%; font-family:'Kanit'; font-weight:800; font-size:20px; color:#fff;
+    background:linear-gradient(135deg, var(--neon-purple), #7c2fd6);
+    border:1px solid rgba(255,255,255,.35); border-radius:12px; padding:16px; cursor:pointer;
+    box-shadow:0 8px 0 #5a1aa3, 0 0 26px rgba(168,85,247,.55), inset 0 0 12px rgba(255,255,255,.12);
+    text-shadow:0 0 8px rgba(255,255,255,.5); transition:transform .08s, box-shadow .08s;
+    -webkit-user-select:none; user-select:none; }
+  .btn:active{ transform:translateY(5px); box-shadow:0 3px 0 #5a1aa3, 0 0 18px rgba(168,85,247,.5); }
+  .btn[disabled]{ filter:saturate(.4) brightness(.8); cursor:default; }
+  .btn.gold{ background:linear-gradient(135deg,var(--neon-pink),#d61f7a); box-shadow:0 8px 0 #a01258, 0 0 26px rgba(255,46,154,.6), inset 0 0 12px rgba(255,255,255,.15); }
+  .btn.gold:active{ box-shadow:0 3px 0 #a01258, 0 0 18px rgba(255,46,154,.55); }
+  .btn.ghost{ background:rgba(255,255,255,.08); color:var(--cream); border:1px solid rgba(255,255,255,.2);
+    box-shadow:none; font-size:15px; padding:12px; }
+  .btn.ghost:active{ transform:translateY(2px); }
+
+  /* ---- intro art ---- */
+  .introArt{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; padding:10px 0; }
+  .miniBoard{ width:200px; height:150px; position:relative; margin:6px 0 2px; }
+
+  /* ---- plinko board ---- */
+  .boardWrap{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; padding:6px 0; }
+  .scoreTop{ display:flex; align-items:center; justify-content:center; gap:10px; font-family:'Kanit'; font-weight:600; }
+  .scoreTop .chip{ background:rgba(0,0,0,.45); border:1px solid rgba(168,85,247,.5); border-radius:8px; padding:6px 16px; font-size:14px; box-shadow:0 0 12px rgba(168,85,247,.3); font-family:'Press Start 2P',monospace; font-weight:400; }
+  .scoreTop .chip b{ color:var(--neon-cyan); font-size:15px; text-shadow:0 0 8px var(--neon-cyan); }
+  #board{ display:block; width:100%; max-width:380px; height:auto;
+    background:linear-gradient(180deg, rgba(22,8,48,.85), rgba(10,1,24,.95));
+    border:2px solid rgba(168,85,247,.6); border-radius:14px;
+    box-shadow:0 0 30px rgba(168,85,247,.5), inset 0 0 30px rgba(168,85,247,.12); touch-action:none; }
+  .dropHint{ font-size:13px; opacity:.7; text-align:center; min-height:18px; }
+
+  /* ---- result ---- */
+  .resCard{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; text-align:center; padding:8px 0; }
+  #champ{ display:none; align-items:center; justify-content:center; font-size:60px; filter:drop-shadow(0 8px 16px rgba(255,210,77,.5)); animation:pop .6s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes pop{ from{transform:scale(0) rotate(-20deg);} to{transform:scale(1) rotate(0);} }
+  #resTitle{ font-family:'Kanit'; font-weight:800; font-size:26px; color:#fff; text-shadow:0 0 12px var(--neon-pink), 0 0 24px var(--neon-purple); }
+  #scoreLine{ font-size:14px; opacity:.85; }
+  #grade{ font-size:14px; }
+  .amtBox{ margin:6px 0; }
+  #amt{ font-family:'Press Start 2P', monospace; font-weight:400; font-size:52px; line-height:1.1; color:var(--gold);
+    text-shadow:0 0 14px var(--gold), 0 0 30px rgba(255,138,0,.6); }
+  #amt small{ font-size:26px; vertical-align:super; margin-right:4px; }
+  #jackpot{ display:none; font-family:'Kanit'; font-weight:600; font-size:14px; color:var(--gold);
+    background:rgba(255,210,77,.12); border:1px dashed rgba(255,210,77,.5); border-radius:12px; padding:8px 16px; }
+  .note{ font-size:12.5px; opacity:.7; max-width:320px; }
+
+  /* QR + code */
+  #qrcodeBox{ margin:8px auto; }
+  .codeRow{ display:flex; align-items:center; gap:8px; justify-content:center; flex-wrap:wrap;
+    background:rgba(0,0,0,.3); border:1px dashed rgba(255,255,255,.3); border-radius:12px; padding:10px 16px; cursor:pointer; }
+  #codeTxt{ font-family:'Press Start 2P', monospace; font-weight:400; font-size:16px; letter-spacing:.06em; color:var(--neon-cyan); text-shadow:0 0 10px var(--neon-cyan); }
+  .codeRow small{ font-size:12px; opacity:.7; width:100%; }
+  #copied{ font-size:12px; color:var(--emerald-bright); min-height:16px; }
+  .expiry{ font-size:13px; color:rgba(255,246,226,.55); }
+
+  /* gold flash + confetti */
+  #goldflash{ position:fixed; inset:0; pointer-events:none; background:radial-gradient(circle at 50% 50%, rgba(255,46,154,.5), rgba(168,85,247,.35) 40%, transparent 65%); opacity:0; z-index:50; }
+  #goldflash.go{ animation:gf .8s ease; }
+  @keyframes gf{ 0%{opacity:0;} 20%{opacity:1;} 100%{opacity:0;} }
+  .sound{ position:absolute; top:14px; right:14px; font-size:22px; opacity:.7; cursor:pointer; z-index:5; background:none; border:none; }
+  canvas.fx{ position:fixed; inset:0; pointer-events:none; z-index:60; }
+</style>
+</head>
+<body>
+<div id="goldflash"></div>
+<canvas class="fx" id="fxCanvas"></canvas>
+<div class="wrap">
+
+  <!-- ============ INTRO ============ -->
+  <section class="screen on" id="intro">
+    <button class="sound" id="soundBtn" onclick="toggleSound()">🔊</button>
+    <div class="top"><span class="wc-bar">▸ INSERT COIN ◂</span></div>
+    <div class="introArt">
+      <canvas id="miniBoard" class="miniBoard" width="200" height="150"></canvas>
+      <h1>ARCADE DROP<br><span class="hl">ลุ้นส่วนลด</span></h1>
+      <p class="sub">หยอดเหรียญ ปล่อยลูกให้เด้งผ่านหมุด ลุ้นตกช่องส่วนลด 🕹️</p>
+      <span class="cap">ลุ้นสูงสุด <b>฿300</b></span>
+    </div>
+    <div style="width:100%;margin-top:16px;"><button class="btn" id="startBtn" onclick="startGame()" disabled style="opacity:.55;">⏳ LOADING...</button></div>
+  </section>
+
+  <!-- ============ PLAY ============ -->
+  <section class="screen" id="play">
+    <div class="boardWrap">
+      <div class="scoreTop">
+        <span class="chip">รอบที่ <b id="ballNo">1</b>/<span id="ballTotal">1</span></span>
+        <span class="chip">฿<b id="runAmt">0</b></span>
+      </div>
+      <canvas id="board" width="380" height="460"></canvas>
+      <div class="dropHint" id="dropHint">▸ กดปุ่มเพื่อหยอดลูก 🪙</div>
+      <div style="width:100%;max-width:380px;"><button class="btn gold" id="dropBtn" onclick="dropBall()">▸ PLAY ◂ ปล่อยลูก</button></div>
+    </div>
+  </section>
+
+  <!-- ============ RESULT ============ -->
+  <section class="screen" id="result">
+    <div class="resCard">
+      <div id="champ">🏆</div>
+      <div id="resTitle">จบเกม!</div>
+      <div id="scoreLine"></div>
+      <div class="amtBox"><div id="amt"><small>฿</small>0</div></div>
+      <div id="jackpot">🏆 แจ็กพอต! ได้ส่วนลดสูงสุด</div>
+      <div id="grade"></div>
+      <div id="qrcodeBox"></div>
+      <div class="codeRow" onclick="copyCode()">
+        <span id="codeTxt">GEISHA-XXXXXX</span>
+        <small>📋 แตะเพื่อคัดลอกรหัส</small>
+      </div>
+      <div id="copied"></div>
+      <div class="expiry">📅 ใช้คูปองได้ถึง 15 ก.ย. 2569 · 1 สิทธิ์/ID LINE · แสดง QR ที่ร้าน</div>
+      <button class="btn ghost" id="replayBtn" onclick="resetGame()" style="display:none;margin-top:10px;">เล่นอีกครั้ง (Test Mode)</button>
+    </div>
+    <div style="text-align:center;font-size:12px;opacity:.55;padding-top:10px;">🕹️ ARCADE Edition · <span id="footShop">Geisha SPA</span> · เล่นได้ <b>1 ครั้ง/LINE ID</b></div>
+  </section>
+
+</div>
+
+<script>
+/* ============================================================
+   SHOP & CAMPAIGN CONFIG  (Geisha — Yoshi sed-replace ตอน build)
+   ============================================================ */
+const SHOP_ID = "geisha";
+const SHOP_NAME = "Geisha SPA";
+const SHOP_EMOJI = "\uD83C\uDF38";
+const CAMPAIGN_ID = "arcade_aug2026";
+const COLLECTION_NAME = "coupons_" + SHOP_ID + "_" + CAMPAIGN_ID;
+const CAMPAIGN_START_DATE = "2026-08-01";
+const CAMPAIGN_EXPIRE_DATE = "2026-09-01";   // เล่นได้ถึง 31 ส.ค. · 1 ก.ย. ปิด
+const LIFF_ID = "2009881458-wioPjdS0";
+
+/* ============================================================
+   PRIZE TABLE — โอกาสออก (สัดส่วนเท่าคูปองขูดบัตร)
+   ============================================================ */
+const PRIZES = [
+  { amount:50,  weight:20 },
+  { amount:100, weight:25 },
+  { amount:150, weight:30 },
+  { amount:200, weight:18 },
+  { amount:250, weight:5  },
+  { amount:300, weight:2  },
+];
+const CAP = 300;                 // แจ็กพอต
+// ลำดับช่องบนกระดาน (ซ้าย→ขวา) — เรียงให้รางวัลใหญ่อยู่กลาง (สมจริงแบบ Plinko)
+const SLOT_ORDER = [50, 150, 250, 300, 200, 100];   // 6 ช่อง
+// หมายเหตุ: โอกาสจริงคุมที่ rollPrize() ไม่ได้คุมที่ตำแหน่งช่อง
+
+function getNow(){
+  const params = new URLSearchParams(location.search);
+  const mock = params.get('mockdate');
+  if(mock){ const d=new Date(mock+"T12:00:00+07:00"); if(!isNaN(d.getTime())){ console.log("[MOCK]",mock); return d; } }
+  return new Date();
+}
+function isCampaignNotStarted(){ return getNow() < new Date(CAMPAIGN_START_DATE+"T00:00:00+07:00"); }
+function isCampaignExpired(){ return getNow() >= new Date(CAMPAIGN_EXPIRE_DATE+"T00:00:00+07:00"); }
+
+/* --- LIFF / state --- */
+let lineUserId=null, lineDisplayName="", linePictureUrl="";
+let currentCouponData=null, realtimeUnsubscribe=null;
+let soundOn=true, audioCtx=null;
+let lockedPrize=null;     // ⭐ เลขที่ล็อกไว้ (ผลจริง)
+let dropping=false;
+
+window.addEventListener('load', initLine);
+
+async function initLine(){
+  const isTest = /test/i.test(location.hash+location.search);
+  const isPreview = /preview/i.test(location.hash+location.search);
+  drawMiniBoard();
+
+  // หมดเขต / ยังไม่เริ่ม (ลูกค้าจริงเท่านั้น)
+  if(!isTest && !isPreview){
+    if(isCampaignNotStarted()){ showCampaignNotStarted(); return; }
+    if(isCampaignExpired()){ showCampaignExpired(); return; }
+  }
+
+  if(isTest || isPreview){
+    lineUserId = isPreview ? ("preview_"+Date.now()) : (localStorage.getItem("test_user_id")||generateTestId());
+    if(isTest && !isPreview) localStorage.setItem("test_user_id", lineUserId);
+    lineDisplayName = isPreview ? "Preview User" : "Test User";
+    document.getElementById('replayBtn').style.display = isTest ? 'block' : 'none';
+    if(isPreview){ enableStartBtn(); return; }   // preview: เล่นใหม่ทุกครั้ง
+    await afterIdentity();
+    return;
+  }
+
+  // ลูกค้าจริง — LIFF
+  try{
+    await liff.init({ liffId: LIFF_ID });
+    if(!liff.isLoggedIn()){ liff.login(); return; }
+    const p = await liff.getProfile();
+    lineUserId = p.userId; lineDisplayName = p.displayName||""; linePictureUrl = p.pictureUrl||"";
+    console.log("[LIFF] user:", lineUserId);
+  }catch(e){
+    console.error("LIFF error:", e);
+    showErrorScreen("เชื่อมต่อ LINE ไม่สำเร็จ", "สัญญาณอาจขัดข้องชั่วคราว<br>ปิดหน้านี้แล้วเปิดลิงก์เดิมอีกครั้ง");
+    return;
+  }
+  await afterIdentity();
+}
+
+/* เช็คสิทธิ์ + กู้คูปอง — เคยเล่น = เด้งหน้า QR ทันที (ไม่ปล่อยเริ่ม) */
+async function afterIdentity(){
+  const chk = await checkExistingResult();
+  if(chk === 'found') return;
+  const localBak = loadLocalCoupon();
+  if(localBak && localBak.code){
+    console.log("[recover] local:", localBak.code);
+    if(chk === 'none') await resyncLocalCoupon(localBak);
+    if(!currentCouponData) currentCouponData = { code:localBak.code, amount:localBak.amount, isUsed:false };
+    showExistingResult(currentCouponData);
+    return;
+  }
+  if(chk === 'error' && lineUserId && !String(lineUserId).startsWith("test_") && !String(lineUserId).startsWith("preview_")){
+    showErrorScreen("ตรวจสอบสิทธิ์ไม่สำเร็จ", "สัญญาณขัดข้องชั่วคราว<br>ปิดหน้านี้แล้วเปิดลิงก์เดิมอีกครั้ง (สิทธิ์ของคุณยังอยู่)");
+    return;
+  }
+  enableStartBtn();
+}
+
+function enableStartBtn(){
+  window._initDone = true;
+  const b = document.getElementById('startBtn');
+  if(b){ b.disabled=false; b.style.opacity=''; b.textContent='▸ START ◂ เริ่มเล่น'; }
+}
+function generateTestId(){ return "test_"+Math.random().toString(36).slice(2,11); }
+
+/* ============================================================
+   PLINKO ENGINE — physics + locked outcome
+   ============================================================ */
+const ROWS = 9;               // จำนวนแถวหมุด
+let BW=380, BH=460;           // ขนาด canvas (set จาก attr)
+let pegs=[], slots=[], ball=null, anim=null;
+let slotXs=[];                // กึ่งกลาง x ของแต่ละช่อง
+const PEG_R=5, BALL_R=9;
+
+function startGame(){
+  if(!window._initDone) return;
+  audio();
+  show('play');
+  // ⭐ ล็อกผลก่อนเริ่ม
+  lockedPrize = rollPrize();
+  console.log("[locked]", lockedPrize, "บาท");
+  document.getElementById('ballNo').textContent = '1';
+  document.getElementById('ballTotal').textContent = '1';
+  document.getElementById('runAmt').textContent = '0';
+  document.getElementById('dropHint').textContent = '▸ กดปุ่มเพื่อหยอดลูก 🪙';
+  document.getElementById('dropBtn').disabled = false;
+  document.getElementById('dropBtn').style.opacity = '';
+  buildBoard();
+  dropping = false;
+}
+
+/* สุ่มรางวัลตามน้ำหนัก (ผลจริง) */
+function rollPrize(){
+  const total = PRIZES.reduce((s,p)=>s+p.weight,0);
+  let r = Math.random()*total;
+  for(const p of PRIZES){ if(r < p.weight) return p.amount; r -= p.weight; }
+  return PRIZES[0].amount;
+}
+
+/* วางหมุด + ช่อง */
+function buildBoard(){
+  const cv = document.getElementById('board');
+  BW = cv.width; BH = cv.height;
+  pegs = [];
+  const topPad = 56, botPad = 86;
+  const usableH = BH - topPad - botPad;
+  const rowGap = usableH / (ROWS-1);
+  const nSlots = SLOT_ORDER.length;
+  const sideMargin = 10;                       // กันล้นขอบ
+  const colGap = (BW - sideMargin*2) / (nSlots+1);
+
+  for(let row=0; row<ROWS; row++){
+    const count = row + 3;                 // หมุดเพิ่มลงล่าง
+    const y = topPad + row*rowGap;
+    const spread = colGap * (count-1);
+    const x0 = BW/2 - spread/2;
+    for(let i=0;i<count;i++){
+      pegs.push({ x: x0 + i*colGap, y });
+    }
+  }
+  // ช่องล่าง
+  slots = []; slotXs = [];
+  const slotW = (BW - sideMargin*2) / nSlots;
+  for(let i=0;i<nSlots;i++){
+    const x = sideMargin + slotW*i;
+    const cx = x + slotW/2;
+    slotXs.push(cx);
+    slots.push({ x, w:slotW, cx, amount:SLOT_ORDER[i] });
+  }
+  drawBoard();
+}
+
+/* หา index ช่องที่ตรงกับรางวัลที่ล็อก */
+function targetSlotIndex(){
+  const idxs = [];
+  SLOT_ORDER.forEach((a,i)=>{ if(a===lockedPrize) idxs.push(i); });
+  if(idxs.length===0) return Math.floor(SLOT_ORDER.length/2);
+  return idxs[Math.floor(Math.random()*idxs.length)];   // ถ้ามีหลายช่องค่าเดียวกัน สุ่ม
+}
+
+function drawBoard(highlightSlot){
+  const cv = document.getElementById('board'); const ctx = cv.getContext('2d');
+  ctx.clearRect(0,0,BW,BH);
+  // หมุด
+  for(const p of pegs){
+    ctx.beginPath(); ctx.arc(p.x,p.y,PEG_R,0,7);
+    ctx.fillStyle='#22d3ee'; ctx.shadowColor='#22d3ee'; ctx.shadowBlur=8; ctx.fill(); ctx.shadowBlur=0;
+    ctx.beginPath(); ctx.arc(p.x-1.5,p.y-1.5,1.6,0,7); ctx.fillStyle='rgba(255,255,255,.9)'; ctx.fill();
+  }
+  // ช่อง
+  const palette = { 50:'#3b1d6e',100:'#5b21b6',150:'#7c2fd6',200:'#a21caf',250:'#c026d3',300:'#ff2e9a' };
+  for(let i=0;i<slots.length;i++){
+    const s = slots[i];
+    const hot = (s.amount>=250);
+    ctx.fillStyle = (highlightSlot===i) ? '#ffe89a' : (palette[s.amount]||'#444');
+    roundRect(ctx, s.x+3, BH-70, s.w-6, 54, 10); ctx.fill();
+    // divider posts
+    ctx.fillStyle='rgba(168,85,247,.55)';
+    if(i>0) ctx.fillRect(s.x, BH-78, 2, 62);
+    // label
+    ctx.fillStyle = (highlightSlot===i)?'#05130c':'#fff';
+    ctx.font = '800 '+(hot?16:15)+'px Kanit, sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('฿'+s.amount, s.cx, hot ? BH-46 : BH-43);
+    if(hot){ ctx.font='9px Kanit'; ctx.fillText('★', s.cx, BH-28); }
+  }
+
+  // ball
+  if(ball){
+    ctx.beginPath(); ctx.arc(ball.x,ball.y+2,BALL_R,0,7); ctx.fillStyle='rgba(0,0,0,.35)'; ctx.fill();
+    ctx.beginPath(); ctx.arc(ball.x,ball.y,BALL_R,0,7);
+    const g=ctx.createRadialGradient(ball.x-3,ball.y-3,1,ball.x,ball.y,BALL_R);
+    g.addColorStop(0,'#fff'); g.addColorStop(.45,'#ff8ad4'); g.addColorStop(1,'#ff2e9a');
+    ctx.fillStyle=g; ctx.fill();
+    ctx.lineWidth=2; ctx.strokeStyle='rgba(255,46,154,.9)'; ctx.shadowColor='#ff2e9a'; ctx.shadowBlur=12; ctx.stroke(); ctx.shadowBlur=0;
+  }
+}
+
+function roundRect(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+
+/* ปล่อยลูก — บอลเด้งหมุดสมจริง แต่ค่อยๆ ดึงไปช่องเป้าหมาย */
+function dropBall(){
+  if(dropping || !window._initDone) return;
+  dropping = true;
+  audio(); beep(520,.05);
+  document.getElementById('dropBtn').disabled = true;
+  document.getElementById('dropBtn').style.opacity = '.5';
+  document.getElementById('dropHint').textContent = '◂ ลูกกำลังเด้ง... ▸';
+
+  const tgtIdx = targetSlotIndex();
+  const targetX = slotXs[tgtIdx];
+  ball = { x: BW/2 + (Math.random()*16-8), y: 30, vx:0, vy:0, settled:false };
+  const GRAV=0.42, REST=0.55, FRICT=0.992, GUIDE=0.00018;
+  let lastRow=-1;
+
+  cancelAnimationFrame(anim);
+  function step(){
+    if(ball.settled){ return; }
+    // แรงโน้มถ่วง + ไกด์ไปเป้าหมาย (อ่อนๆ — มองไม่ออก)
+    ball.vy += GRAV;
+    const dy = ball.y / BH;                       // ยิ่งลงล่าง ไกด์ยิ่งแรงนิด
+    ball.vx += (targetX - ball.x) * GUIDE * (0.4 + dy);
+    ball.vx *= FRICT;
+    ball.x += ball.vx; ball.y += ball.vy;
+
+    // ชนหมุด
+    for(const p of pegs){
+      const dx=ball.x-p.x, dyy=ball.y-p.y; const dist=Math.hypot(dx,dyy); const min=PEG_R+BALL_R;
+      if(dist<min && dist>0){
+        const nx=dx/dist, ny=dyy/dist;
+        const overlap=min-dist;
+        ball.x += nx*overlap; ball.y += ny*overlap;
+        const dot=ball.vx*nx+ball.vy*ny;
+        ball.vx -= (1+REST)*dot*nx; ball.vy -= (1+REST)*dot*ny;
+        // เด้งให้เอียงไปทางเป้านิดหน่อย
+        ball.vx += (targetX>ball.x?1:-1)*0.18 + (Math.random()*0.5-0.25);
+        const row = Math.round((p.y-56)/((BH-142)/(ROWS-1)));
+        if(row!==lastRow){ lastRow=row; beep(680+row*18,.03,.04); }
+      }
+    }
+    // ผนัง
+    if(ball.x<BALL_R){ ball.x=BALL_R; ball.vx=Math.abs(ball.vx)*REST; }
+    if(ball.x>BW-BALL_R){ ball.x=BW-BALL_R; ball.vx=-Math.abs(ball.vx)*REST; }
+
+    // ถึงโซนช่อง → ล็อกเข้าเป้า
+    if(ball.y > BH-92){
+      ball.vx += (targetX-ball.x)*0.08;          // ดูดเข้ากลางช่อง
+      ball.x += (targetX-ball.x)*0.18;
+    }
+    drawBoard();
+
+    if(ball.y >= BH-78){
+      ball.y = BH-78; ball.settled=true;
+      ball.x = targetX;
+      drawBoard(tgtIdx);
+      onBallLanded(lockedPrize, tgtIdx);
+      return;
+    }
+    anim = requestAnimationFrame(step);
+  }
+  anim = requestAnimationFrame(step);
+}
+
+function onBallLanded(amount, slotIdx){
+  document.getElementById('runAmt').textContent = amount;
+  beep(880,.08,.12); setTimeout(()=>beep(1180,.1,.12),90);
+  if(amount>=CAP){ flashGold(); confetti(); }
+  else if(amount>=200){ confetti(0.5); }
+  // หน่วงให้เห็นช่อง highlight แล้วค่อยไปหน้าผล
+  setTimeout(()=>finish(amount), 1100);
+}
+
+async function finish(amount){
+  const code = genCode();
+  show('result');
+  const jackpot = amount>=CAP;
+  document.getElementById('resTitle').textContent = jackpot ? '🏆 แชมป์!' : 'ยินดีด้วย!';
+  document.getElementById('champ').style.display = jackpot ? 'flex' : 'none';
+  document.getElementById('scoreLine').textContent = '';
+  document.getElementById('grade').textContent = '⏳ แสดง QR นี้ที่ร้านเพื่อรับส่วนลด';
+  document.getElementById('amt').innerHTML = `<small>฿</small>${amount}`;
+  document.getElementById('jackpot').style.display = jackpot ? 'block' : 'none';
+  document.getElementById('codeTxt').textContent = code;
+  document.getElementById('copied').textContent='';
+  const isTest = /test/i.test(location.hash+location.search);
+  document.getElementById('replayBtn').style.display = isTest ? 'block' : 'none';
+  generateCouponQR(code, amount, false);
+  await saveCouponToFirebase(code, amount);
+  subscribeToChanges();
+}
+</script>
+
+
+<script>
+/* ============================================================
+   BACKEND — Firebase save / check / recover / QR / realtime
+   (port จากเกมจุดโทษ + fix ความทนทานทั้งหมด)
+   ============================================================ */
+
+/* บันทึกคูปอง — retry 3 ครั้ง + fallback local + เตือน */
+async function saveCouponToFirebase(code, amount){
+  if(!window.firebaseReady || !lineUserId){ saveToLocalStorage(code,amount); showSaveWarning(); return; }
+  try{
+    const { doc, setDoc, serverTimestamp } = window.firebaseHelpers;
+    const ref = doc(window.firebaseDB, COLLECTION_NAME, lineUserId);
+    const couponData = {
+      amount, code, goals:0, shots:0,
+      lineUserId, lineDisplayName, linePictureUrl,
+      displayName:lineDisplayName, userId:lineUserId,
+      shop:SHOP_ID, shopId:SHOP_ID, campaignId:CAMPAIGN_ID,
+      createdAt:serverTimestamp(), date:new Date().toISOString(),
+      isUsed:false, usedAt:null,
+      expireDate:"15/09/69", gameType:"plinko_arcade"
+    };
+    let saved=false;
+    for(let i=0;i<3;i++){
+      try{ await setDoc(ref, couponData); saved=true; break; }
+      catch(err){ console.warn("[fb] save attempt",i+1,"failed:",err); await new Promise(r=>setTimeout(r,1200)); }
+    }
+    if(!saved) throw new Error("save failed x3");
+    currentCouponData = couponData;
+    console.log("[fb] Saved:", code);
+    await updateCustomerMaster(amount);
+  }catch(e){
+    console.error("[fb] save failed:", e);
+    saveToLocalStorage(code,amount); showSaveWarning();
+  }
+}
+
+function saveToLocalStorage(code, amount){
+  try{ localStorage.setItem(SHOP_ID+"_plinko_"+(lineUserId||"guest"), JSON.stringify({code,amount,ts:Date.now()})); }catch(e){}
+}
+function loadLocalCoupon(){
+  try{ const raw=localStorage.getItem(SHOP_ID+"_plinko_"+(lineUserId||"guest")); return raw?JSON.parse(raw):null; }catch(e){ return null; }
+}
+async function resyncLocalCoupon(bak){
+  if(!window.firebaseReady || !lineUserId) return false;
+  try{
+    const { doc, setDoc, serverTimestamp } = window.firebaseHelpers;
+    const ref = doc(window.firebaseDB, COLLECTION_NAME, lineUserId);
+    await setDoc(ref, {
+      amount:bak.amount, code:bak.code, goals:0, shots:0,
+      lineUserId, lineDisplayName, linePictureUrl, displayName:lineDisplayName, userId:lineUserId,
+      shop:SHOP_ID, shopId:SHOP_ID, campaignId:CAMPAIGN_ID,
+      createdAt:serverTimestamp(), date:new Date(bak.ts||Date.now()).toISOString(),
+      isUsed:false, usedAt:null, expireDate:"15/09/69", gameType:"plinko_arcade", resynced:true
+    });
+    currentCouponData = { code:bak.code, amount:bak.amount, isUsed:false };
+    console.log("[recover] resynced:", bak.code); return true;
+  }catch(e){ console.warn("[recover] resync failed:", e); return false; }
+}
+
+async function updateCustomerMaster(amount){
+  if(!window.firebaseReady || !lineUserId) return;
+  try{
+    const { doc, setDoc, serverTimestamp, increment, arrayUnion } = window.firebaseHelpers;
+    const ref = doc(window.firebaseDB, "customers", lineUserId);
+    await setDoc(ref, {
+      displayName:lineDisplayName, pictureUrl:linePictureUrl,
+      shops:arrayUnion(SHOP_ID), lastVisit:serverTimestamp(), visitCount:increment(1),
+      [SHOP_ID+"_plinko_amount"]:amount,
+      [SHOP_ID+"_plinko_couponDate"]:serverTimestamp(),
+      [SHOP_ID+"_plinko_used"]:false
+    }, { merge:true });
+  }catch(e){ console.warn("[fb] customer:", e); }
+}
+
+/* เช็คว่าเคยเล่นยัง — return 'found'|'none'|'error' */
+async function checkExistingResult(){
+  if(!window.firebaseReady || !lineUserId) return 'error';
+  try{
+    const { doc, getDoc } = window.firebaseHelpers;
+    const ref = doc(window.firebaseDB, COLLECTION_NAME, lineUserId);
+    const snap = await Promise.race([ getDoc(ref), new Promise((_,rej)=>setTimeout(()=>rej(new Error("timeout")),8000)) ]);
+    if(snap.exists()){ const d=snap.data(); currentCouponData=d; showExistingResult(d); return 'found'; }
+    return 'none';
+  }catch(e){ console.warn("[fb] check failed:", e); return 'error'; }
+}
+
+function showExistingResult(data){
+  show('result');
+  const jackpot = data.amount >= CAP;
+  document.getElementById('resTitle').textContent = jackpot ? '🏆 แชมป์!' : 'คุณเคยเล่นแล้ว!';
+  document.getElementById('champ').style.display = jackpot ? 'flex' : 'none';
+  document.getElementById('scoreLine').textContent = '';
+  document.getElementById('grade').textContent = data.isUsed ? '✅ ใช้คูปองเรียบร้อยแล้ว' : '⏳ ยังไม่ได้ใช้ — แสดง QR ที่ร้าน';
+  document.getElementById('amt').innerHTML = `<small>฿</small>${data.amount}`;
+  document.getElementById('jackpot').style.display = (jackpot && !data.isUsed) ? 'block' : 'none';
+  document.getElementById('codeTxt').textContent = data.code;
+  document.getElementById('copied').textContent='';
+  const rb=document.getElementById('replayBtn'); if(rb) rb.style.display='none';
+  generateCouponQR(data.code, data.amount, data.isUsed);
+  if(!data.isUsed){ subscribeToChanges(); } else { markAsUsedUI(); }
+}
+
+/* QR — payload โปร่ง (code+campaign+type) ระดับ M */
+function generateCouponQR(code, amount, isUsed){
+  const box = document.getElementById('qrcodeBox');
+  if(!box) return;
+  if(isUsed){ box.innerHTML='<div style="padding:20px;text-align:center;opacity:.5;">QR Code ถูกใช้แล้ว</div>'; return; }
+  box.innerHTML='<div id="qrcode" style="display:flex;justify-content:center;padding:14px;background:#fff;border-radius:14px;margin:10px auto;width:fit-content;"></div>';
+  const qd=document.getElementById('qrcode'); if(!qd) return;
+  const qrData = JSON.stringify({ code:code, campaign:CAMPAIGN_ID, type:SHOP_ID+"_coupon" });
+  const renderNow=()=>{ qd.innerHTML=''; new QRCode(qd,{ text:qrData, width:220, height:220, colorDark:"#000000", colorLight:"#ffffff", correctLevel:QRCode.CorrectLevel.M }); };
+  if(typeof QRCode!=='undefined'){ renderNow(); return; }
+  qd.innerHTML='<div style="padding:24px;color:#666;font-size:13px;">⏳ กำลังสร้าง QR...</div>';
+  let t=0; const tm=setInterval(()=>{ t++;
+    if(typeof QRCode!=='undefined'){ clearInterval(tm); renderNow(); return; }
+    if(t===1){ const s=document.createElement('script'); s.src='qrcode.min.js?r='+Date.now(); document.head.appendChild(s); }
+    if(t===6){ const s=document.createElement('script'); s.src='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js'; document.head.appendChild(s); }
+    if(t>20){ clearInterval(tm); qd.innerHTML='<div style="padding:18px;color:#b45309;font-size:13px;line-height:1.6;">⚠️ สร้าง QR ไม่สำเร็จ (เน็ตขัดข้อง)<br>ปิดแล้วเปิดหน้านี้ใหม่ หรือแจ้งรหัสด้านล่างกับพนักงาน</div>'; }
+  },500);
+}
+
+function showSaveWarning(){
+  const box=document.getElementById('qrcodeBox'); if(!box||document.getElementById('saveWarn')) return;
+  const d=document.createElement('div'); d.id='saveWarn';
+  d.style.cssText='margin:8px auto;padding:10px 14px;background:rgba(255,180,60,.15);border:1px solid rgba(255,180,60,.5);border-radius:10px;font-size:12.5px;line-height:1.6;color:#ffd24d;max-width:320px;text-align:center;';
+  d.innerHTML='⚠️ สัญญาณขัดข้อง — คูปองยังไม่เข้าระบบร้าน<br>เปิดหน้านี้ใหม่เมื่อสัญญาณดี ระบบจะบันทึกซ้ำอัตโนมัติ (รหัสเดิม ไม่ต้องเล่นใหม่)';
+  box.parentNode.insertBefore(d, box.nextSibling);
+}
+
+function subscribeToChanges(){
+  if(realtimeUnsubscribe || !window.firebaseReady || !lineUserId) return;
+  try{
+    const { doc, onSnapshot } = window.firebaseHelpers;
+    const ref = doc(window.firebaseDB, COLLECTION_NAME, lineUserId);
+    realtimeUnsubscribe = onSnapshot(ref, (snap)=>{
+      if(!snap.exists()) return; const d=snap.data();
+      if(d.isUsed===true && currentCouponData && !currentCouponData.isUsed){
+        currentCouponData.isUsed=true; markAsUsedUI(); showUsedToast();
+        if(realtimeUnsubscribe){ realtimeUnsubscribe(); realtimeUnsubscribe=null; }
+      }
+    }, (err)=>console.error("[rt]",err));
+  }catch(e){ console.error("[rt] setup:",e); }
+}
+function markAsUsedUI(){
+  const g=document.getElementById('grade'); if(g) g.textContent='✅ ใช้คูปองเรียบร้อยแล้ว';
+  const j=document.getElementById('jackpot'); if(j) j.style.display='none';
+  const q=document.getElementById('qrcodeBox'); if(q){ q.style.transition='opacity .5s'; q.style.opacity='.3'; }
+}
+function showUsedToast(){
+  const t=document.createElement('div');
+  t.innerHTML=`<div style="font-size:32px;margin-bottom:8px;">✅</div><div style="font-size:18px;font-weight:bold;">คูปองถูกใช้แล้ว!</div><div style="font-size:13px;opacity:.9;margin-top:4px;">ขอบคุณที่ใช้บริการ ${SHOP_EMOJI} ${SHOP_NAME}</div>`;
+  t.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.8);background:linear-gradient(135deg,#4caf50,#388e3c);color:#fff;padding:24px 32px;border-radius:16px;box-shadow:0 8px 32px rgba(76,175,80,.4);text-align:center;z-index:99999;min-width:260px;opacity:0;transition:all .4s cubic-bezier(.34,1.56,.64,1);';
+  document.body.appendChild(t);
+  setTimeout(()=>{ t.style.opacity='1'; t.style.transform='translate(-50%,-50%) scale(1)'; },50);
+  setTimeout(()=>{ t.style.opacity='0'; t.style.transform='translate(-50%,-50%) scale(.8)'; setTimeout(()=>t.remove(),400); },3000);
+}
+window.addEventListener("beforeunload", ()=>{ if(realtimeUnsubscribe){ realtimeUnsubscribe(); realtimeUnsubscribe=null; } });
+
+/* รหัสคูปอง GEISHA-XXXXXX / YOSHI-XXXXXX */
+function genCode(){
+  const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let s='';
+  for(let i=0;i<6;i++) s+=c[Math.floor(Math.random()*c.length)];
+  return SHOP_ID.toUpperCase()+'-'+s;
+}
+function copyCode(){
+  const txt=document.getElementById('codeTxt').textContent;
+  const done=()=>document.getElementById('copied').textContent='✓ คัดลอกแล้ว';
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done).catch(done);
+  else done();
+}
+function resetGame(){
+  if(!/test/i.test(location.hash+location.search) && lineUserId && !lineUserId.startsWith("test_")){
+    alert("คุณเล่นไปแล้ว 1 ครั้ง — ไม่สามารถเล่นซ้ำได้"); return;
+  }
+  if(lineUserId && lineUserId.startsWith("test_")){ localStorage.removeItem("test_user_id"); lineUserId=generateTestId(); }
+  currentCouponData=null;
+  if(realtimeUnsubscribe){ realtimeUnsubscribe(); realtimeUnsubscribe=null; }
+  startGame();
+}
+
+/* ============ screens (expire/notstart/error) ============ */
+function show(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on')); document.getElementById(id).classList.add('on'); }
+function showCampaignNotStarted(){
+  const el=document.getElementById('intro'); if(!el) return;
+  el.innerHTML=`<div style="text-align:center;padding:30px 20px;margin:auto;"><div style="font-size:64px;margin-bottom:16px;">${SHOP_EMOJI}</div><div style="font-size:24px;font-weight:bold;color:var(--gold);margin-bottom:12px;font-family:Kanit;">${SHOP_NAME}</div><div style="font-size:18px;margin:20px 0;">โปรโมชั่นยังไม่เริ่ม</div><div style="font-size:14px;opacity:.8;line-height:1.6;">เกมจะเปิดให้เล่นในวันที่<br><strong style="color:var(--gold);font-size:18px;">1 สิงหาคม 2569</strong></div></div>`;
+}
+function showCampaignExpired(){
+  const el=document.getElementById('intro'); if(!el) return;
+  el.innerHTML=`<div style="text-align:center;padding:30px 20px;margin:auto;"><div style="font-size:64px;margin-bottom:16px;">${SHOP_EMOJI}</div><div style="font-size:24px;font-weight:bold;color:var(--gold);margin-bottom:12px;font-family:Kanit;">${SHOP_NAME}</div><div style="font-size:60px;margin:20px 0;">😢</div><div style="font-size:20px;font-weight:bold;margin-bottom:12px;">โปรโมชั่นจบแล้วค่ะ</div><div style="font-size:14px;opacity:.8;line-height:1.6;">เกมสิ้นสุดเมื่อ<br><strong style="color:var(--gold);">31 สิงหาคม 2569</strong></div><div style="background:rgba(255,255,255,.05);border:1px dashed rgba(255,210,77,.4);border-radius:14px;padding:16px;margin:24px 0;"><div style="font-size:13px;opacity:.8;margin-bottom:6px;">📢 ติดตามโปรโมชั่นใหม่ๆ</div><div style="font-size:14px;">ทาง LINE OA: <strong style="color:var(--gold);">${SHOP_NAME}</strong></div></div></div>`;
+}
+function showErrorScreen(title,msg){
+  const el=document.getElementById('intro'); if(!el) return;
+  el.innerHTML=`<div style="text-align:center;padding:30px 20px;margin:auto;"><div style="font-size:48px;margin-bottom:16px;">⚠️</div><div style="font-size:20px;font-weight:bold;margin-bottom:12px;font-family:Kanit;">${title}</div><div style="font-size:14px;opacity:.8;line-height:1.6;">${msg}</div></div>`;
+}
+
+/* ============ sound + effects ============ */
+function audio(){ if(!audioCtx){ try{ audioCtx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(audioCtx&&audioCtx.state==='suspended') audioCtx.resume(); }
+function beep(freq,dur,vol){ if(!soundOn||!audioCtx) return; try{ const o=audioCtx.createOscillator(),g=audioCtx.createGain(); o.frequency.value=freq; o.type='sine'; g.gain.value=vol||.08; o.connect(g); g.connect(audioCtx.destination); o.start(); g.gain.exponentialRampToValueAtTime(.0001, audioCtx.currentTime+(dur||.06)); o.stop(audioCtx.currentTime+(dur||.06)); }catch(e){} }
+function toggleSound(){ soundOn=!soundOn; document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇'; if(soundOn) audio(); }
+function flashGold(){ const g=document.getElementById('goldflash'); g.classList.remove('go'); void g.offsetWidth; g.classList.add('go'); }
+
+function confetti(scale){
+  const cv=document.getElementById('fxCanvas'); const ctx=cv.getContext('2d');
+  cv.width=innerWidth; cv.height=innerHeight;
+  const N=Math.round((scale||1)*120); const cols=['#ffd24d','#23e07f','#ff5d5d','#fff','#f0a312','#2f6d8f'];
+  const ps=[]; for(let i=0;i<N;i++) ps.push({ x:innerWidth/2+(Math.random()*120-60), y:innerHeight/2-60, vx:Math.random()*8-4, vy:Math.random()*-10-4, g:.3+Math.random()*.2, c:cols[i%cols.length], s:4+Math.random()*5, r:Math.random()*6, vr:Math.random()*.4-.2, life:1 });
+  let t0=performance.now();
+  (function loop(now){
+    const dt=Math.min((now-t0)/16,2); t0=now; ctx.clearRect(0,0,cv.width,cv.height); let alive=false;
+    for(const p of ps){ if(p.life<=0) continue; alive=true; p.vy+=p.g*dt; p.x+=p.vx*dt; p.y+=p.vy*dt; p.r+=p.vr*dt; p.life-=0.006*dt;
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.r); ctx.globalAlpha=Math.max(p.life,0); ctx.fillStyle=p.c; ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s*1.6); ctx.restore(); }
+    if(alive) requestAnimationFrame(loop); else ctx.clearRect(0,0,cv.width,cv.height);
+  })(t0);
+}
+
+/* mini board แอนิเมชันหน้า intro */
+function drawMiniBoard(){
+  const cv=document.getElementById('miniBoard'); if(!cv) return; const ctx=cv.getContext('2d');
+  const W=cv.width,H=cv.height; const pegsM=[];
+  for(let r=0;r<5;r++){ const n=r+3,y=20+r*22,gap=26,x0=W/2-gap*(n-1)/2; for(let i=0;i<n;i++) pegsM.push({x:x0+i*gap,y}); }
+  let by=4,bx=W/2,bvx=0,bvy=0;
+  (function loop(){
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle='#22d3ee'; ctx.shadowColor='#22d3ee'; ctx.shadowBlur=5; for(const p of pegsM){ ctx.beginPath(); ctx.arc(p.x,p.y,3,0,7); ctx.fill(); } ctx.shadowBlur=0;
+    // slots
+    const cols=['#5b21b6','#7c2fd6','#ff2e9a','#a21caf','#22d3ee']; const sw=W/5;
+    for(let i=0;i<5;i++){ ctx.fillStyle=cols[i]; ctx.fillRect(sw*i+2,H-16,sw-4,12); }
+    bvy+=0.25; bx+=bvx; by+=bvy;
+    for(const p of pegsM){ const dx=bx-p.x,dy=by-p.y,d=Math.hypot(dx,dy); if(d<9&&d>0){ const nx=dx/d,ny=dy/d; bx+=nx*(9-d); by+=ny*(9-d); const dot=bvx*nx+bvy*ny; bvx-=1.5*dot*nx; bvy-=1.5*dot*ny; bvx+=Math.random()*1-.5; } }
+    if(bx<6){bx=6;bvx*=-.5;} if(bx>W-6){bx=W-6;bvx*=-.5;}
+    ctx.beginPath(); ctx.arc(bx,by,6,0,7); const g=ctx.createRadialGradient(bx-2,by-2,1,bx,by,6); g.addColorStop(0,'#fff'); g.addColorStop(1,'#ff2e9a'); ctx.fillStyle=g; ctx.shadowColor='#ff2e9a'; ctx.shadowBlur=8; ctx.fill(); ctx.shadowBlur=0;
+    if(by>H-10){ by=4; bx=W/2+(Math.random()*40-20); bvx=0; bvy=0; }
+    requestAnimationFrame(loop);
+  })();
+}
+</script>
+
+</body>
+</html>
