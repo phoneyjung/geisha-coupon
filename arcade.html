@@ -318,11 +318,12 @@ function generateTestId(){ return "test_"+Math.random().toString(36).slice(2,11)
 /* ============================================================
    PLINKO ENGINE — physics + locked outcome
    ============================================================ */
-const ROWS = 9;               // จำนวนแถวหมุด
+const ROWS = 10;              // จำนวนแถวหมุด (เต็มพื้นที่)
 let BW=380, BH=460;           // ขนาด canvas (set จาก attr)
-let pegs=[], slots=[], ball=null, anim=null;
+let pegs=[], gears=[], slots=[], ball=null, anim=null;
+let gearSpin=0;            // มุมหมุนเฟือง (เพิ่มทุกเฟรม)
 let slotXs=[];                // กึ่งกลาง x ของแต่ละช่อง
-const PEG_R=5, BALL_R=9;
+const PEG_R=5, BALL_R=8, GEAR_R=15;   // เฟืองใหญ่กว่าหมุด
 
 function startGame(){
   if(!window._initDone) return;
@@ -355,22 +356,40 @@ function rollPrize(){
 function buildBoard(){
   const cv = document.getElementById('board');
   BW = cv.width; BH = cv.height;
-  pegs = [];
-  const topPad = 78, botPad = 86;   // topPad เพิ่ม เผื่อรางปล่อย + aimer
+  pegs = []; gears = [];
+  const topPad = 80, botPad = 86;   // เผื่อรางปล่อย + aimer
   const usableH = BH - topPad - botPad;
   const rowGap = usableH / (ROWS-1);
   const nSlots = SLOT_ORDER.length;
-  const sideMargin = 10;                       // กันล้นขอบ
-  const colGap = (BW - sideMargin*2) / (nSlots+1);
-
+  const sideMargin = 10;
+  // diamond grid: ทุกแถวเต็มความกว้าง สลับ offset ครึ่งช่อง (Plinko แท้)
+  const cols = nSlots;                          // จำนวนคอลัมน์หลัก = จำนวนช่อง
+  const pegGap = (BW - sideMargin*2) / cols;    // ระยะห่างแนวนอน
   for(let row=0; row<ROWS; row++){
-    const count = row + 3;                 // หมุดเพิ่มลงล่าง
     const y = topPad + row*rowGap;
-    const spread = colGap * (count-1);
-    const x0 = BW/2 - spread/2;
-    for(let i=0;i<count;i++){
-      pegs.push({ x: x0 + i*colGap, y });
+    const odd = row % 2;                         // แถวคี่เลื่อนครึ่งช่อง
+    const startX = sideMargin + pegGap*(odd?1:0.5);
+    const n = odd ? cols : cols+1;               // สลับจำนวนให้เต็มขอบ
+    for(let i=0;i<n;i++){
+      const x = startX + i*pegGap;
+      if(x < sideMargin+3 || x > BW-sideMargin-3) continue;
+      pegs.push({ x, y });
     }
+  }
+  // ⚙️ เฟืองหมุน — วางเป็นจุดเด่น 5 ตัว กลางกระดาน (สลับทิศหมุน)
+  const gearRows = [2, 4, 4, 6, 7];
+  const gearColsArr = [ [0.5], [0.25,0.75], [], [0.4,0.6], [0.5] ];
+  let gi=0;
+  const gpos = [
+    {r:3, c:0.3}, {r:3, c:0.7},
+    {r:5, c:0.5},
+    {r:7, c:0.28}, {r:7, c:0.72}
+  ];
+  for(const g of gpos){
+    const y = topPad + g.r*rowGap;
+    const x = sideMargin + (BW-sideMargin*2)*g.c;
+    gears.push({ x, y, dir: (gi%2===0?1:-1), r:GEAR_R });
+    gi++;
   }
   // ช่องล่าง
   slots = []; slotXs = [];
@@ -426,6 +445,8 @@ function drawBoard(highlightSlot, aimXpos){
     ctx.fillStyle='#22d3ee'; ctx.shadowColor='#22d3ee'; ctx.shadowBlur=8; ctx.fill(); ctx.shadowBlur=0;
     ctx.beginPath(); ctx.arc(p.x-1.5,p.y-1.5,1.6,0,7); ctx.fillStyle='rgba(255,255,255,.9)'; ctx.fill();
   }
+  // ⚙️ เฟืองหมุน
+  for(const g of gears){ drawGear(ctx, g.x, g.y, g.r, gearSpin*g.dir, g.dir); }
   // ช่อง
   const palette = { 50:'#3b1d6e',100:'#5b21b6',150:'#7c2fd6',200:'#a21caf',250:'#c026d3',300:'#ff2e9a' };
   for(let i=0;i<slots.length;i++){
@@ -457,6 +478,33 @@ function drawBoard(highlightSlot, aimXpos){
 
 function roundRect(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
 
+/* ⚙️ วาดเฟืองหมุน — ฟันเฟือง + แกนกลาง เรืองแสงม่วง/ชมพู */
+function drawGear(ctx, cx, cy, r, angle, dir){
+  const teeth = 9, inner = r*0.62, toothH = r*0.34;
+  ctx.save(); ctx.translate(cx, cy); ctx.rotate(angle);
+  // ตัวเฟือง (ฟัน)
+  ctx.beginPath();
+  for(let i=0;i<teeth;i++){
+    const a0 = (i/teeth)*Math.PI*2, a1=((i+0.5)/teeth)*Math.PI*2, a2=((i+1)/teeth)*Math.PI*2;
+    ctx.lineTo(Math.cos(a0)*(r+toothH), Math.sin(a0)*(r+toothH));
+    ctx.lineTo(Math.cos(a1)*r, Math.sin(a1)*r);
+    ctx.lineTo(Math.cos(a2)*(r+toothH), Math.sin(a2)*(r+toothH));
+  }
+  ctx.closePath();
+  const grad = ctx.createRadialGradient(0,0,inner*0.4, 0,0,r+toothH);
+  grad.addColorStop(0, dir>0?'#c026d3':'#7c2fd6'); grad.addColorStop(1, dir>0?'#ff2e9a':'#a855f7');
+  ctx.fillStyle=grad; ctx.shadowColor=dir>0?'#ff2e9a':'#a855f7'; ctx.shadowBlur=14; ctx.fill();
+  ctx.shadowBlur=0; ctx.lineWidth=1.5; ctx.strokeStyle='rgba(255,255,255,.4)'; ctx.stroke();
+  // วงใน
+  ctx.beginPath(); ctx.arc(0,0,inner,0,7); ctx.fillStyle='rgba(10,1,24,.9)'; ctx.fill();
+  ctx.lineWidth=2; ctx.strokeStyle='rgba(255,255,255,.55)'; ctx.stroke();
+  // แกน 3 ซี่ (ให้เห็นว่าหมุน)
+  ctx.strokeStyle='rgba(34,211,238,.85)'; ctx.lineWidth=2.5;
+  for(let i=0;i<3;i++){ const a=(i/3)*Math.PI*2; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(Math.cos(a)*inner*0.8, Math.sin(a)*inner*0.8); ctx.stroke(); }
+  ctx.beginPath(); ctx.arc(0,0,2.5,0,7); ctx.fillStyle='#22d3ee'; ctx.fill();
+  ctx.restore();
+}
+
 /* ===== Launch Aimer — ตัวชี้จุดปล่อยวิ่งซ้าย-ขวา ===== */
 function startAimer(){
   aimActive = true;
@@ -465,6 +513,7 @@ function startAimer(){
   cancelAnimationFrame(aimRAF);
   function loop(){
     if(!aimActive){ return; }
+    gearSpin += 0.05;                       // ⚙️ เฟืองหมุนตอนเล็ง
     aimX += aimDir * (BW/150);              // ความเร็วกวาด
     if(aimX>=maxX){ aimX=maxX; aimDir=-1; }
     if(aimX<=minX){ aimX=minX; aimDir=1; }
@@ -512,15 +561,23 @@ function dropBall(){
   let lastRow=-1, landed=false;
 
   cancelAnimationFrame(anim);
+  let stepCount=0;
   function step(){
     if(ball.settled) return;
+    gearSpin += 0.08;                          // ⚙️ หมุนเฟือง
+    stepCount++;
+    // กันค้างนาน (เฟืองสะบัดแรง) — เกิน ~7 วิ บังคับลงเป้า
+    if(stepCount > 420){
+      ball.settled=true; ball.x=targetX; ball.y=BH-78;
+      drawBoard(tgtIdx); onBallLanded(lockedPrize, tgtIdx); return;
+    }
 
     ball.vy += GRAV;
 
     // โซนเหนือหมุด: ตกอิสระเกือบล้วน (ไกด์เบามาก) — ดูธรรมชาติ
     // โซนหมุด→ช่อง: เพิ่ม bias ด้านข้างทีละนิด ผ่าน "ความเร่ง" ไม่ใช่ v;
     const prog = Math.max(0, Math.min(1, (ball.y - 78) / (slotTopY - 120)));
-    const guideAccel = (targetX - ball.x) * (0.0009 + prog*0.0026);
+    const guideAccel = (targetX - ball.x) * (0.0012 + prog*0.0042);
     ball.vx += guideAccel;
 
     ball.vx *= (ball.y < slotTopY-40 ? FRICT : 0.985);
@@ -549,6 +606,22 @@ function dropBall(){
       }
     }
 
+    // ⚙️ ชนเฟือง — เด้งแรง + สะบัดตามทิศหมุน (ดูสมจริง มีพลัง)
+    for(const g of gears){
+      const dx=ball.x-g.x, dyy=ball.y-g.y; const dist=Math.hypot(dx,dyy); const min=g.r+BALL_R+2;
+      if(dist<min && dist>0.01){
+        const nx=dx/dist, ny=dyy/dist; const overlap=min-dist;
+        ball.x += nx*overlap; ball.y += ny*overlap;
+        const dot=ball.vx*nx+ball.vy*ny;
+        if(dot<0){ ball.vx -= (1+0.78)*dot*nx; ball.vy -= (1+0.78)*dot*ny; }   // เด้งแรงกว่าหมุด
+        // สะบัดตามทิศหมุนเฟือง (แทนเจนต์) — ทำให้กระเด็งมีชีวิต
+        const tx=-ny*g.dir, ty=nx*g.dir;
+        ball.vx += tx*1.9; ball.vy += ty*1.0;
+        // bias ไปเป้านิดเดียว (คงผลล็อก)
+        ball.vx += (targetX>ball.x?1:-1)*0.3;
+        beep(300+Math.random()*120,.05,.09);   // เสียงเฟือง (ต่ำ กึก)
+      }
+    }
     // ผนัง — เด้งนุ่ม
     if(ball.x<BALL_R){ ball.x=BALL_R; ball.vx=Math.abs(ball.vx)*REST; }
     if(ball.x>BW-BALL_R){ ball.x=BW-BALL_R; ball.vx=-Math.abs(ball.vx)*REST; }
