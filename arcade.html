@@ -177,8 +177,8 @@
         <span class="chip">฿<b id="runAmt">0</b></span>
       </div>
       <canvas id="board" width="380" height="460"></canvas>
-      <div class="dropHint" id="dropHint">▸ กดปุ่มเพื่อหยอดลูก 🪙</div>
-      <div style="width:100%;max-width:380px;"><button class="btn gold" id="dropBtn" onclick="dropBall()">▸ PLAY ◂ ปล่อยลูก</button></div>
+      <div class="dropHint" id="dropHint">👆 เลือกช่องปล่อย แล้วกดปุ่ม!</div>
+      <div style="width:100%;max-width:380px;"><button class="btn gold" id="dropBtn" onclick="dropBall()">▸ ปล่อยลูก! ◂</button></div>
     </div>
   </section>
 
@@ -249,6 +249,7 @@ let currentCouponData=null, realtimeUnsubscribe=null;
 let soundOn=true, audioCtx=null;
 let lockedPrize=null;     // ⭐ เลขที่ล็อกไว้ (ผลจริง)
 let dropping=false;
+let aimX=0, aimDir=1, aimRAF=null, aimActive=false;   // ⭐ launch aimer
 
 window.addEventListener('load', initLine);
 
@@ -337,7 +338,9 @@ function startGame(){
   document.getElementById('dropBtn').disabled = false;
   document.getElementById('dropBtn').style.opacity = '';
   buildBoard();
+  bindBoardAim();        // ⭐ แตะกระดานเลือกจุดปล่อยเอง
   dropping = false;
+  startAimer();          // ⭐ ตัวชี้จุดปล่อยวิ่งซ้าย-ขวา
 }
 
 /* สุ่มรางวัลตามน้ำหนัก (ผลจริง) */
@@ -353,7 +356,7 @@ function buildBoard(){
   const cv = document.getElementById('board');
   BW = cv.width; BH = cv.height;
   pegs = [];
-  const topPad = 56, botPad = 86;
+  const topPad = 78, botPad = 86;   // topPad เพิ่ม เผื่อรางปล่อย + aimer
   const usableH = BH - topPad - botPad;
   const rowGap = usableH / (ROWS-1);
   const nSlots = SLOT_ORDER.length;
@@ -389,9 +392,34 @@ function targetSlotIndex(){
   return idxs[Math.floor(Math.random()*idxs.length)];   // ถ้ามีหลายช่องค่าเดียวกัน สุ่ม
 }
 
-function drawBoard(highlightSlot){
+function drawBoard(highlightSlot, aimXpos){
   const cv = document.getElementById('board'); const ctx = cv.getContext('2d');
   ctx.clearRect(0,0,BW,BH);
+
+  // ⭐ Launch Aimer — กรอบเรืองแสง + นิ้วชี้ + เส้นนำปล่อย
+  if(typeof aimXpos==='number'){
+    const ax = aimXpos, ayTop = 6, slotTopY = BH-78;
+    // เส้นนำประ (ตั้งแต่บนลงล่าง) เรืองแสง cyan
+    ctx.save();
+    ctx.setLineDash([6,8]); ctx.lineWidth=2;
+    ctx.strokeStyle='rgba(34,211,238,.55)'; ctx.shadowColor='#22d3ee'; ctx.shadowBlur=8;
+    ctx.beginPath(); ctx.moveTo(ax, 40); ctx.lineTo(ax, slotTopY-30); ctx.stroke();
+    ctx.restore();
+    // กรอบเรืองแสงรอบจุดปล่อย
+    ctx.save();
+    ctx.shadowColor='#ff2e9a'; ctx.shadowBlur=16;
+    ctx.strokeStyle='#ff2e9a'; ctx.lineWidth=3;
+    roundRect(ctx, ax-22, ayTop+18, 44, 30, 9); ctx.stroke();
+    ctx.restore();
+    // ลูกตัวอย่าง (พรีวิว) ในกรอบ
+    ctx.beginPath(); ctx.arc(ax, ayTop+33, BALL_R-1, 0, 7);
+    const pg=ctx.createRadialGradient(ax-2,ayTop+31,1,ax,ayTop+33,BALL_R);
+    pg.addColorStop(0,'#fff'); pg.addColorStop(1,'#ff2e9a'); ctx.fillStyle=pg; ctx.fill();
+    // นิ้วชี้ 👆 ใต้กรอบ
+    ctx.font='18px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('👇', ax, ayTop+60);
+  }
+
   // หมุด
   for(const p of pegs){
     ctx.beginPath(); ctx.arc(p.x,p.y,PEG_R,0,7);
@@ -429,10 +457,45 @@ function drawBoard(highlightSlot){
 
 function roundRect(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
 
-/* ปล่อยลูก — บอลเด้งหมุดสมจริง แต่ค่อยๆ ดึงไปช่องเป้าหมาย */
+/* ===== Launch Aimer — ตัวชี้จุดปล่อยวิ่งซ้าย-ขวา ===== */
+function startAimer(){
+  aimActive = true;
+  const minX = BALL_R+6, maxX = BW-BALL_R-6;
+  aimX = BW/2; aimDir = 1;
+  cancelAnimationFrame(aimRAF);
+  function loop(){
+    if(!aimActive){ return; }
+    aimX += aimDir * (BW/150);              // ความเร็วกวาด
+    if(aimX>=maxX){ aimX=maxX; aimDir=-1; }
+    if(aimX<=minX){ aimX=minX; aimDir=1; }
+    drawBoard(undefined, aimX);
+    aimRAF = requestAnimationFrame(loop);
+  }
+  aimRAF = requestAnimationFrame(loop);
+}
+function stopAimer(){ aimActive=false; cancelAnimationFrame(aimRAF); }
+
+// แตะ/คลิกบนกระดานเพื่อตั้งจุดปล่อยเอง (หยุด aimer ค้างจุดนั้น)
+function bindBoardAim(){
+  const cv = document.getElementById('board');
+  if(cv.__aimBound) return; cv.__aimBound = true;
+  const setX = (clientX)=>{
+    if(dropping) return;
+    const r = cv.getBoundingClientRect();
+    const x = (clientX - r.left) * (BW / r.width);
+    aimX = Math.max(BALL_R+6, Math.min(BW-BALL_R-6, x));
+    aimActive = false; cancelAnimationFrame(aimRAF);
+    drawBoard(undefined, aimX);
+  };
+  cv.addEventListener('click', e=> setX(e.clientX));
+  cv.addEventListener('touchstart', e=>{ if(e.touches[0]) setX(e.touches[0].clientX); }, {passive:true});
+}
+
+/* ปล่อยลูก — physics ลื่นเป็นธรรมชาติ + ไกด์เนียนไปช่องเป้า */
 function dropBall(){
   if(dropping || !window._initDone) return;
   dropping = true;
+  stopAimer();
   audio(); beep(520,.05);
   document.getElementById('dropBtn').disabled = true;
   document.getElementById('dropBtn').style.opacity = '.5';
@@ -440,52 +503,81 @@ function dropBall(){
 
   const tgtIdx = targetSlotIndex();
   const targetX = slotXs[tgtIdx];
-  ball = { x: BW/2 + (Math.random()*16-8), y: 30, vx:0, vy:0, settled:false };
-  const GRAV=0.42, REST=0.55, FRICT=0.992, GUIDE=0.00018;
-  let lastRow=-1;
+  const launchX = aimX || BW/2;
+  ball = { x: launchX, y: 40, vx:(Math.random()*0.6-0.3), vy:0, settled:false, rot:0 };
+
+  // ฟิสิกส์: ลื่น เด้งสมจริง — ไกด์แบบนุ่มมาก (ความเร่งด้านข้าง ไม่กระชากตำแหน่ง)
+  const GRAV=0.34, REST=0.62, FRICT=0.995, AIRX=0.999;
+  const slotTopY = BH-78;
+  let lastRow=-1, landed=false;
 
   cancelAnimationFrame(anim);
   function step(){
-    if(ball.settled){ return; }
-    // แรงโน้มถ่วง + ไกด์ไปเป้าหมาย (อ่อนๆ — มองไม่ออก)
-    ball.vy += GRAV;
-    const dy = ball.y / BH;                       // ยิ่งลงล่าง ไกด์ยิ่งแรงนิด
-    ball.vx += (targetX - ball.x) * GUIDE * (0.4 + dy);
-    ball.vx *= FRICT;
-    ball.x += ball.vx; ball.y += ball.vy;
+    if(ball.settled) return;
 
-    // ชนหมุด
+    ball.vy += GRAV;
+
+    // โซนเหนือหมุด: ตกอิสระเกือบล้วน (ไกด์เบามาก) — ดูธรรมชาติ
+    // โซนหมุด→ช่อง: เพิ่ม bias ด้านข้างทีละนิด ผ่าน "ความเร่ง" ไม่ใช่ v;
+    const prog = Math.max(0, Math.min(1, (ball.y - 78) / (slotTopY - 120)));
+    const guideAccel = (targetX - ball.x) * (0.0009 + prog*0.0026);
+    ball.vx += guideAccel;
+
+    ball.vx *= (ball.y < slotTopY-40 ? FRICT : 0.985);
+    ball.x += ball.vx; ball.y += ball.vy;
+    ball.rot += ball.vx*0.08;
+
+    // ชนหมุด — สะท้อนตามฟิสิกส์จริง + กระเด้งเล็กน้อยตามธรรมชาติ
     for(const p of pegs){
       const dx=ball.x-p.x, dyy=ball.y-p.y; const dist=Math.hypot(dx,dyy); const min=PEG_R+BALL_R;
-      if(dist<min && dist>0){
+      if(dist<min && dist>0.01){
         const nx=dx/dist, ny=dyy/dist;
         const overlap=min-dist;
         ball.x += nx*overlap; ball.y += ny*overlap;
         const dot=ball.vx*nx+ball.vy*ny;
-        ball.vx -= (1+REST)*dot*nx; ball.vy -= (1+REST)*dot*ny;
-        // เด้งให้เอียงไปทางเป้านิดหน่อย
-        ball.vx += (targetX>ball.x?1:-1)*0.18 + (Math.random()*0.5-0.25);
-        const row = Math.round((p.y-56)/((BH-142)/(ROWS-1)));
-        if(row!==lastRow){ lastRow=row; beep(680+row*18,.03,.04); }
+        if(dot<0){
+          ball.vx -= (1+REST)*dot*nx;
+          ball.vy -= (1+REST)*dot*ny;
+        }
+        // สุ่มเล็กน้อย + เอนไปทางเป้านิดเดียว (ธรรมชาติ ไม่ฝืน)
+        const bias = (targetX>ball.x?1:-1) * 0.22;
+        ball.vx += bias + (Math.random()*0.7-0.35);
+        // กันบอลค้างนิ่งบนหมุด
+        if(Math.abs(ball.vx)<0.4) ball.vx += (Math.random()<.5?-1:1)*0.7;
+        const row = Math.round((p.y-78)/((BH-164)/(ROWS-1)));
+        if(row!==lastRow){ lastRow=row; beep(620+row*22,.025,.05); }
       }
     }
-    // ผนัง
+
+    // ผนัง — เด้งนุ่ม
     if(ball.x<BALL_R){ ball.x=BALL_R; ball.vx=Math.abs(ball.vx)*REST; }
     if(ball.x>BW-BALL_R){ ball.x=BW-BALL_R; ball.vx=-Math.abs(ball.vx)*REST; }
 
-    // ถึงโซนช่อง → ล็อกเข้าเป้า
-    if(ball.y > BH-92){
-      ball.vx += (targetX-ball.x)*0.08;          // ดูดเข้ากลางช่อง
-      ball.x += (targetX-ball.x)*0.18;
+    // เข้าโซนช่อง (ใต้หมุดแถวล่างสุด): นำทางเข้ากลางช่องแบบ "สปริงนุ่ม"
+    // ใช้แรงดึงผ่านความเร่ง + หน่วง ทำให้ดูเหมือนกลิ้งลงร่อง ไม่ใช่วาร์ป
+    if(ball.y > slotTopY-44){
+      const k=0.06, damp=0.80;                       // สปริง+แดมป์
+      ball.vx += (targetX - ball.x)*k;
+      ball.vx *= damp;
+      // กั้นข้างช่อง (divider) ให้รู้สึกมีร่อง
     }
-    drawBoard();
 
-    if(ball.y >= BH-78){
-      ball.y = BH-78; ball.settled=true;
-      ball.x = targetX;
-      drawBoard(tgtIdx);
-      onBallLanded(lockedPrize, tgtIdx);
-      return;
+    drawBoard(ball.y>slotTopY-10 ? tgtIdx : undefined);
+
+    // ตกถึงก้นช่อง
+    if(ball.y >= slotTopY){
+      // ให้บอลตกนิ่งกลางช่องแบบ settle (เด้งเบาๆ 1-2 ที)
+      ball.y = slotTopY;
+      if(!landed){
+        landed=true;
+        ball.vy *= -0.28;                            // เด้งกลับเบาๆ ครั้งสุดท้าย
+        ball.vx *= 0.5;
+        if(Math.abs(ball.vy)<1.2 && Math.abs(ball.x-targetX)<4){
+          ball.settled=true; ball.x=targetX;
+          drawBoard(tgtIdx); onBallLanded(lockedPrize, tgtIdx); return;
+        }
+        landed=false;                                // เด้งต่ออีกนิดถ้ายังแรง
+      }
     }
     anim = requestAnimationFrame(step);
   }
