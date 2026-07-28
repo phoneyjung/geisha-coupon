@@ -104,7 +104,13 @@ canvas#ekg{ width:100%; height:110px; display:block; }
 .ht-ring{ position:absolute; inset:6px; border-radius:50%; border:3px solid rgba(255,93,158,.65); animation:guidePulse 1.09s ease-out infinite; }
 .ht-heart{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:44px; }
 .ht-finger{ position:absolute; left:56%; top:52%; font-size:34px; animation:htTap 1.09s ease-in-out infinite; filter:drop-shadow(0 3px 6px rgba(0,0,0,.25)); }
-@keyframes htTap{ 0%,100%{ transform:translate(6px,14px) scale(1); } 50%{ transform:translate(0,2px) scale(.88); } }
+@keyframes htTap{
+  0%{ transform:translate(0,2px) scale(.86); }      /* 👇 กดพอดีวงบีบสุด */
+  14%{ transform:translate(0,2px) scale(.86); }
+  38%{ transform:translate(7px,15px) scale(1); }    /* ยกนิ้วขึ้น */
+  78%{ transform:translate(7px,15px) scale(1); }
+  100%{ transform:translate(0,2px) scale(.86); }    /* ลงมากดรอบใหม่ */
+}
 /* 👆 นิ้วบอกจุดกดตอนเริ่มเล่น */
 .taphint{ position:absolute; left:58%; top:58%; font-size:44px; pointer-events:none; animation:htTap 1.09s ease-in-out infinite; filter:drop-shadow(0 4px 8px rgba(0,0,0,.3)); z-index:5; }
 .heart-fx{ position:fixed; font-size:22px; pointer-events:none; z-index:9999; animation:heartUp 1.15s ease-out forwards; }
