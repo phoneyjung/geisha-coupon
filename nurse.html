@@ -50,7 +50,10 @@ h1,h2,.kanit{ font-family:'Kanit',sans-serif; }
 .shoplogo{ height:64px; max-width:60vw; object-fit:contain; filter:drop-shadow(0 4px 12px rgba(224,64,127,.25)); }
 .shoplogo.sm{ height:40px; }
 .hero .big{ font-size:56px; line-height:1; }
-.hero h1{ font-size:27px; color:var(--pink-deep); margin:10px 0 2px; text-shadow:0 2px 14px rgba(255,93,158,.3); }
+.hero h1{ font-size:28px; margin:8px 0 4px; letter-spacing:.3px; background:linear-gradient(110deg,#d63d78,#a92355 58%,#e63946); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; filter:drop-shadow(0 2px 10px rgba(214,61,120,.22)); }
+.pulse-art{ width:min(235px,68vw); height:44px; display:block; margin:4px auto 0; filter:drop-shadow(0 2px 8px rgba(230,57,70,.22)); }
+.promo-chip{ display:inline-block; margin-top:12px; padding:9px 18px; border-radius:999px; background:linear-gradient(135deg,#ffffff,#fff5f8); border:1.5px solid #f0c6d4; color:#8a5468; font-size:13.5px; box-shadow:0 4px 14px rgba(224,64,127,.12); }
+.promo-chip b{ color:#e0407f; font-family:'Kanit'; font-size:16px; }
 .hero .sub{ font-size:14px; line-height:1.7; color:#8a6478; }
 .card{ background:#fff; border:2px solid #ffd3e4; border-radius:20px; padding:16px; margin-top:14px; box-shadow:0 8px 24px rgba(224,64,127,.12); }
 .rule{ font-size:13.5px; line-height:1.9; opacity:.92; }
@@ -77,8 +80,12 @@ canvas#ekg{ width:100%; height:110px; display:block; }
 /* pump zone */
 .pumpzone{ position:relative; display:flex; justify-content:center; align-items:center; margin:14px auto 4px; width:190px; height:190px; }
 .guide{ position:absolute; inset:0; border-radius:50%; border:3.5px solid rgba(230,57,70,.7); animation:none; pointer-events:none; }  /* ⭐ FIX: วงจังหวะห้ามบังปุ่ม — นิ้วทะลุผ่าน */
-.guide.beat{ animation:guidePulse .545s ease-out infinite; }
-@keyframes guidePulse{ 0%{ transform:scale(.86); opacity:.95; } 55%{ transform:scale(1.06); opacity:.35; } 100%{ transform:scale(.86); opacity:.95; } }
+.guide.beat{ animation:guidePulse .545s linear infinite; }
+@keyframes guidePulse{
+  0%{ transform:scale(1.24); opacity:.12; }   /* เริ่มใหญ่+จาง */
+  70%{ opacity:.65; }
+  100%{ transform:scale(.84); opacity:1; }    /* 👇 หุบชนขอบแดงพอดี = จังหวะกด */
+}
 .pump{ width:150px; height:150px; border-radius:50%; border:5px solid #e63946; background:radial-gradient(circle at 34% 30%, #ffffff, #fff3f5 55%, #ffe1e6); font-size:56px; box-shadow:0 10px 28px rgba(230,57,70,.35), inset 0 -8px 18px rgba(230,57,70,.08); cursor:pointer; transition:transform .07s; touch-action:manipulation; user-select:none; }
 .pump:active{ transform:scale(.9); }
 .pump:disabled{ filter:grayscale(.6); opacity:.6; }
@@ -103,7 +110,7 @@ canvas#ekg{ width:100%; height:110px; display:block; }
 
 /* 👀 เดโม่วิธีเล่น (หน้าแรก) */
 .howto{ position:relative; width:110px; height:110px; margin:4px auto 0; }
-.ht-ring{ position:absolute; inset:6px; border-radius:50%; border:3px solid rgba(230,57,70,.7); animation:guidePulse 1.09s ease-out infinite; }
+.ht-ring{ position:absolute; inset:6px; border-radius:50%; border:3px solid rgba(230,57,70,.9); animation:guidePulse 1.09s linear infinite; }
 .ht-heart{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:44px; }
 .ht-finger{ position:absolute; left:56%; top:52%; font-size:34px; animation:htTap 1.09s ease-in-out infinite; filter:drop-shadow(0 3px 6px rgba(0,0,0,.25)); }
 @keyframes htTap{
@@ -129,10 +136,17 @@ canvas#ekg{ width:100%; height:110px; display:block; }
   <!-- INTRO -->
   <div class="screen on" id="intro">
     <div class="hero">
-      <img class="shoplogo" data-logo alt="logo" style="margin-bottom:6px;">
-      <div class="big">👩‍⚕️💓</div>
+      <img class="shoplogo" data-logo alt="logo" style="margin-bottom:8px;">
+      <svg class="pulse-art" viewBox="0 0 240 44" aria-hidden="true">
+        <defs><linearGradient id="pgrad" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#f3b6c8"/><stop offset=".55" stop-color="#e0407f"/><stop offset="1" stop-color="#e63946"/>
+        </linearGradient></defs>
+        <path d="M4 24 H70 L82 24 91 7 101 39 109 24 H166" fill="none" stroke="url(#pgrad)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M198 15.5c-3.4-6.8-13.6-5.3-13.6 2.4 0 5.3 6.6 9.9 13.6 15.2 7-5.3 13.6-9.9 13.6-15.2 0-7.7-10.2-9.2-13.6-2.4z" fill="url(#pgrad)"/>
+      </svg>
       <h1>ใจวาย...ให้น้องช่วยปั๊ม</h1>
-      <div class="sub">เดินเข้าร้านมาเจอน้องพยาบาล Geisha SPA<br>น่ารักจน<b style="color:var(--pink);">หัวใจหยุดเต้น!</b> 🫨</div>
+      <div class="sub">เห็นน้องพยาบาล Geisha SPA แล้วใจเต้นแรงขนาดนี้<br><b style="color:var(--pink-deep);">ต้องให้น้องช่วยปลอบหัวใจสักหน่อยแล้วค่ะ</b></div>
+      <div class="promo-chip">ร่วมสนุก · ลุ้นรับส่วนลดสูงสุด <b>฿300</b> จากราคาปกติ</div>
     </div>
     <div class="card" style="text-align:center; padding:14px 12px;">
       <div style="font-family:'Kanit'; font-size:14px; color:var(--pink-deep); margin-bottom:6px;"><span style="color:#e63946;">✚</span> วิธีเล่น — แตะตามจังหวะวงแดง</div>
