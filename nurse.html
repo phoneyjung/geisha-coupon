@@ -35,29 +35,29 @@
 </script>
 
 <style>
-:root{ --pink:#ff5d9e; --pink-deep:#e0407f; --gold:#ffd24d; --bg1:#12061c; --bg2:#26102f; --mon:#04140a; --ekg:#2bff88; }
+:root{ --pink:#ff5d9e; --pink-deep:#e0407f; --gold:#f59e0b; --ink:#5b4351; --mon:#062117; --ekg:#2bff88; }
 *{ margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 html,body{ height:100%; }
-body{ font-family:'Sarabun',sans-serif; background:radial-gradient(120% 100% at 50% 0%, var(--bg2) 0%, var(--bg1) 62%); color:#fff; overflow-x:hidden; }
+body{ font-family:'Sarabun',sans-serif; background:linear-gradient(180deg,#fff0f6 0%,#ffdcec 45%,#ffd0e5 100%); color:var(--ink); overflow-x:hidden; }
 h1,h2,.kanit{ font-family:'Kanit',sans-serif; }
 .wrap{ max-width:440px; margin:0 auto; min-height:100dvh; display:flex; flex-direction:column; padding:18px 16px 26px; }
 .screen{ display:none; flex:1; flex-direction:column; }
 .screen.on{ display:flex; }
-.foot{ text-align:center; font-size:11.5px; opacity:.55; margin-top:16px; }
+.foot{ text-align:center; font-size:11.5px; color:#c99bb0; margin-top:16px; }
 
 /* intro */
 .hero{ text-align:center; padding:14px 4px 6px; }
 .hero .big{ font-size:56px; line-height:1; }
-.hero h1{ font-size:26px; color:var(--pink); margin:10px 0 2px; text-shadow:0 2px 18px rgba(255,93,158,.45); }
-.hero .sub{ font-size:14px; opacity:.85; line-height:1.7; }
-.card{ background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.12); border-radius:18px; padding:16px; margin-top:14px; }
+.hero h1{ font-size:27px; color:var(--pink-deep); margin:10px 0 2px; text-shadow:0 2px 14px rgba(255,93,158,.3); }
+.hero .sub{ font-size:14px; line-height:1.7; color:#8a6478; }
+.card{ background:#fff; border:2px solid #ffd3e4; border-radius:20px; padding:16px; margin-top:14px; box-shadow:0 8px 24px rgba(224,64,127,.12); }
 .rule{ font-size:13.5px; line-height:1.9; opacity:.92; }
 .btn-main{ display:block; width:100%; margin-top:16px; padding:16px; border:none; border-radius:16px; background:linear-gradient(135deg,var(--pink),var(--pink-deep)); color:#fff; font-family:'Kanit'; font-size:19px; font-weight:600; box-shadow:0 8px 26px rgba(255,93,158,.4); cursor:pointer; transition:transform .12s; }
 .btn-main:active{ transform:scale(.96); }
 .btn-main:disabled{ opacity:.5; }
 
 /* monitor */
-.monitor{ background:var(--mon); border:2px solid #123522; border-radius:16px; padding:10px 10px 6px; margin-top:12px; box-shadow:inset 0 0 22px rgba(0,0,0,.7), 0 4px 18px rgba(0,0,0,.4); }
+.monitor{ background:var(--mon); border:3px solid #ffc0da; border-radius:18px; padding:10px 10px 6px; margin-top:12px; box-shadow:inset 0 0 22px rgba(0,0,0,.6), 0 8px 22px rgba(224,64,127,.2); }
 .mon-top{ display:flex; justify-content:space-between; align-items:baseline; font-family:'Kanit'; padding:0 4px 4px; }
 .mon-top .bpm{ color:var(--ekg); font-size:24px; }
 .mon-top .bpm small{ font-size:11px; opacity:.7; }
@@ -65,12 +65,12 @@ h1,h2,.kanit{ font-family:'Kanit',sans-serif; }
 canvas#ekg{ width:100%; height:110px; display:block; }
 
 .setbar{ display:flex; gap:6px; margin-top:12px; }
-.setchip{ flex:1; text-align:center; padding:7px 4px; border-radius:10px; font-family:'Kanit'; font-size:13px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); opacity:.55; }
-.setchip.on{ background:rgba(255,93,158,.18); border-color:var(--pink); opacity:1; }
-.setchip.done{ background:rgba(43,255,136,.12); border-color:rgba(43,255,136,.5); opacity:.9; }
+.setchip{ flex:1; text-align:center; padding:7px 4px; border-radius:12px; font-family:'Kanit'; font-size:13px; background:#fff; border:2px solid #ffe0ec; color:#c99bb0; }
+.setchip.on{ background:linear-gradient(135deg,#ff5d9e,#e0407f); border-color:var(--pink-deep); color:#fff; box-shadow:0 4px 12px rgba(224,64,127,.35); }
+.setchip.done{ background:#e9fcf1; border-color:#7fe0ab; color:#1f9e5e; }
 
-.prompt{ text-align:center; font-size:15px; line-height:1.7; margin-top:12px; min-height:48px; }
-.prompt b{ color:var(--gold); }
+.prompt{ text-align:center; font-size:15px; line-height:1.7; margin-top:12px; min-height:48px; color:var(--ink); }
+.prompt b{ color:var(--pink-deep); }
 
 /* pump zone */
 .pumpzone{ position:relative; display:flex; justify-content:center; align-items:center; margin:14px auto 4px; width:190px; height:190px; }
@@ -80,25 +80,33 @@ canvas#ekg{ width:100%; height:110px; display:block; }
 .pump{ width:150px; height:150px; border-radius:50%; border:none; background:radial-gradient(circle at 34% 30%, #ff8db9, var(--pink) 46%, var(--pink-deep)); color:#fff; font-size:56px; box-shadow:0 10px 30px rgba(255,93,158,.5), inset 0 -8px 18px rgba(0,0,0,.25); cursor:pointer; transition:transform .07s; touch-action:manipulation; user-select:none; }
 .pump:active{ transform:scale(.9); }
 .pump:disabled{ filter:grayscale(.6); opacity:.6; }
-.taps{ text-align:center; font-family:'Kanit'; font-size:14px; opacity:.85; margin-top:6px; }
+.taps{ text-align:center; font-family:'Kanit'; font-size:15px; color:#a97c92; margin-top:6px; }
 
 /* result (โครงเดียวกับบอลโลก — สแกน/พฤติกรรมเดิม) */
 .res-head{ text-align:center; margin-top:6px; }
-.res-head h2{ font-size:26px; color:var(--pink); }
+.res-head h2{ font-size:26px; color:var(--pink-deep); }
 #champ{ display:none; justify-content:center; gap:8px; font-size:30px; margin-top:4px; }
-#scoreLine{ text-align:center; font-size:14px; opacity:.85; margin-top:4px; }
-#grade{ text-align:center; font-size:15px; color:var(--gold); margin-top:6px; min-height:22px; }
+#scoreLine{ text-align:center; font-size:14px; color:#8a6478; margin-top:4px; }
+#grade{ text-align:center; font-size:15px; color:var(--gold); font-weight:700; margin-top:6px; min-height:22px; }
 .amtbox{ text-align:center; margin:10px 0 2px; }
-#amt{ font-family:'Kanit'; font-size:64px; font-weight:800; color:var(--gold); text-shadow:0 3px 22px rgba(255,210,77,.4); }
+#amt{ font-family:'Kanit'; font-size:66px; font-weight:800; background:linear-gradient(135deg,#ff5d9e,#ff8a3d); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; filter:drop-shadow(0 3px 14px rgba(255,93,158,.35)); }
 #amt small{ font-size:26px; }
-.amt-cap{ font-size:13px; opacity:.8; }
-#jackpot{ display:none; text-align:center; background:linear-gradient(135deg,rgba(255,210,77,.2),rgba(255,93,158,.2)); border:1px dashed var(--gold); border-radius:12px; padding:10px; margin:10px 0; font-size:14px; }
+.amt-cap{ font-size:13px; color:#a97c92; }
+#jackpot{ display:none; text-align:center; background:linear-gradient(135deg,#fff4d6,#ffe3ef); border:2px dashed #ffb14d; border-radius:14px; padding:10px; margin:10px 0; font-size:14px; color:#9a5b12; }
 .codebox{ display:flex; align-items:center; justify-content:center; gap:8px; margin-top:8px; }
-#codeTxt{ font-family:'Kanit'; font-size:20px; letter-spacing:1.5px; background:rgba(255,255,255,.08); border:1px dashed rgba(255,255,255,.35); padding:8px 14px; border-radius:10px; }
-.copybtn{ padding:9px 13px; border-radius:10px; border:1px solid rgba(255,255,255,.3); background:rgba(255,255,255,.08); color:#fff; font-size:13px; cursor:pointer; }
-#copied{ text-align:center; font-size:12px; color:var(--ekg); min-height:16px; margin-top:4px; }
-.expnote{ text-align:center; font-size:12.5px; opacity:.75; margin-top:8px; line-height:1.7; }
+#codeTxt{ font-family:'Kanit'; font-size:20px; letter-spacing:1.5px; background:#fff; border:2px dashed #ffabce; color:var(--pink-deep); padding:8px 14px; border-radius:12px; }
+.copybtn{ padding:9px 13px; border-radius:12px; border:2px solid #ffd3e4; background:#fff; color:var(--pink-deep); font-weight:700; font-size:13px; cursor:pointer; }
+#copied{ text-align:center; font-size:12px; color:#1f9e5e; min-height:16px; margin-top:4px; }
+.expnote{ text-align:center; font-size:12.5px; color:#8a6478; margin-top:8px; line-height:1.7; }
 
+/* 👀 เดโม่วิธีเล่น (หน้าแรก) */
+.howto{ position:relative; width:110px; height:110px; margin:4px auto 0; }
+.ht-ring{ position:absolute; inset:6px; border-radius:50%; border:3px solid rgba(255,93,158,.65); animation:guidePulse 1.09s ease-out infinite; }
+.ht-heart{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:44px; }
+.ht-finger{ position:absolute; left:56%; top:52%; font-size:34px; animation:htTap 1.09s ease-in-out infinite; filter:drop-shadow(0 3px 6px rgba(0,0,0,.25)); }
+@keyframes htTap{ 0%,100%{ transform:translate(6px,14px) scale(1); } 50%{ transform:translate(0,2px) scale(.88); } }
+/* 👆 นิ้วบอกจุดกดตอนเริ่มเล่น */
+.taphint{ position:absolute; left:58%; top:58%; font-size:44px; pointer-events:none; animation:htTap 1.09s ease-in-out infinite; filter:drop-shadow(0 4px 8px rgba(0,0,0,.3)); z-index:5; }
 .heart-fx{ position:fixed; font-size:22px; pointer-events:none; z-index:9999; animation:heartUp 1.15s ease-out forwards; }
 @keyframes heartUp{ 0%{ transform:translateY(0) scale(.6); opacity:1; } 100%{ transform:translateY(-130px) scale(1.25); opacity:0; } }
 
@@ -116,6 +124,15 @@ canvas#ekg{ width:100%; height:110px; display:block; }
       <div class="big">👩‍⚕️💓</div>
       <h1>ใจวาย...ให้น้องช่วยปั๊ม</h1>
       <div class="sub">เดินเข้าร้านมาเจอน้องพยาบาล Geisha SPA<br>น่ารักจน<b style="color:var(--pink);">หัวใจหยุดเต้น!</b> 🫨</div>
+    </div>
+    <div class="card" style="text-align:center; padding:14px 12px;">
+      <div style="font-family:'Kanit'; font-size:14px; color:var(--pink-deep); margin-bottom:6px;">👀 วิธีเล่น — แตะตามจังหวะวงชมพู</div>
+      <div class="howto">
+        <div class="ht-ring"></div>
+        <div class="ht-heart">🫀</div>
+        <div class="ht-finger">👆</div>
+      </div>
+      <div style="font-size:12px; color:#a97c92; margin-top:4px;">วงบีบเข้า = จังหวะกด · ปั๊มให้ครบทั้ง 3 เซ็ต!</div>
     </div>
     <div class="card">
       <div class="rule">
@@ -146,6 +163,7 @@ canvas#ekg{ width:100%; height:110px; display:block; }
     <div class="pumpzone">
       <div class="guide" id="guide"></div>
       <button class="pump" id="pumpBtn" disabled>🫀</button>
+      <div class="taphint" id="taphint" style="display:none;">👆</div>
     </div>
     <div class="taps" id="tapCount"></div>
   </div>
@@ -482,6 +500,8 @@ function nextSet(){
   g.classList.add('beat');
   const b = document.getElementById('pumpBtn');
   b.disabled = false;
+  const th = document.getElementById('taphint');
+  if(th) th.style.display = (G.set === 1) ? 'block' : 'none';
 }
 
 /* ⭐ FIX: ผูกปุ่มตรงๆ (สคริปต์อยู่ท้าย body — element มีแล้ว) · pointerdown = ตอบสนองทันที กดรัวไม่หลุด */
@@ -502,6 +522,7 @@ function onPump(){
   }
   G.lastTap = now;
   G.taps++;
+  if(G.taps === 1){ const th = document.getElementById('taphint'); if(th) th.style.display = 'none'; }
   document.getElementById('tapCount').textContent = `${G.taps}/${TAPS_PER_SET}`;
   ekgSpike(G.set / SETS);
   try{ if(navigator.vibrate) navigator.vibrate(30); }catch(e){}
@@ -740,9 +761,18 @@ function ekgInit(){
   if(!ekgRaf) ekgLoop();
 }
 function ekgSpike(strength){
-  // QRS สั้นๆ ตามแรงปั๊ม
-  const s = 18 + strength * 22;
-  ekgBuf.push(4, -s, s * 0.55, -4, 0);
+  // ⭐ คลื่น P-QRS-T แบบหมอดูจริง: เนินเล็ก → ยอดแหลมสูง → แอ่ง → เนิน T แล้วกลับเส้นฐาน
+  const R = 26 + strength * 16;
+  ekgBuf.push(
+    0, 0,
+    2, 3, 2, 0,          // P เนินเล็ก
+    -3,                   // Q จิ๊กลง
+    R * 0.7, R, R * 0.55, // R ยอดแหลม
+    -R * 0.28, -5,        // S แอ่งลง
+    0, 0,
+    4, 6, 4, 2, 0,        // T เนินโค้ง
+    0, 0, 0, 0
+  );
 }
 function ekgTease(level, done){
   ekgMode = 'tease'; ekgLevel = level;
