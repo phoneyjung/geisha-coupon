@@ -9,7 +9,7 @@
 <meta property="og:title" content="ไฟจิ้งจอกที่เกียวโต">
 <meta property="og:description" content="นิยายลึกลับ โรแมนติก เก้าตอนจบ อ่านฟรีบนมือถือ ตลอดเดือนตุลาคม">
 <meta property="og:url" content="https://geisha-coupon.pages.dev/fox">
-<meta property="og:image" content="https://geisha-coupon.pages.dev/fox-cover.jpg">
+<meta property="og:image" content="https://geisha-coupon.pages.dev/fox-assets/fox-cover.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
@@ -43,7 +43,10 @@
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 56px);-webkit-text-size-adjust:100%}
 *,*::before,*::after{box-sizing:inherit}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--ui);line-height:1.6}
+body{margin:0;background:var(--bg) url(/fox-assets/fox-washi.jpg) repeat;background-size:320px;color:var(--ink);font-family:var(--ui);line-height:1.6}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) body{background-image:url(/fox-assets/fox-indigo.jpg)}}
+:root[data-theme="dark"] body{background-image:url(/fox-assets/fox-indigo.jpg)}
+:root[data-theme="light"] body{background-image:url(/fox-assets/fox-washi.jpg)}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 a{color:inherit}
 :focus-visible{outline:2px solid var(--glow);outline-offset:3px;border-radius:6px}
@@ -64,7 +67,26 @@ img{max-width:100%}
 .wrap{max-width:34rem;margin:0 auto;padding:0 20px}
 
 /* หน้าแรก */
-.hero{position:relative;padding:34px 0 8px;min-height:330px}
+.hero{position:relative;padding:18px 0 4px}
+.heroimg{position:relative;border-radius:20px;overflow:hidden;aspect-ratio:4/5;background:#141833;box-shadow:0 14px 34px var(--shadow)}
+.heroimg img{width:100%;height:100%;object-fit:cover;display:block}
+.herotext{position:absolute;left:0;right:0;top:0;padding:26px 22px 60px;background:linear-gradient(rgba(12,14,38,.55),rgba(12,14,38,0))}
+.ornament{display:block;width:62%;max-width:320px;margin:26px auto 6px;height:auto}
+.endimg{margin:1.6em 0 1em;border-radius:18px;overflow:hidden;box-shadow:0 12px 28px var(--shadow)}
+.endimg img{display:block;width:100%;height:auto}
+.dock{position:fixed;right:0;bottom:0;z-index:8;padding:0 14px calc(14px + env(safe-area-inset-bottom,0px)) 0;pointer-events:none}
+.music{pointer-events:auto;display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:999px;background:color-mix(in srgb,var(--paper) 92%,transparent);
+  border:1px solid var(--line);box-shadow:0 6px 18px var(--shadow);font-weight:700;font-size:14px;color:var(--soft);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.music .bars{display:inline-flex;gap:2px;align-items:flex-end;height:14px}
+.music .bars i{width:3px;height:4px;border-radius:2px;background:currentColor;opacity:.7}
+.music[aria-pressed="true"]{background:var(--glow);border-color:var(--glow);color:#2A1A05}
+@media (prefers-reduced-motion:no-preference){
+  .music[aria-pressed="true"] .bars i{animation:eq 1.1s ease-in-out infinite}
+  .music[aria-pressed="true"] .bars i:nth-child(2){animation-delay:.25s}
+  .music[aria-pressed="true"] .bars i:nth-child(3){animation-delay:.5s}
+}
+@keyframes eq{0%,100%{height:4px}50%{height:13px}}
+article{background:color-mix(in srgb,var(--paper) 86%,transparent);border-radius:18px;padding:22px 18px 10px!important;margin-top:16px;box-shadow:0 8px 24px var(--shadow)}
 .fire{position:absolute;right:0;top:14px;width:58px;height:300px;pointer-events:none}
 .fire i{position:absolute;width:10px;height:10px;border-radius:50%;background:var(--glow);
   box-shadow:0 0 10px 3px color-mix(in srgb,var(--glow) 70%,transparent),0 0 26px 8px color-mix(in srgb,var(--glow) 25%,transparent);opacity:.95}
@@ -72,9 +94,9 @@ img{max-width:100%}
   .fire i{animation:light .9s ease-out both}
 }
 @keyframes light{from{opacity:0;transform:translateY(-14px) scale(.4)}to{opacity:.95;transform:none}}
-.hero h1{font-family:var(--display);font-weight:400;font-size:clamp(32px,9vw,44px);line-height:1.25;margin:40px 0 6px;padding-right:60px;color:var(--ink)}
-.hero .sub{color:var(--soft);font-size:15px;margin:0 0 22px;padding-right:60px}
-.epi{font-family:var(--body);font-style:italic;color:var(--soft);font-size:15px;line-height:1.85;margin:0 60px 0 0;padding-left:14px;border-left:2px solid var(--torii)}
+.hero h1{font-family:var(--display);font-weight:400;font-size:clamp(32px,9vw,44px);line-height:1.25;margin:0 0 4px;color:#F4F0FA;text-shadow:0 2px 14px rgba(0,0,0,.55)}
+.hero .sub{color:#E3DDF0;font-size:15px;margin:0;text-shadow:0 1px 8px rgba(0,0,0,.6)}
+.epi{font-family:var(--body);font-style:italic;color:var(--soft);font-size:15px;line-height:1.85;margin:18px 0 0;padding-left:14px;border-left:2px solid var(--torii)}
 .cta{display:block;width:100%;margin:28px 0 8px;padding:15px 18px;border-radius:14px;background:var(--glow);color:#2A1A05;
   font-weight:700;font-size:17px;text-align:center;box-shadow:0 6px 20px color-mix(in srgb,var(--glow) 35%,transparent)}
 .cta small{display:block;font-weight:400;font-size:13px;opacity:.8}
@@ -163,14 +185,16 @@ article .tail{text-align:center;font-style:italic;color:var(--soft);font-size:.9
 <main id="home" class="wrap">
   <p class="banner" id="pv" hidden>โหมดตัวอย่าง เห็นทุกตอนก่อนวันปล่อย ลิงก์นี้ใช้ดูเองเท่านั้น</p>
   <section class="hero">
-    <div class="fire" id="fire" aria-hidden="true"></div>
-    <h1 id="t"></h1>
-    <p class="sub" id="s"></p>
+    <div class="heroimg">
+      <img src="/fox-assets/fox-hero.jpg" alt="เสาแดงฟุชิมิ อินาริ ยามค่ำคืน มีไฟจิ้งจอกลอยลงมา" width="900" height="1125">
+      <div class="herotext"><h1 id="t"></h1><p class="sub" id="s"></p></div>
+    </div>
     <p class="epi" id="e"></p>
   </section>
   <button class="cta" id="go"></button>
   <button class="cta alt" id="go2" hidden></button>
   <details class="cast"><summary>รู้จักตัวละคร</summary><dl id="cast"></dl></details>
+  <img class="ornament" src="/fox-assets/fox-lantern.png" alt="" width="720" height="240" loading="lazy">
   <ol class="path" id="list" aria-label="รายชื่อตอน"></ol>
   <section class="share">
     <p>ชวนเพื่อนในกลุ่มมาอ่านด้วยกัน ลิงก์นี้เปิดได้ในแอป LINE เลย</p>
@@ -190,6 +214,7 @@ article .tail{text-align:center;font-style:italic;color:var(--soft);font-size:.9
 <div class="progress" id="prog" hidden><i></i></div>
 <main id="reader" class="wrap" hidden>
   <article id="art"></article>
+  <img class="ornament" src="/fox-assets/fox-lantern.png" alt="" width="720" height="240" loading="lazy">
   <button class="next" id="next"></button>
   <a class="back" href="#">กลับไปดูโคมทั้งหมด</a>
   <footer>
@@ -198,6 +223,7 @@ article .tail{text-align:center;font-style:italic;color:var(--soft);font-size:.9
     © 2569 เกอิชา สปา (GS) สงวนลิขสิทธิ์
   </footer>
 </main>
+<div class="dock"><button class="music" id="music" aria-pressed="false" aria-label="เปิดหรือปิดเพลงคลอ"><span class="bars" aria-hidden="true"><i></i><i></i><i></i></span><span id="mlabel">เพลงคลอ</span></button></div>
 <div class="toast" id="toast" role="status"></div>
 
 <script>
@@ -246,14 +272,7 @@ const today = (() => { const d = new Date(); return d.getFullYear() + '-' + Stri
 const isOpen = (i) => PREVIEW || DATA.ch[i].date <= today;
 const latestReleased = () => { let k = -1; DATA.ch.forEach((c, i) => { if (isOpen(i)) k = i; }); return k; };
 if (PREVIEW) document.getElementById('pv').hidden = false;
-(function fire(){
-  const f = $('fire'); let h = '';
-  for (let i = 0; i < 9; i++){
-    const x = 40 - i * 4 + (i % 2 ? 8 : 0), y = i * 33;
-    h += `<i style="left:${x}px;top:${y}px;animation-delay:${i * 0.12}s"></i>`;
-  }
-  f.innerHTML = h;
-})();
+
 function renderHome(){
   const list = $('list');
   const nowIdx = last ? last.i : (read.length ? Math.min(N - 1, Math.max(...read) + 1) : Math.max(0, latestReleased()));
@@ -314,7 +333,7 @@ function renderChapter(i){
     else if (k === 'd') h += `<p class="line"><span class="who">${esc(a)}</span>“${esc(t)}”</p>`;
     else if (k === 'pov') h += `<div class="pov">— ${esc(a)} —</div>`;
     else if (k === 'sep') h += `<div class="sep">✦✦✦</div>`;
-    else if (k === 'end') h += `<p class="end">${esc(a)}</p>` + DATA.meta.tail.map(x => `<p class="tail">${esc(x)}</p>`).join('');
+    else if (k === 'end') h += `<figure class="endimg"><img src="/fox-assets/fox-end.jpg" alt="ร่มสองคันพิงกำแพงกลางฝนตกแดดออก" width="900" height="1125" loading="lazy"></figure><p class="end">${esc(a)}</p>` + DATA.meta.tail.map(x => `<p class="tail">${esc(x)}</p>`).join('');
   }
   $('art').innerHTML = h;
   const nx = $('next');
@@ -355,7 +374,54 @@ function route(){
     document.title = DATA.meta.title; scrollTo(0, 0);
   }
 }
-addEventListener('hashchange', route);
+// ════ เพลงคลอ (เบา) — เล่นเมื่อผู้อ่านกดเองเท่านั้น · เปลี่ยนอารมณ์ตามตอน ════
+const TRACKS = { theme:'/fox-assets/fox-m-theme.mp3', mystery:'/fox-assets/fox-m-mystery.mp3', tension:'/fox-assets/fox-m-tension.mp3', romance:'/fox-assets/fox-m-romance.mp3', ending:'/fox-assets/fox-m-ending.mp3' };
+const MOOD = ['mystery','mystery','mystery','romance','mystery','tension','romance','tension','tension','ending'];
+const LEVEL = 0.45;
+const music = (() => {
+  const el = new Audio(); el.loop = true; el.preload = 'none';
+  let ctx = null, gain = null, on = false, curKey = null, timer = null;
+  const btn = $('music'), label = $('mlabel');
+  function setVol(v){ if (gain) gain.gain.value = v; else el.volume = Math.max(0, Math.min(1, v)); }
+  function getVol(){ return gain ? gain.gain.value : el.volume; }
+  function fade(to, ms, done){
+    clearInterval(timer); const from = getVol(), steps = Math.max(1, Math.round(ms / 50)); let k = 0;
+    timer = setInterval(() => { k++; setVol(from + (to - from) * k / steps); if (k >= steps){ clearInterval(timer); done && done(); } }, 50);
+  }
+  function ensureCtx(){
+    if (ctx) return;
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      ctx = new AC(); const src = ctx.createMediaElementSource(el); gain = ctx.createGain(); gain.gain.value = 0;
+      src.connect(gain).connect(ctx.destination);
+    } catch(e) { ctx = null; gain = null; }
+  }
+  function ui(){ btn.setAttribute('aria-pressed', on ? 'true' : 'false'); label.textContent = on ? 'ปิดเพลง' : 'เพลงคลอ'; }
+  function keyFor(){ return cur >= 0 ? MOOD[cur] : 'theme'; }
+  function playKey(key){
+    if (!on) return;
+    if (key === curKey && !el.paused) return;
+    const start = () => { curKey = key; el.src = TRACKS[key]; setVol(0); const p = el.play(); if (p && p.catch) p.catch(() => { on = false; ui(); }); fade(LEVEL, 1800); };
+    if (!el.paused && curKey) fade(0, 700, start); else start();
+  }
+  function start(){ ensureCtx(); if (ctx && ctx.state === 'suspended') ctx.resume(); on = true; store.set('music', true); ui(); playKey(keyFor()); }
+  function stop(){ on = false; store.set('music', false); ui(); fade(0, 600, () => el.pause()); }
+  btn.onclick = () => (on ? stop() : start());
+  document.addEventListener('visibilitychange', () => {
+    if (!on) return;
+    if (document.hidden) fade(0, 300, () => el.pause());
+    else { const p = el.play(); if (p && p.catch) p.catch(() => {}); fade(LEVEL, 1200); }
+  });
+  // เคยเปิดไว้ครั้งก่อน → แตะจอครั้งแรกเริ่มเพลงให้เอง (เบราว์เซอร์ไม่ให้เล่นเองก่อนแตะ)
+  if (store.get('music', false)) {
+    const once = (ev) => { document.removeEventListener('pointerdown', once, true); if (!on && !(ev.target && ev.target.closest && ev.target.closest('#music'))) start(); };
+    document.addEventListener('pointerdown', once, true);
+  }
+  ui();
+  return { sync(){ playKey(keyFor()); } };
+})();
+addEventListener('hashchange', () => { route(); music.sync(); });
 route();
 </script>
 </body>
