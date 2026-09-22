@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>สถิติคนอ่าน — ไฟจิ้งจอกที่เกียวโต</title>
+<link href="https://fonts.googleapis.com/css2?family=Chonburi&family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F4EFE4;--paper:#FBF8F1;--ink:#2A2233;--soft:#6E6478;--line:#DCD2C2;--glow:#E8A247;--torii:#B8392A;--ok:#2F8F5B;--display:"Chonburi",Georgia,serif;--ui:"Sarabun",system-ui,sans-serif}
+@media (prefers-color-scheme: dark){:root{--bg:#161A33;--paper:#1D2240;--ink:#ECE6F4;--soft:#A9A3C2;--line:#2F3561;--glow:#F2B35E;--torii:#D5503B;--ok:#5BC98A}}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--ui);line-height:1.55}
+.wrap{max-width:40rem;margin:0 auto;padding:18px 16px 40px}
+h1{font-family:var(--display);font-weight:400;font-size:26px;margin:4px 0 2px}
+.sub{color:var(--soft);font-size:14px;margin:0 0 14px}
+.bar{display:flex;gap:8px;align-items:center;margin-bottom:16px}
+.bar button{padding:9px 14px;border-radius:10px;border:1px solid var(--line);background:var(--paper);color:inherit;font:inherit;font-weight:700;cursor:pointer}
+.bar span{font-size:13px;color:var(--soft)}
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media (min-width:560px){.cards{grid-template-columns:repeat(3,1fr)}}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.card b{display:block;font-family:var(--display);font-weight:400;font-size:28px;line-height:1.2}
+.card span{font-size:13px;color:var(--soft)}
+.card.hi{border-color:var(--glow);border-width:2px}
+h2{font-size:17px;margin:26px 0 8px}
+.note{font-size:13px;color:var(--soft);margin:0 0 10px}
+.row{display:grid;grid-template-columns:62px 1fr 88px;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px}
+.row .lab{font-weight:700}
+.bars{display:grid;gap:4px}
+.b{height:10px;border-radius:6px;background:var(--line);position:relative;overflow:hidden}
+.b i{position:absolute;inset:0 auto 0 0;border-radius:6px}
+.b.o i{background:var(--glow)} .b.f i{background:var(--ok)}
+.num{text-align:right;font-variant-numeric:tabular-nums;font-size:13px;color:var(--soft)}
+.num b{color:var(--ink)}
+.legend{display:flex;gap:14px;font-size:13px;color:var(--soft);margin:4px 0 6px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.days{display:flex;align-items:flex-end;gap:4px;height:150px;padding:8px 4px 0;border-bottom:1px solid var(--line);overflow-x:auto}
+.day{flex:1;min-width:18px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+.day i{width:100%;max-width:26px;background:var(--glow);border-radius:5px 5px 0 0;min-height:2px}
+.day small{font-size:10px;color:var(--soft);margin-top:3px}
+.day em{font-style:normal;font-size:10.5px;font-weight:700;margin-bottom:2px}
+.err{padding:12px;border-radius:12px;border:1px solid var(--torii);color:var(--torii);font-size:14px;display:none}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <h1>สถิติคนอ่าน</h1>
+  <p class="sub">ไฟจิ้งจอกที่เกียวโต · geisha-coupon.pages.dev/fox</p>
+  <div class="bar"><button id="rf">รีเฟรช</button><span id="upd">กำลังโหลด…</span></div>
+  <div class="err" id="err"></div>
+  <div class="cards" id="cards"></div>
+  <h2>คนมาจากไหน</h2>
+  <p class="note">นับจากลิงก์ที่ติดป้าย เช่น ?from=kapoo (1 เครื่องนับครั้งเดียว) · คนที่เข้าจากลิงก์ปกติจะไม่อยู่ในส่วนนี้</p>
+  <div id="src"></div>
+  <h2>คนอ่านแต่ละตอน</h2>
+  <p class="note">นับ 1 เครื่อง = 1 คน · % เทียบกับคนที่เปิดตอน 1 (ดูว่าคนหลุดตอนไหน)</p>
+  <div class="legend"><span><i style="background:var(--glow)"></i>เปิดอ่าน</span><span><i style="background:var(--ok)"></i>อ่านจบตอน</span></div>
+  <div id="funnel"></div>
+  <h2>คนเข้าเว็บรายวัน</h2>
+  <p class="note">14 วันล่าสุด (คนไม่ซ้ำต่อวัน)</p>
+  <div class="days" id="days"></div>
+  <h2>รายละเอียดรายวัน</h2>
+  <div id="table"></div>
+  <p class="note" style="margin-top:18px">ไม่เก็บข้อมูลส่วนตัวของลูกค้า เก็บแค่ตัวเลขนับ · ลิงก์ ?preview ที่เจ้าของใช้ทดสอบไม่ถูกนับ</p>
+</main>
+<script>
+const KEY = 'AIzaSyBhkUyMQLhWiwGIF7yTSnageSNXmJim6FQ';
+const LIST = 'https://firestore.googleapis.com/v1/projects/geisha-coupon/databases/(default)/documents/coupons_fox_stats?pageSize=300&key=' + KEY;
+const CH = ['เขาเรียกชื่อผม','อย่าหันไปเป่า','คนที่ไม่มีชื่อ','คำถามเดียว','ห้องกระจก','ไม่ต้องบอกริน','รูปบนผนังร้านเครื่องราง','ผมขอถือได้ไหม','โคมดวงที่เก้า','ร่มสองคัน'];
+const TH = '๐๑๒๓๔๕๖๗๘๙', thNum = n => String(n).replace(/\d/g, d => TH[d]);
+const MON = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const $ = id => document.getElementById(id);
+const nf = n => (n || 0).toLocaleString('th-TH');
+function parse(doc){ const o = {}; for (const [k, v] of Object.entries(doc.fields || {})) o[k] = +(v.integerValue ?? v.doubleValue ?? 0); return o; }
+async function load(){
+  $('upd').textContent = 'กำลังโหลด…'; $('err').style.display = 'none';
+  try {
+    const res = await fetch(LIST, { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const js = await res.json();
+    const docs = {}; (js.documents || []).forEach(d => { docs[d.name.split('/').pop()] = parse(d); });
+    render(docs);
+    $('upd').textContent = 'อัปเดต ' + new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+  } catch(e) {
+    $('err').style.display = 'block'; $('err').textContent = 'โหลดข้อมูลไม่ได้ (' + e.message + ') — ถ้ายังไม่มีใครเข้าเว็บเลย ข้อมูลจะยังว่าง';
+    $('upd').textContent = '';
+  }
+}
+function render(docs){
+  const T = docs.total || {};
+  const dayKeys = Object.keys(docs).filter(k => /^d_\d{8}$/.test(k)).sort();
+  const lastDay = dayKeys.length ? docs[dayKeys[dayKeys.length - 1]] : {};
+  const cards = [
+    ['คนเข้าเว็บทั้งหมด', T.visitors, true], ['เปิดดูทั้งหมด (ครั้ง)', T.views],
+    ['เริ่มอ่านตอน 1', T.r1, true], ['อ่านจบตอนจบ (ตอน 9)', T.f9],
+    ['กดแอดไลน์ร้าน', T.oa, true], ['กดแชร์ลิงก์', T.share],
+    ['เปิดเพลงคลอ', T.music], ['คนเข้าวันล่าสุด', lastDay.visitors]
+  ];
+  $('cards').innerHTML = cards.map(([l, v, hi]) => `<div class="card ${hi ? 'hi' : ''}"><b>${nf(v)}</b><span>${l}</span></div>`).join('');
+  const NAMES = { kapoo: 'เว็บบอร์ด kapoo', relax: 'เว็บบอร์ด relax', line: 'LINE', tg: 'Telegram' };
+  const srcs = Object.keys(T).filter(k => k.startsWith('src_')).map(k => [k.slice(4), T[k]]).sort((x, y) => y[1] - x[1]);
+  const smx = Math.max(1, ...srcs.map(x => x[1]));
+  $('src').innerHTML = srcs.length ? srcs.map(([k, v]) => `<div class="row" style="grid-template-columns:120px 1fr 60px"><span class="lab">${NAMES[k] || k}</span><div class="b o"><i style="width:${v / smx * 100}%"></i></div><span class="num"><b>${nf(v)}</b></span></div>`).join('') : '<p class="note">ยังไม่มีคนเข้าจากลิงก์ที่ติดป้าย</p>';
+  const base = Math.max(1, T.r1 || 0), mx = Math.max(1, ...Array.from({ length: 10 }, (_, i) => T['r' + (i + 1)] || 0));
+  $('funnel').innerHTML = CH.map((t, i) => {
+    const r = T['r' + (i + 1)] || 0, f = T['f' + (i + 1)] || 0;
+    return `<div class="row"><span class="lab">${i < 9 ? 'ตอน ' + (i + 1) : 'พิเศษ'}</span>
+      <div class="bars" title="${t}"><div class="b o"><i style="width:${r / mx * 100}%"></i></div><div class="b f"><i style="width:${f / mx * 100}%"></i></div></div>
+      <span class="num"><b>${nf(r)}</b> / ${nf(f)}<br>${Math.round(r / base * 100)}%</span></div>`;
+  }).join('');
+  const last14 = dayKeys.slice(-14), dmx = Math.max(1, ...last14.map(k => docs[k].visitors || 0));
+  $('days').innerHTML = last14.length ? last14.map(k => {
+    const v = docs[k].visitors || 0, m = +k.slice(6, 8), d = +k.slice(8, 10);
+    return `<div class="day"><em>${v}</em><i style="height:${v / dmx * 100}%"></i><small>${d}/${m}</small></div>`;
+  }).join('') : '<p class="note">ยังไม่มีข้อมูล</p>';
+  $('table').innerHTML = dayKeys.slice().reverse().slice(0, 31).map(k => {
+    const o = docs[k], m = +k.slice(6, 8), d = +k.slice(8, 10);
+    const reads = Array.from({ length: 10 }, (_, i) => o['r' + (i + 1)] || 0).reduce((a, b) => a + b, 0);
+    return `<div class="row" style="grid-template-columns:70px 1fr 1fr"><span class="lab">${thNum(d)} ${MON[m - 1]}</span><span>คน ${nf(o.visitors)} · เปิด ${nf(o.views)}</span><span class="num">อ่าน ${nf(reads)} · ไลน์ ${nf(o.oa)}</span></div>`;
+  }).join('') || '<p class="note">ยังไม่มีข้อมูล</p>';
+}
+$('rf').onclick = load;
+load();
+</script>
+</body>
+</html>
