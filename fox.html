@@ -72,6 +72,8 @@ img{max-width:100%}
 .heroimg img{width:100%;height:100%;object-fit:cover;display:block}
 .herotext{position:absolute;left:0;right:0;top:0;padding:26px 22px 60px;background:linear-gradient(rgba(12,14,38,.55),rgba(12,14,38,0))}
 .ornament{display:block;width:62%;max-width:320px;margin:26px auto 6px;height:auto}
+.chimg{margin:-4px 0 22px;border-radius:16px;overflow:hidden;aspect-ratio:4/5;background:color-mix(in srgb,var(--line) 50%,transparent);box-shadow:0 10px 26px var(--shadow)}
+.chimg img{display:block;width:100%;height:100%;object-fit:cover}
 .endimg{margin:1.6em 0 1em;border-radius:18px;overflow:hidden;box-shadow:0 12px 28px var(--shadow)}
 .endimg img{display:block;width:100%;height:auto}
 .dock{position:fixed;right:0;bottom:0;z-index:8;padding:0 14px calc(14px + env(safe-area-inset-bottom,0px)) 0;pointer-events:none}
@@ -325,6 +327,8 @@ let cur = -1, resumeRatio = 0;
 function renderChapter(i){
   const c = DATA.ch[i];
   let h = `<p class="n">${esc(c.label)}</p><h2>${esc(c.title)}</h2>`;
+  // ภาพประกอบตอน — มีไฟล์เมื่อไหร่ขึ้นเอง ไม่มีก็ซ่อน (อัปภาพทีหลังได้โดยไม่ต้องแก้หน้าเว็บ)
+  h += `<figure class="chimg"><img src="/fox-assets/fox-ch${i + 1}.jpg" alt="ภาพประกอบ ${esc(c.label)}" width="900" height="1125" loading="lazy" onerror="this.parentNode.remove()"></figure>`;
   if (c.recap) h += `<div class="recap"><b>ตอนที่แล้ว</b>${esc(c.recap)}</div>`;
   for (const b of c.b){
     const [k, a, t] = b;
