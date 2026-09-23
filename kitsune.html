@@ -298,7 +298,8 @@ const BASE_TABLE = [
   { a: 300, w: 5 },
 ];
 const THREE_SLIP_BONUS = 50;
-const SLIP_MAX = 150;                 // ทุกใบสูงสุดใบละ ฿150 (ทั้งใบที่จับและใบที่เฉลย)
+/* สำรับ 9 ใบ ตายตัวทุกคน: ว่าง 1 · ฿50 ×2 · ฿100 ×4 · ฿150 ×2 — ตอนเฉลยต้องครบชุดนี้เสมอ */
+const DECK_SET = [0, 50, 50, 100, 100, 100, 100, 150, 150];
 const SLIP_TABLE = [
   { a: 0,   k: "凶",   th: "ว่างเปล่า" },
   { a: 50,  k: "小吉", th: "โชคเล็ก" },
@@ -945,15 +946,15 @@ function pickWeighted(tbl){
   return tbl[0].a;
 }
 function round50Random(v){ const u = v / 50, f = Math.floor(u); return 50 * (f + (Math.random() < u - f ? 1 : 0)); }
-function splitAmount(total, n){   // แบ่งยอดเป็น n ใบ ใบละ 0–SLIP_MAX (ทีละ 50)
-  const maxU = SLIP_MAX / 50;
-  for(let tries = 0; tries < 200; tries++){
-    const parts = new Array(n).fill(0);
-    let u = total / 50;
-    while(u > 0){ const i = Math.floor(Math.random() * n); if(parts[i] < maxU){ parts[i]++; u--; } else if(parts.every(p => p >= maxU)) break; }
-    if(u === 0) return parts.map(p => p * 50);
-  }
-  return new Array(n).fill(0).map((_, i) => i === 0 ? total : 0);
+function comboFromDeck(total, n){   // เลือก n ใบจากสำรับที่รวมได้ = total (สุ่มจากทุกชุดที่เป็นไปได้)
+  const idx = [...DECK_SET.keys()], hits = [];
+  const walk = (start, pick) => {
+    if(pick.length === n){ if(pick.reduce((a, i) => a + DECK_SET[i], 0) === total) hits.push(pick.slice()); return; }
+    for(let i = start; i < idx.length; i++){ pick.push(i); walk(i + 1, pick); pick.pop(); }
+  };
+  walk(0, []);
+  if(!hits.length) return null;
+  return hits[Math.floor(Math.random() * hits.length)];
 }
 function neighborsOf(i){
   const r = Math.floor(i / 3), c = i % 3, out = [];
@@ -963,17 +964,20 @@ function neighborsOf(i){
 function buildResult(d, picks){
   const n = picks.length;
   const cap = (forceDiscount !== null) ? forceDiscount : pickWeighted(BASE_TABLE);   // ยอดตั้งต้น
-  const total = n >= 3 ? Math.min(CAP, cap + THREE_SLIP_BONUS) : n === 2 ? cap : round50Random(cap / 2);
-  const mine = splitAmount(total, n);
+  let total = n >= 3 ? Math.min(CAP, cap + THREE_SLIP_BONUS) : n === 2 ? cap : round50Random(cap / 2);
+  let combo = comboFromDeck(total, n);
+  while(!combo && total > 0){ total -= 50; combo = comboFromDeck(total, n); }   // กันกรณีรวมไม่ได้ (ไม่ควรเกิด)
+  if(!combo){ combo = comboFromDeck(DECK_SET.slice().sort((a, b) => a - b).slice(0, n).reduce((a, v) => a + v, 0), n); total = combo.reduce((a, i) => a + DECK_SET[i], 0); }
+  const mineVals = combo.map(i => DECK_SET[i]).sort(() => Math.random() - .5);
+  const restVals = DECK_SET.filter((v, i) => !combo.includes(i));
   const deck = new Array(DECK_SIZE).fill(null);
-  picks.forEach((i, k) => deck[i] = mine[k]);
-  // ใบที่ไม่ได้เลือก: ใบสูงวางข้างๆ ใบที่จับ + ใบว่างอย่างน้อย 1 + ที่เหลือคละ
+  picks.forEach((i, k) => deck[i] = mineVals[k]);
+  // ใบที่ไม่ได้เลือก: ใบ ฿150 ที่เหลือวางติดใบที่จับก่อน (เกือบได้ 😏) ที่เหลือคละ
   const rest = [...Array(DECK_SIZE).keys()].filter(i => !picks.includes(i));
   const near = [...new Set(picks.flatMap(neighborsOf))].filter(i => rest.includes(i)).sort(() => Math.random() - .5);
-  const teases = [SLIP_MAX, SLIP_MAX];   // ใบ ฿150 วางข้างใบที่จับ
-  const pool = [{ a: 0, w: 28 }, { a: 50, w: 30 }, { a: 100, w: 26 }, { a: 150, w: 16 }];
   const order = [...near, ...rest.filter(i => !near.includes(i)).sort(() => Math.random() - .5)];
-  order.forEach((i, k) => { deck[i] = k < teases.length ? teases[k] : (k === teases.length ? 0 : pickWeighted(pool)); });
+  const vals = restVals.filter(v => v === 150).concat(restVals.filter(v => v !== 150).sort(() => Math.random() - .5));
+  order.forEach((i, k) => deck[i] = vals[k]);
   return { ...d, pending: false, picks, deck, cap, amount: total, code: total > 0 ? genCode() : '' };
 }
 async function endGame(){
