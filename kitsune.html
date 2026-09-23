@@ -126,6 +126,8 @@
   .slip.missed .back::after{ content:'ไม่ได้เลือก'; position:absolute; bottom:4px; font-size:9px; color:#8a7a5a; }
   .slip.tease .back{ opacity:1; box-shadow:0 0 0 3px #ff4d5a; animation:tease 1s ease-in-out infinite; }
   @keyframes tease{ 0%,100%{ box-shadow:0 0 0 3px #ff4d5a, 0 0 6px rgba(255,77,90,.4); } 50%{ box-shadow:0 0 0 3px #ff4d5a, 0 0 22px rgba(255,77,90,.9); } }
+  .slip.shake{ animation:shk .09s linear infinite; }
+  @keyframes shk{ 0%{ transform:translateY(-8px) rotate(-2deg) } 50%{ transform:translateY(-8px) rotate(2deg) } 100%{ transform:translateY(-8px) rotate(-2deg) } }
   @keyframes bob{ 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(-3px) } }
   #pickLeft{ text-align:center; font-family:'Kanit'; font-size:15px; color:var(--gold); margin-top:2px; min-height:22px; text-shadow:0 2px 0 #000; }
   #omiNote{ text-align:center; font-size:13px; color:#e8ebff; min-height:20px; }
@@ -696,14 +698,21 @@ function startIntroFox(){
 function stopIntroFox(){ if(_introRaf){ cancelAnimationFrame(_introRaf); _introRaf = null; } }
 
 /* ============================================================
-   🔊 เสียง 8-bit (สร้างสดด้วย Web Audio — ไม่มีไฟล์เสียง)
-   สเกลญี่ปุ่น In (E F A B C)
+   🔊 เสียงแนวญี่ปุ่น (สร้างสดด้วย Web Audio — ไฟล์เสียง 0 KB)
+   โคโตะ (ดีด) · กระดิ่งศาลเจ้า · ไทโกะ · ไม้เคาะ · ระฆังวัด — สเกลญี่ปุ่น In (E F A B C)
+   🎵 เพลงประกอบ: ถ้ามีไฟล์ BGM_URL ในเว็บ จะเล่นไฟล์นั้น · ไม่มี = เล่นเพลงสังเคราะห์แทนอัตโนมัติ
    ============================================================ */
-let _ac = null, _muted = false, _master = null, _bgmTimer = null;
+const BGM_URL = 'fox-assets/kitsune-bgm.mp3';
+const BGM_VOL = 0.35;
+let _ac = null, _muted = false, _master = null, _bgmTimer = null, _bgmBuf = null, _bgmSrc = null, _bgmFileOk = null;
 const INSCALE = [329.63, 349.23, 440.00, 493.88, 523.25, 659.25, 698.46, 880.00, 987.77, 1046.5];
 function ac(){
   try{
-    if(!_ac){ _ac = new (window.AudioContext || window.webkitAudioContext)(); _master = _ac.createGain(); _master.gain.value = .55; _master.connect(_ac.destination); }
+    if(!_ac){
+      _ac = new (window.AudioContext || window.webkitAudioContext)();
+      _master = _ac.createGain(); _master.gain.value = .6;
+      const comp = _ac.createDynamicsCompressor(); _master.connect(comp); comp.connect(_ac.destination);
+    }
     if(_ac.state === 'suspended') _ac.resume();
   }catch(e){}
   return _ac;
@@ -717,43 +726,230 @@ function tone(freq, dur, type, vol, when, slideTo){
   g.gain.setValueAtTime(vol || .12, t0); g.gain.exponentialRampToValueAtTime(0.0008, t0 + dur);
   o.connect(g); g.connect(_master); o.start(t0); o.stop(t0 + dur + .02);
 }
-function noise(dur, vol, when, hp){
+function noise(dur, vol, when, hp, type, q){
   const a = ac(); if(!a || _muted) return;
   const t0 = a.currentTime + (when || 0);
-  const buf = a.createBuffer(1, Math.floor(a.sampleRate * dur), a.sampleRate), d = buf.getChannelData(0);
+  const buf = a.createBuffer(1, Math.max(1, Math.floor(a.sampleRate * dur)), a.sampleRate), d = buf.getChannelData(0);
   for(let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
   const src = a.createBufferSource(), g = a.createGain(), f = a.createBiquadFilter();
-  f.type = 'highpass'; f.frequency.value = hp || 1200;
+  f.type = type || 'highpass'; f.frequency.value = hp || 1200; if(q) f.Q.value = q;
   src.buffer = buf; g.gain.value = vol || .1; src.connect(f); f.connect(g); g.connect(_master); src.start(t0);
 }
+/* 🎸 โคโตะ — Karplus-Strong (สายดีด) */
+const _pluckCache = {};
+function pluckBuf(freq){
+  const a = ac(); const key = Math.round(freq * 10);
+  if(_pluckCache[key]) return _pluckCache[key];
+  const sr = a.sampleRate, N = Math.floor(sr * 1.8), p = Math.max(2, Math.round(sr / freq));
+  const buf = a.createBuffer(1, N, sr), d = buf.getChannelData(0), ring = new Float32Array(p);
+  for(let i = 0; i < p; i++) ring[i] = Math.random() * 2 - 1;
+  let idx = 0;
+  for(let i = 0; i < N; i++){ const nx = (idx + 1) % p, v = ring[idx]; ring[idx] = 0.4975 * (v + ring[nx]); d[i] = v; idx = nx; }
+  return (_pluckCache[key] = buf);
+}
+function pluck(freq, vol, when){
+  const a = ac(); if(!a || _muted) return;
+  const t0 = a.currentTime + (when || 0);
+  const src = a.createBufferSource(), g = a.createGain(), f = a.createBiquadFilter();
+  src.buffer = pluckBuf(freq); f.type = 'lowpass'; f.frequency.value = 3200;
+  g.gain.value = vol || .25; src.connect(f); f.connect(g); g.connect(_master); src.start(t0);
+}
+/* 🔔 กระดิ่ง/ระฆัง — ฮาร์มอนิกแบบโลหะ */
+function bell(freq, vol, when, dur){
+  const a = ac(); if(!a || _muted) return;
+  const t0 = a.currentTime + (when || 0), D = dur || 1.2;
+  [[1, 1], [2.76, .5], [5.4, .25], [8.93, .12]].forEach(([m, v]) => {
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = 'sine'; o.frequency.value = freq * m;
+    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime((vol || .08) * v, t0 + .005);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + D / m ** .35);
+    o.connect(g); g.connect(_master); o.start(t0); o.stop(t0 + D + .05);
+  });
+}
+/* 🥁 ไทโกะ */
+function taiko(vol, when){
+  const a = ac(); if(!a || _muted) return;
+  const t0 = a.currentTime + (when || 0);
+  const o = a.createOscillator(), g = a.createGain();
+  o.type = 'sine'; o.frequency.setValueAtTime(120, t0); o.frequency.exponentialRampToValueAtTime(48, t0 + .32);
+  g.gain.setValueAtTime(vol || .5, t0); g.gain.exponentialRampToValueAtTime(0.001, t0 + .45);
+  o.connect(g); g.connect(_master); o.start(t0); o.stop(t0 + .5);
+  noise(.06, (vol || .5) * .35, when, 380, 'lowpass');
+}
+/* 🪵 ไม้เคาะ (ฮโยชิกิ) */
+function clap(vol, when){ noise(.045, vol || .25, when, 2600, 'bandpass', 6); tone(1900, .03, 'sine', (vol || .25) * .4, when); }
+
+/* 🦊 จิ้งจอกร้อง "คอน!" */
+function foxKon(vol, when){
+  const a = ac(); if(!a || _muted) return;
+  const t0 = a.currentTime + (when || 0), V = vol || .22;
+  noise(.018, V * .5, when, 3000);                       // ค
+  const g = a.createGain(), f = a.createBiquadFilter();
+  f.type = 'bandpass'; f.frequency.value = 1400; f.Q.value = 1.1;
+  g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(V, t0 + .025); g.gain.exponentialRampToValueAtTime(0.0008, t0 + .26);
+  ['triangle', 'square'].forEach((tp, k) => {
+    const o = a.createOscillator(); o.type = tp; o.detune.value = k ? 9 : 0;
+    o.frequency.setValueAtTime(900, t0 + .01); o.frequency.exponentialRampToValueAtTime(1550, t0 + .06); o.frequency.exponentialRampToValueAtTime(1150, t0 + .22);
+    const og = a.createGain(); og.gain.value = k ? .35 : 1; o.connect(og); og.connect(f); o.start(t0); o.stop(t0 + .28);
+  });
+  f.connect(g); g.connect(_master);
+}
+/* 👻 ผีฮาโลวีน "วู้~" (ตอนโอนิโผล่) */
+function ghost(vol, when){
+  const a = ac(); if(!a || _muted) return;
+  const t0 = a.currentTime + (when || 0);
+  const o = a.createOscillator(), lfo = a.createOscillator(), lg = a.createGain(), g = a.createGain(), f = a.createBiquadFilter();
+  o.type = 'sine'; o.frequency.setValueAtTime(260, t0); o.frequency.exponentialRampToValueAtTime(430, t0 + .35); o.frequency.exponentialRampToValueAtTime(220, t0 + .95);
+  lfo.frequency.value = 5.5; lg.gain.value = 16; lfo.connect(lg); lg.connect(o.frequency);
+  f.type = 'lowpass'; f.frequency.value = 1100;
+  g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol || .06, t0 + .18); g.gain.exponentialRampToValueAtTime(0.0008, t0 + 1);
+  o.connect(f); f.connect(g); g.connect(_master); o.start(t0); lfo.start(t0); o.stop(t0 + 1.05); lfo.stop(t0 + 1.05);
+}
+/* 🌀 "โบ๊ง!" สปริงตลก (แตะโดนโอนิ) */
+function boing(vol, when){
+  const a = ac(); if(!a || _muted) return;
+  const t0 = a.currentTime + (when || 0);
+  const o = a.createOscillator(), lfo = a.createOscillator(), lg = a.createGain(), g = a.createGain();
+  o.type = 'sine'; o.frequency.setValueAtTime(340, t0); o.frequency.exponentialRampToValueAtTime(130, t0 + .5);
+  lfo.frequency.value = 24; lg.gain.setValueAtTime(130, t0); lg.gain.exponentialRampToValueAtTime(1, t0 + .5);
+  lfo.connect(lg); lg.connect(o.frequency);
+  g.gain.setValueAtTime(vol || .35, t0); g.gain.exponentialRampToValueAtTime(0.0008, t0 + .55);
+  o.connect(g); g.connect(_master); o.start(t0); lfo.start(t0); o.stop(t0 + .6); lfo.stop(t0 + .6);
+}
+/* 🎺 เสียงแตร (ตาด๊า / ว้า~ว้า~) */
+function brass(freq, dur, vol, when, opts){
+  const a = ac(); if(!a || _muted) return;
+  const t0 = a.currentTime + (when || 0), o = opts || {};
+  const g = a.createGain(), f = a.createBiquadFilter();
+  f.type = 'lowpass'; f.Q.value = o.wah ? 6 : 1;
+  f.frequency.setValueAtTime(o.wah ? 350 : 1600, t0);
+  if(o.wah){ f.frequency.exponentialRampToValueAtTime(1300, t0 + dur * .45); f.frequency.exponentialRampToValueAtTime(450, t0 + dur); }
+  g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol || .14, t0 + .03);
+  g.gain.setValueAtTime(vol || .14, t0 + dur * .7); g.gain.exponentialRampToValueAtTime(0.0008, t0 + dur);
+  ['sawtooth', 'square'].forEach((tp, k) => {
+    const osc = a.createOscillator(); osc.type = tp; osc.frequency.value = freq; osc.detune.value = k ? -6 : 4;
+    if(o.vib){ const l = a.createOscillator(), lg = a.createGain(); l.frequency.value = 6; lg.gain.value = freq * .03; l.connect(lg); lg.connect(osc.frequency); l.start(t0 + .15); l.stop(t0 + dur); }
+    const og = a.createGain(); og.gain.value = k ? .4 : .7; osc.connect(og); og.connect(f); osc.start(t0); osc.stop(t0 + dur + .02);
+  });
+  f.connect(g); g.connect(_master);
+}
+/* 🥁 กลองรัว (เร่งขึ้นเรื่อยๆ) */
+function drumroll(dur, vol, when){
+  let t = 0, gap = .1; const V = vol || .22, w = when || 0;
+  while(t < dur){ const k = t / dur; noise(.05, V * (.45 + k * .7), w + t, 480, 'bandpass', 1.4); tone(150 + k * 40, .05, 'sine', V * .5 * (.4 + k), w + t); t += gap; gap = Math.max(.032, gap * .88); }
+}
+
 const sfx = {
-  pick(n){ tone(INSCALE[Math.min(9, 4 + n)], .09, 'square', .09); tone(INSCALE[Math.min(9, 5 + n)] * 2, .06, 'triangle', .05, .04); },
-  gold(){ [0, 2, 4, 7].forEach((k, i) => tone(INSCALE[Math.min(9, k + 2)] * 2, .14, 'triangle', .09, i * .05)); },
-  oni(){ tone(220, .28, 'sawtooth', .12, 0, 70); noise(.18, .08, 0, 400); },
-  tail(){ [0, 1, 2, 3, 4].forEach((k, i) => tone(INSCALE[k + 3], .16, 'square', .08, i * .06)); tone(INSCALE[9], .35, 'triangle', .07, .3); },
-  tick(){ tone(1400, .04, 'square', .05); },
-  go(){ tone(523.25, .12, 'square', .1); tone(1046.5, .25, 'square', .08, .1); },
-  gong(){ tone(110, 1.6, 'sine', .22); tone(220, 1.2, 'sine', .1); tone(331, .9, 'sine', .05); },
-  paper(){ noise(.22, .09, 0, 2500); tone(900, .05, 'triangle', .03, .15); },
+  pick(combo){   // 🔥 ป๊อป — แตะติดกันเร็วๆ (คอมโบ) เสียงไต่สูงขึ้น
+    const c = Math.min(combo || 0, 7), f = INSCALE[Math.min(9, 2 + c)];
+    tone(f * .55, .08, 'sine', .2, 0, f * 1.5); bell(f * 2, .045, .01, .4);
+    if(c >= 3) pluck(f * 2, .1, .03);
+  },
+  gold(){ [2, 4, 5, 7, 9].forEach((k, i) => pluck(INSCALE[k], .22, i * .05)); bell(INSCALE[9] * 2, .08, .22, 1.2); bell(INSCALE[9] * 3, .04, .3, .8); },
+  oni(){ boing(.34); clap(.22, .02); },
+  oniAppear(){ ghost(.05); },
+  tail(){ foxKon(.22); [0, 1, 2, 3, 4, 5, 7].forEach((k, i) => pluck(INSCALE[k], .17, .2 + i * .045)); bell(INSCALE[7] * 2, .07, .52, 1.5); },
+  tick(){ clap(.22); },
+  go(){ clap(.3); clap(.3, .12); taiko(.5, .2); },
+  gong(){ bell(98, .22, 0, 4.5); bell(196.5, .08, 0, 3); taiko(.4); },
+  paper(){ noise(.22, .08, 0, 2500); noise(.12, .05, .12, 4000); },
+  roll(dur){ drumroll(dur || .7, .22); },
+  tada(){ brass(523.25, .13, .13); brass(783.99, .5, .15, .15); brass(659.25, .5, .07, .15); bell(INSCALE[9] * 2, .05, .2, 1); },
   reveal(big){
-    const seq = big ? [0, 2, 4, 5, 7, 9] : [2, 4, 7];
-    seq.forEach((k, i) => tone(INSCALE[k], big ? .22 : .16, 'square', .09, i * (big ? .09 : .08)));
-    if(big){ tone(INSCALE[9] * 2, .8, 'triangle', .08, .6); tone(110, 1.2, 'sine', .15, .55); }
+    if(big){
+      [0, 2, 4, 5, 7, 9].forEach((k, i) => pluck(INSCALE[k], .24, i * .09));
+      [0, .18, .3, .42, .54].forEach((t, i) => taiko(.35 + i * .05, .5 + t));
+      [9, 7, 5].forEach((k, i) => bell(INSCALE[k] * 2, .07, 1.1 + i * .15, 2));
+      foxKon(.2, 1.6);
+    } else {
+      [2, 4, 7].forEach((k, i) => pluck(INSCALE[k], .22, i * .08)); bell(INSCALE[7] * 2, .05, .25, 1);
+    }
+  },
+  wah(){   // 🎺 ว้า~ ว้า~ ว้า~ ว้าาา~
+    [[233.08, .34], [220, .34], [207.65, .34], [196, 1.0]].reduce((t, [f, d], i) => { brass(f, d, .12, t, { wah: true, vib: i === 3 }); return t + d + .02; }, 0);
   },
 };
+
+/* 🎵 เพลงประกอบ — ไฟล์จริง (ถ้ามี) หรือสังเคราะห์ · เล่นผ่าน Web Audio (ปลดล็อกตอนกดเริ่ม ใช้ได้ใน LINE ทั้ง iOS/Android) */
+function bgmPrepare(){
+  if(_bgmFileOk !== null) return;
+  _bgmFileOk = 'loading';
+  fetch(BGM_URL).then(r => { if(!r.ok) throw new Error('no bgm'); return r.arrayBuffer(); })
+    .then(ab => new Promise((res, rej) => ac().decodeAudioData(ab, res, rej)))
+    .then(buf => { _bgmBuf = buf; _bgmFileOk = true; if(G && G.running && !G.over && !_muted) bgmStart(); })
+    .catch(() => { _bgmFileOk = false; });
+}
 function bgmStart(){
-  bgmStop(); if(_muted) return;
-  let step = 0, note = 2;
-  const pat = [1, 0, 1, 1, 0, 1, 0, 1];
+  if(_muted) return;
+  const hurry = G && G.t >= HURRY_AT;
+  if(_bgmBuf){
+    bgmSynthStop();
+    const a = ac(); if(!a) return;
+    if(_bgmSrc){ _bgmSrc.playbackRate.value = hurry ? 1.1 : 1; return; }
+    _bgmSrc = a.createBufferSource(); _bgmSrc.buffer = _bgmBuf; _bgmSrc.loop = true; _bgmSrc.playbackRate.value = hurry ? 1.1 : 1;
+    const g = a.createGain(); g.gain.value = BGM_VOL; _bgmSrc.connect(g); g.connect(_master); _bgmSrc.start();
+    return;
+  }
+  bgmSynthStart();
+}
+/* 🎃 เพลงสังเคราะห์ธีมฮาโลวีนญี่ปุ่น — ลึกลับแต่น่ารัก (ขบวนภูตผีร้อยตน) ไม่น่ากลัวจนเครียด */
+let _drone = null;
+function droneStart(){
+  const a = ac(); if(!a || _drone) return;
+  const g = a.createGain(); g.gain.setValueAtTime(0.0001, a.currentTime); g.gain.exponentialRampToValueAtTime(.05, a.currentTime + 2);
+  const f = a.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 420;
+  const o1 = a.createOscillator(), o2 = a.createOscillator(), lfo = a.createOscillator(), lg = a.createGain();
+  o1.type = 'triangle'; o1.frequency.value = 82.41;          // E ต่ำ
+  o2.type = 'sawtooth'; o2.frequency.value = 87.31;          // F ต่ำ ชนกันครึ่งเสียง = หลอนๆ
+  lfo.frequency.value = .18; lg.gain.value = 180; lfo.connect(lg); lg.connect(f.frequency);
+  o1.connect(f); o2.connect(f); f.connect(g); g.connect(_master);
+  o1.start(); o2.start(); lfo.start();
+  _drone = { g, nodes: [o1, o2, lfo] };
+}
+function droneStop(){
+  if(!_drone) return;
+  const a = ac(), d = _drone; _drone = null;
+  try{ d.g.gain.cancelScheduledValues(a.currentTime); d.g.gain.setValueAtTime(d.g.gain.value, a.currentTime); d.g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + .6);
+       d.nodes.forEach(n => n.stop(a.currentTime + .7)); }catch(e){}
+}
+function ghostFlute(when){   // เสียงขลุ่ยผี: ลอยลง + สั่นเสียง
+  const a = ac(); if(!a || _muted) return;
+  const t0 = a.currentTime + (when || 0);
+  const o = a.createOscillator(), g = a.createGain(), v = a.createOscillator(), vg = a.createGain();
+  o.type = 'sine'; o.frequency.setValueAtTime(INSCALE[7], t0); o.frequency.exponentialRampToValueAtTime(INSCALE[5], t0 + 1.4);
+  v.frequency.value = 5.5; vg.gain.value = 9; v.connect(vg); vg.connect(o.frequency);
+  g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(.05, t0 + .35); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 1.7);
+  o.connect(g); g.connect(_master); o.start(t0); v.start(t0); o.stop(t0 + 1.8); v.stop(t0 + 1.8);
+  noise(1.2, .015, when, 1800, 'bandpass', 2);   // ลมหายใจขลุ่ย
+}
+function windSwell(when){ noise(2.2, .05, when, 500, 'lowpass'); }
+function bgmSynthStart(){
+  bgmSynthStop(); if(_muted) return;
+  const hurry = G && G.t >= HURRY_AT;
+  droneStart();
+  let step = 0, note = 3;
+  const melody = [1, 0, 0, 1, 0, 1, 0, 0];     // โน้ตห่างๆ = ลึกลับ
+  const bass = [INSCALE[0], INSCALE[1], INSCALE[0], INSCALE[3]];
   _bgmTimer = setInterval(() => {
     if(_muted) return;
-    if(step % 8 === 0) tone(INSCALE[0] / 2, .5, 'triangle', .07);
-    if(step % 8 === 4) tone(INSCALE[2] / 2, .4, 'triangle', .05);
-    if(pat[step % 8]){ note = Math.max(0, Math.min(7, note + [-2, -1, 1, 2, 0][Math.floor(Math.random() * 5)])); tone(INSCALE[note], .2, 'triangle', .045); }
+    const s8 = step % 8, bar = Math.floor(step / 8) % 8;
+    if(s8 === 0) taiko(bar % 4 === 0 ? .3 : .18);
+    if(s8 === 6 && bar % 2 === 1) taiko(.12);
+    if(hurry && (s8 === 2 || s8 === 4 || s8 === 6)) clap(.07);
+    if(s8 === 0) pluck(bass[bar % 4] / 2, .18);
+    if(melody[s8] && Math.random() < .8){
+      note = Math.max(0, Math.min(7, note + [-2, -1, -1, 1, 1, 2, 0][Math.floor(Math.random() * 7)]));
+      pluck(INSCALE[note], .12);
+      if(Math.random() < .25) pluck(INSCALE[note] * 2, .05, .02);   // เสียงสะท้อนบางๆ
+    }
+    if(s8 === 0 && bar === 2) ghostFlute(0);
+    if(s8 === 0 && bar === 6) windSwell(0);
+    if(s8 === 4 && bar === 7) bell(INSCALE[1] * 2, .03, 0, 2.2);
     step++;
-  }, (G && G.t > HURRY_AT) ? 170 : 220);
+  }, hurry ? 210 : 270);
 }
-function bgmStop(){ if(_bgmTimer){ clearInterval(_bgmTimer); _bgmTimer = null; } }
+function bgmSynthStop(){ if(_bgmTimer){ clearInterval(_bgmTimer); _bgmTimer = null; } droneStop(); }
+function bgmStop(){ bgmSynthStop(); try{ if(_bgmSrc){ _bgmSrc.stop(); } }catch(e){} _bgmSrc = null; }
 document.getElementById('muteBtn').onclick = () => {
   _muted = !_muted; document.getElementById('muteBtn').textContent = _muted ? '🔇' : '🔊';
   if(_muted) bgmStop(); else if(G && G.running) bgmStart();
@@ -767,12 +963,12 @@ function rnd(a, b){ return a + Math.random() * (b - a); }
 
 function startGame(){
   if(!window._initDone) return;
-  ac();
+  ac(); bgmPrepare();
   show('game');
   CV = fitCanvas(document.getElementById('cv'));
   G = { t: 0, running: false, over: false, last: 0,
         tails: 1, prog: 0, fires: 0, golds: 0, oniHits: 0,
-        objs: [], parts: [], pops: [], nextBlue: 0.4, nextOni: ONI_START, nextFake: FAKE_START, goldIdx: 0, shake: 0, lastTick: -1, hurried: false, stunUntil: 0, fakeHits: 0 };
+        objs: [], parts: [], pops: [], nextBlue: 0.4, nextOni: ONI_START, nextFake: FAKE_START, goldIdx: 0, shake: 0, lastTick: -1, hurried: false, stunUntil: 0, fakeHits: 0, combo: 0, lastCatch: -9 };
   updateHud();
   document.getElementById('hint').style.opacity = '1';
   // นับถอยหลัง 3-2-1
@@ -806,6 +1002,7 @@ function spawn(kind){
       o.vy = f ? f.vy * .8 : 0; o.life = late ? 1.2 : 1.5; o.ambush = true;
     }
     G.objs.push(o);
+    if(G.running) sfx.oniAppear();
     return;
   }
   const gold = kind === 'gold';
@@ -925,17 +1122,19 @@ document.getElementById('cv').addEventListener('pointerdown', (e) => {
   best.dead = true;
   const stun = () => { G.stunUntil = G.t + STUN_SEC; const f = document.getElementById('flash'); f.style.opacity = '.35'; setTimeout(() => f.style.opacity = '0', 160); try{ navigator.vibrate && navigator.vibrate(80); }catch(_e){} };
   if(best.kind === 'fake'){
-    G.fakeHits++; G.shake = .6; sfx.oni();
+    G.fakeHits++; G.shake = .6; G.combo = 0; sfx.oni();
     const lost = Math.min(G.prog, FAKE_PENALTY); G.prog = Math.max(0, G.prog - FAKE_PENALTY);
     burst(best.x, best.y, '#b77bff', 12, lost ? `-${lost} หลอก!` : 'หลอก!'); stun(); updateHud();
   } else if(best.kind === 'oni'){
-    G.oniHits++; G.shake = 1; sfx.oni();
+    G.oniHits++; G.shake = 1; G.combo = 0; sfx.oni();
     const lost = Math.min(G.prog, ONI_PENALTY); G.prog = Math.max(0, G.prog - ONI_PENALTY);
     burst(best.x, best.y, '#ff5a5a', 14, lost ? `-${lost}` : '👹'); stun(); updateHud();
   } else if(best.kind === 'gold'){
+    G.combo = (G.t - G.lastCatch < 1.1) ? G.combo + 1 : 0; G.lastCatch = G.t;
     G.golds++; sfx.gold(); burst(best.x, best.y, '#ffcf5a', 18, `+${GOLD_VALUE}`); addPoints(GOLD_VALUE);
   } else {
-    G.fires++; sfx.pick(G.prog); burst(best.x, best.y, '#9cc6ff', 9, '+1'); addPoints(1);
+    G.combo = (G.t - G.lastCatch < 1.1) ? G.combo + 1 : 0; G.lastCatch = G.t;
+    G.fires++; sfx.pick(G.combo); burst(best.x, best.y, '#9cc6ff', 9, G.combo >= 2 ? `+1 คอมโบ ${G.combo + 1}` : '+1'); addPoints(1);
   }
 }, { passive: false });
 
@@ -1029,16 +1228,19 @@ async function revealAll(d, picks){
   await finalizeResult(res);            // ✅ บันทึกผลให้เสร็จก่อนพลิกใบแรก (ปิดแอประหว่างพลิก = ผลเดิม)
   const flip = (i, extra) => { const a = res.deck[i]; els[i].querySelector('.back').innerHTML = slipBackHtml(a); els[i].classList.toggle('zero', !(a > 0)); els[i].classList.add('open', ...(extra || [])); };
   let run = 0;
+  let first = true;
   for(const i of picks){
+    const rl = first ? .8 : .5; first = false;
+    sfx.roll(rl); els[i].classList.add('shake'); await new Promise(r => setTimeout(r, rl * 1000)); els[i].classList.remove('shake');
     flip(i, ['mine']); sfx.paper(); run += res.deck[i];
     note.innerHTML = `รวม <b style="color:var(--gold);">฿${run}</b>`;
-    if(res.deck[i] >= 150) setTimeout(() => sfx.reveal(false), 300);
-    await new Promise(r => setTimeout(r, 800));
+    if(res.deck[i] >= 150) setTimeout(() => sfx.reveal(false), 250); else if(res.deck[i] > 0) setTimeout(() => bell(INSCALE[5] * 2, .05, 0, .6), 250);
+    await new Promise(r => setTimeout(r, 650));
   }
   picks.forEach(i => els[i].classList.add(res.deck[i] > 0 ? 'best' : 'lose'));
   if(res.amount >= CAP) picks.forEach(i => els[i].classList.add('k9'));
   note.innerHTML = res.amount > 0 ? `✨ รวมได้ <b style="color:var(--gold);">฿${res.amount}</b>` : '😢 ใบที่จับได้ว่างเปล่า…';
-  if(res.amount > 0) sfx.reveal(res.amount >= CAP); else tone(196, .5, 'triangle', .1, 0, 147);
+  if(res.amount >= CAP) sfx.reveal(true); else if(res.amount > 0) sfx.tada(); else sfx.wah();
   await new Promise(r => setTimeout(r, 1100));
   // 😏 เฉลยใบที่ไม่ได้เลือก
   const rest = els.map((el, i) => i).filter(i => !picks.includes(i));
