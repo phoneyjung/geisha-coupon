@@ -15,7 +15,7 @@
 /* Layout: one full-bleed 3D night street; UI floats above it in layers (HUD top · lane buttons bottom · cards centred) */
 :root{
   color-scheme: dark;
-  --night:#0a1030; --dusk:#1a2552; --snow:#f2f6ff; --berry:#e23a4e; --pine:#27a36b; --gold:#ffcc4d; --ice:#8fe6ff;
+  --night:#0a1030; --dusk:#1a2552; --snow:#f2f6ff; --berry:#e23a4e; --pine:#27a36b; --gold:#ffcc4d; --ice:#8fe6ff; --cheer:#ff4f9a;
   --ink:#0d1330; --panel:rgba(12,18,48,.86); --line:rgba(255,255,255,.18); --dim:rgba(242,246,255,.72);
   --shop:#9d174d;
   --f-display:'Mitr','Leelawadee UI','Thonburi','Noto Sans Thai',system-ui,sans-serif;
@@ -60,7 +60,11 @@ html[lang=en] h1{font-size:clamp(40px,13vw,92px)}
 /* ---------- HUD ---------- */
 #hud{pointer-events:none;display:flex;flex-direction:column;gap:8px}
 .hud-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
-.score{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:4px 14px 6px;min-width:112px}
+.score{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:4px 14px 6px;min-width:112px}
+.score.cheer{border-color:var(--cheer);box-shadow:0 0 16px rgba(255,79,154,.55)}
+.score.cheer b{color:#ff9cc8}
+.x2{position:absolute;right:-14px;top:-9px;overflow:hidden;padding:4px 9px 8px;border-radius:12px;background:var(--cheer);color:#fff;font-family:var(--f-data);font-weight:700;font-size:17px;line-height:1;box-shadow:0 0 14px rgba(255,79,154,.8)}
+.x2 i{position:absolute;left:0;bottom:0;width:100%;height:4px;background:#fff;transform-origin:left center}
 .score .lbl{display:block;font-size:12px;color:var(--dim)}
 .score b{display:block;font-family:var(--f-data);font-size:34px;line-height:1;font-weight:700;font-variant-numeric:tabular-nums;color:var(--gold)}
 .score b.pop{animation:pop .18s}
@@ -161,7 +165,7 @@ html[lang=en] h1{font-size:clamp(40px,13vw,92px)}
   <!-- HUD -->
   <div id="hud" class="layer" hidden>
     <div class="hud-top">
-      <div class="score"><span class="lbl" data-t="score"></span><b id="sc">0</b><span class="spd"><i id="spd">54</i> <span data-t="kmh"></span></span></div>
+      <div class="score" id="scoreBox"><span class="x2" id="x2" hidden>x2<i id="x2bar"></i></span><span class="lbl" data-t="score"></span><b id="sc">0</b><span class="spd"><i id="spd">54</i> <span data-t="kmh"></span></span></div>
       <div class="hud-right">
         <div class="hearts" id="hearts"></div>
         <button class="hud-btn" id="btnPause" aria-label="pause"><svg class="ic"><use href="#i-pause"/></svg></button>
@@ -291,9 +295,10 @@ html[lang=en] h1{font-size:clamp(40px,13vw,92px)}
 const CFG = {
   lanes: [-2.3, 0, 2.3],
   speed0: 15, accel: 0.19,                        // m/s · +0.19 every second → 36 m/s after ~110 s
+  cheerFirst: 8, cheerEvery: 25, cheerSecs: 8,    // น้องแซนตี้ is sent out after 8 s of play (the sleigh reaches her at ~15 s), then every 25 s; her heart = score x2 for 8 s
   speedRef: 36, accelLate: 0.45,                  // past 36 m/s there is NO ceiling: it keeps speeding up, and faster (owner 13 Nov 69)
   hearts: 3,
-  open2: 1500, open3: 4000,                       // score needed to open 2 / 3 gift boxes (first play)
+  open2: 2000, open3: 5500,                       // score needed to open 2 / 3 gift boxes (first play) — was 1500 / 4000 before the x2 heart; same share of players per tier in simulation
   giftPts: 10, starPts: 50,
   spawnZ: -135, rowGapMin: 15, rowGapTime: 0.8,   // seconds of clear road between obstacle rows — up to 36 m/s; past that the rows stay 28.8 m apart,
                                                   // so the time to dodge keeps shrinking and every run ends (simulated: a perfect machine lasts ~11 min)
@@ -311,9 +316,9 @@ document.documentElement.style.setProperty('--shop', SHOP.color);
    ============================================================ */
 const TXT = {
   th: {
-    eyebrow: 'คริสต์มาส · ปีใหม่ 2570', title: 'เลื่อนซิ่ง', tag: 'พาน้องแซนตี้ หลบตุ๊กตาหิมะ เก็บของขวัญ',
+    eyebrow: 'คริสต์มาส · ปีใหม่ 2570', title: 'เลื่อนซิ่ง', tag: 'ปัดซ้ายขวา หลบตุ๊กตาหิมะ เก็บของขวัญ',
     resetBtn: 'ล้างผลตัวอย่าง (ลองเล่นครั้งแรกใหม่)', start: 'เริ่มเกม', howBtn: 'วิธีเล่น', boardBtn: 'อันดับ', best: 'คะแนนสูงสุด', proto: 'ตัวอย่างให้ลองเล่น · ยังไม่ต่อคูปองจริง',
-    score: 'คะแนน', kmh: 'กม./ชม.', howTitle: 'วิธีเล่น', how1: 'ปัดซ้าย-ขวา', how1s: 'หรือแตะครึ่งจอซ้าย / ขวา', how2: 'เก็บของขวัญ', how2s: 'กล่อง +10 · ดาว +50',
+    score: 'คะแนน', kmh: 'กม./ชม.', howTitle: 'วิธีเล่น', how1: 'ปัดซ้าย-ขวา', how1s: 'หรือแตะครึ่งจอซ้าย / ขวา', how2: 'เก็บของขวัญ', how2s: 'กล่อง +10 · ดาว +50 · หัวใจน้องแซนตี้ = คะแนน x2',
     how3: 'ชนได้ 3 ครั้ง', how3s: 'ยิ่งไกลยิ่งเร็ว · หัวใจหมด = จบเกม', how4: 'เล่นครั้งแรก คะแนนถึงเกณฑ์ ได้เปิดกล่องส่วนลดมากขึ้น',
     tier: 'ถึง', tierAny: 'ทุกคน', go: 'ไปเลย', paused: 'พักเกม', resume: 'เล่นต่อ', home: 'หน้าแรก',
     over: 'จบเกม', newBest: 'สถิติใหม่!', overSubFirst: 'ได้เปิดกล่องของขวัญ', boxes: 'กล่อง', openBtn: 'เปิดกล่องของขวัญ',
@@ -321,14 +326,14 @@ const TXT = {
     pickTitle: 'เลือก {n} กล่อง', pickSub: 'แตะกล่องที่ชอบ', pickLeft: 'เหลืออีก {n} กล่อง', pickDone: 'รวมส่วนลดของคุณ',
     empty: 'กล่องเปล่า', couponLbl: 'คูปองส่วนลด', couponNote: 'ตัวอย่าง · ของจริงระบบจะออกคูปองให้ทาง LINE',
     boardTitle: 'อันดับ Top 10', boardSub: 'ตัวอย่าง · ของจริงจะเป็นคะแนนของลูกค้าทั้งร้าน', you: 'คุณ',
-    toast2: 'เปิดได้ 2 กล่องแล้ว!', toast3: 'เปิดได้ 3 กล่องแล้ว!', hint: 'ปัดซ้าย-ขวา เปลี่ยนเลน', toGo: 'อีก {n} → {k} กล่อง', maxed: 'ครบ 3 กล่องแล้ว',
+    cheerOn: 'น้องแซนตี้เชียร์! คะแนน x2', toast2: 'เปิดได้ 2 กล่องแล้ว!', toast3: 'เปิดได้ 3 กล่องแล้ว!', hint: 'ปัดซ้าย-ขวา เปลี่ยนเลน', toGo: 'อีก {n} → {k} กล่อง', maxed: 'ครบ 3 กล่องแล้ว',
     bestTag: 'สถิติ {n}', failTitle: 'อุปกรณ์นี้เปิดเกมไม่ได้', failSub: 'ลองเปิดด้วย Chrome หรือ Safari รุ่นใหม่',
     signs: ['สุขสันต์วันคริสต์มาส', 'สวัสดีปีใหม่ 2570', 'โกโก้ร้อน', 'ร้านของขวัญ', 'นวดผ่อนคลาย'],
   },
   en: {
-    eyebrow: 'CHRISTMAS · NEW YEAR 2027', title: 'Sleigh Dash', tag: 'Help Santy dodge the snowmen and grab the gifts',
+    eyebrow: 'CHRISTMAS · NEW YEAR 2027', title: 'Sleigh Dash', tag: 'Swipe left and right, dodge the snowmen, grab the gifts',
     resetBtn: 'Reset sample (replay as first time)', start: 'Play', howBtn: 'How to play', boardBtn: 'Ranking', best: 'Best score', proto: 'Playable sample · coupons not connected yet',
-    score: 'Score', kmh: 'km/h', howTitle: 'How to play', how1: 'Swipe left / right', how1s: 'or tap the left / right half', how2: 'Collect gifts', how2s: 'Box +10 · Star +50',
+    score: 'Score', kmh: 'km/h', howTitle: 'How to play', how1: 'Swipe left / right', how1s: 'or tap the left / right half', how2: 'Collect gifts', how2s: 'Box +10 · Star +50 · Santy\'s heart = score x2',
     how3: 'Three bumps allowed', how3s: 'It keeps getting faster · no hearts = game over', how4: 'On your first play, a higher score opens more discount boxes',
     tier: 'from', tierAny: 'Everyone', go: "Let's go", paused: 'Paused', resume: 'Resume', home: 'Home',
     over: 'Game over', newBest: 'New best!', overSubFirst: 'Gift boxes you can open', boxes: 'boxes', openBtn: 'Open my gift boxes',
@@ -336,7 +341,7 @@ const TXT = {
     pickTitle: 'Pick {n} boxes', pickSub: 'Tap the ones you like', pickLeft: '{n} more to pick', pickDone: 'Your total discount',
     empty: 'Empty', couponLbl: 'Discount coupon', couponNote: 'Sample · the real coupon will be issued through LINE',
     boardTitle: 'Top 10 Ranking', boardSub: 'Sample · the real board will show every customer', you: 'You',
-    toast2: '2 boxes unlocked!', toast3: '3 boxes unlocked!', hint: 'Swipe left / right to change lane', toGo: '{n} more → {k} boxes', maxed: 'All 3 boxes unlocked',
+    cheerOn: 'Santy cheers! Score x2', toast2: '2 boxes unlocked!', toast3: '3 boxes unlocked!', hint: 'Swipe left / right to change lane', toGo: '{n} more → {k} boxes', maxed: 'All 3 boxes unlocked',
     bestTag: 'Best {n}', failTitle: 'This device cannot run the game', failSub: 'Try a recent Chrome or Safari',
     signs: ['Merry Christmas', 'Happy New Year 2027', 'Hot Cocoa', 'Gift Shop', 'Relax Massage'],
   },
@@ -431,6 +436,7 @@ const Sound = (() => {
     move(){ if(!ctx) return; noise(sfx, ctx.currentTime, 0.07, 0.08, 2500); },
     tier(){ if(!ctx) return; const t0 = ctx.currentTime; [784, 988, 1175, 1568].forEach((f, i) => tone(sfx, 'triangle', f, t0 + i * 0.09, 0.3, 0.24)); },
     click(){ if(!ctx) return; tone(sfx, 'sine', 660, ctx.currentTime, 0.07, 0.18, 990); },
+    cheer(){ if(!ctx) return; const t0 = ctx.currentTime; [880, 1109, 1319, 1760, 2217].forEach((f, i) => tone(sfx, 'triangle', f, t0 + i * 0.07, 0.26, 0.24)); },
     over(){ if(!ctx) return; const t0 = ctx.currentTime; [523, 440, 349, 262].forEach((f, i) => tone(sfx, 'triangle', f, t0 + i * 0.16, 0.34, 0.22)); },
   };
 })();
@@ -560,7 +566,7 @@ function sleighGeo(){
     L.push(P('box', C.goldD, [s * 0.6, 0.3, -1.22], [0.09, 0.5, 0.09], [0.55, 0, 0]));
     L.push(P('box', C.goldD, [s * 0.6, 0.28, -0.55], [0.07, 0.34, 0.07]), P('box', C.goldD, [s * 0.6, 0.28, 0.75], [0.07, 0.34, 0.07]));
     L.push(P('box', C.redD, [s * 0.68, 1.02, 0.1], [0.1, 0.3, 2.0]), P('box', C.gold, [s * 0.68, 1.19, 0.1], [0.13, 0.06, 2.04]));
-    L.push(P('box', C.red, [s * 0.38, 1.52, -0.44], [0.16, 0.16, 0.52]), P('box', C.snow, [s * 0.38, 1.52, -0.72], [0.2, 0.2, 0.12]), P('sph', C.skin, [s * 0.38, 1.52, -0.82], 0.085));
+    L.push(P('box', C.red, [s * 0.38, 1.52, -0.44], [0.16, 0.16, 0.52]), P('box', C.green, [s * 0.38, 1.52, -0.74], [0.18, 0.18, 0.14]));
     L.push(P('box', C.redD, [s * 0.24, 1.44, -1.55], [0.025, 0.025, 1.7]));
   }
   L.push(P('box', C.red, [0, 0.68, 0.1], [1.35, 0.5, 2.0]));
@@ -569,13 +575,26 @@ function sleighGeo(){
   L.push(P('sph', C.green, [0, 1.52, 0.62], [0.56, 0.6, 0.46]), P('box', C.gold, [0, 2.06, 0.62], [0.2, 0.1, 0.2]));
   L.push(P('box', C.blue, [-0.3, 1.98, 0.7], 0.3, [0.2, 0.5, 0.1]), P('box', C.pink, [0.32, 1.96, 0.58], 0.26, [0.1, -0.4, 0.2]), P('box', C.gold, [0.02, 2.2, 0.68], 0.2, [0.4, 0.3, 0]));
   L.push(P('box', C.red, [0, 1.45, -0.15], [0.62, 0.62, 0.46]), P('box', C.ink, [0, 1.3, -0.15], [0.64, 0.1, 0.48]), P('box', C.snow, [0, 1.16, -0.15], [0.66, 0.1, 0.5]));
-  // the driver is a girl in a Santy dress (no beard): long dark hair down her back, white fur collar and cuffs
-  const HAIR = '#3a2317';
-  L.push(P('sph', C.skin, [0, 1.98, -0.15], 0.23), P('cyl8', C.snow, [0, 2.13, -0.15], [0.26, 0.09, 0.26]));
-  L.push(P('sph', HAIR, [0, 1.99, -0.06], [0.25, 0.25, 0.22]), P('box', HAIR, [0, 1.62, 0.13], [0.46, 0.74, 0.12]), P('box', HAIR, [-0.23, 1.84, -0.1], [0.06, 0.36, 0.12]), P('box', HAIR, [0.23, 1.84, -0.1], [0.06, 0.36, 0.12]));
-  L.push(P('cyl8', C.snow, [0, 1.76, -0.17], [0.36, 0.09, 0.3]));
+  L.push(P('sph', C.skin, [0, 1.98, -0.15], 0.23), P('sph', C.snow, [0, 1.9, -0.32], [0.2, 0.19, 0.13]), P('cyl8', C.snow, [0, 2.13, -0.15], [0.26, 0.09, 0.26]));      // Santa: head, beard, hat brim
   L.push(P('cone6', C.red, [0, 2.38, -0.08], [0.24, 0.46, 0.24], [0.4, 0, 0]), P('sph', C.snow, [0, 2.57, 0.06], 0.09));
   Gw.push(P('sph', C.warm, [-0.74, 1.36, -0.98], 0.11), P('sph', C.warm, [0.74, 1.36, -0.98], 0.11));
+  return { lit: merge(L), glow: merge(Gw) };
+}
+/* น้องแซนตี้ — a girl in a Santy dress (the staff wear Santy outfits in December) cheering with pom-poms by the roadside */
+function santyGeo(){
+  const L = [], Gw = [], HAIR = '#3a2317';
+  for(const s of [-1, 1]){
+    L.push(P('box', C.snow, [s * 0.13, 0.13, 0.03], [0.19, 0.26, 0.3]), P('box', C.skin, [s * 0.13, 0.48, 0], [0.13, 0.46, 0.13]));                                   // white boots, legs
+    L.push(P('box', C.red, [s * 0.42, 1.8, 0], [0.13, 0.52, 0.13], [0, 0, -s * 0.5]), P('box', C.snow, [s * 0.55, 2.03, 0], [0.18, 0.12, 0.18], [0, 0, -s * 0.5]));     // arms up, fur cuffs
+    Gw.push(P('sph', '#ffe066', [s * 0.63, 2.2, 0], 0.21), P('sph', '#ffffff', [s * 0.72, 2.33, 0.06], 0.12));                                                      // pom-poms
+  }
+  L.push(P('cone6', C.red, [0, 1.02, 0], [0.5, 0.74, 0.5]), P('cyl8', C.snow, [0, 0.69, 0], [0.5, 0.11, 0.5]));                                                      // A-line skirt, fur hem
+  L.push(P('box', C.red, [0, 1.48, 0], [0.46, 0.5, 0.3]), P('box', C.ink, [0, 1.27, 0], [0.48, 0.08, 0.32]), P('box', C.gold, [0, 1.27, 0.16], [0.12, 0.1, 0.03]));
+  L.push(P('cyl8', C.snow, [0, 1.75, 0], [0.31, 0.09, 0.26]));
+  L.push(P('sph', C.skin, [0, 1.99, 0], 0.23), P('sph', HAIR, [0, 2.0, -0.08], [0.25, 0.25, 0.22]), P('box', HAIR, [0, 1.62, -0.2], [0.44, 0.74, 0.1]));
+  L.push(P('box', HAIR, [-0.23, 1.86, -0.04], [0.06, 0.36, 0.12]), P('box', HAIR, [0.23, 1.86, -0.04], [0.06, 0.36, 0.12]));
+  L.push(P('sph', C.ink, [-0.085, 2.02, 0.2], 0.032), P('sph', C.ink, [0.085, 2.02, 0.2], 0.032), P('sph', '#ff8fa8', [-0.14, 1.94, 0.17], 0.04), P('sph', '#ff8fa8', [0.14, 1.94, 0.17], 0.04), P('box', '#c2334a', [0, 1.9, 0.215], [0.09, 0.025, 0.02]));
+  L.push(P('cyl8', C.snow, [0, 2.15, 0], [0.26, 0.09, 0.26]), P('cone6', C.red, [0, 2.4, 0.03], [0.24, 0.46, 0.24], [-0.25, 0, 0.3]), P('sph', C.snow, [-0.13, 2.6, -0.06], 0.09));
   return { lit: merge(L), glow: merge(Gw) };
 }
 function deerGeo(){
@@ -737,7 +756,17 @@ const GIFT_GEO = [['#ff4d63', '#ffffff'], ['#2fd17a', '#ffe066'], ['#ffffff', '#
 const STAR_GEO = (() => { const sh = new T.Shape(); for(let i = 0; i < 10; i++){ const a = i * Math.PI / 5 - Math.PI / 2, r = i % 2 ? 0.3 : 0.72; if(i) sh.lineTo(Math.cos(a) * r, -Math.sin(a) * r); else sh.moveTo(Math.cos(a) * r, -Math.sin(a) * r); }
   const g = new T.ExtrudeGeometry(sh, { depth: 0.2, bevelEnabled: false }); g.translate(0, 0, -0.1); return g; })();
 const starMat = new T.MeshBasicMaterial({ color: 0xffd54a });
-const pools = { snowman: [], barrier: [], logs: [], gift: [], star: [] }, active = [];
+const pools = { snowman: [], barrier: [], logs: [], gift: [], star: [], cheer: [] }, active = [];
+// the pink "x2" heart: a sprite, so it always faces the player
+const CHEER = '#ff4f9a';
+const cheerMat = (() => { const c = document.createElement('canvas'); c.width = c.height = 160; const x = c.getContext('2d');
+  x.translate(80, 84); x.beginPath(); x.moveTo(0, 56); x.bezierCurveTo(-78, 6, -62, -62, -30, -62); x.bezierCurveTo(-12, -62, 0, -48, 0, -36); x.bezierCurveTo(0, -48, 12, -62, 30, -62); x.bezierCurveTo(62, -62, 78, 6, 0, 56); x.closePath();
+  x.fillStyle = CHEER; x.fill(); x.lineWidth = 8; x.strokeStyle = '#ffffff'; x.stroke();
+  x.fillStyle = '#ffffff'; x.font = '900 58px system-ui, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('x2', 0, -10);
+  return new T.SpriteMaterial({ map: new T.CanvasTexture(c), transparent: true, depthWrite: false }); })();
+const cheerHalo = new T.SpriteMaterial({ map: haloTex, color: 0xff7ab8, blending: T.AdditiveBlending, depthWrite: false, transparent: true });
+const santys = (() => { const g = santyGeo(), out = []; for(let i = 0; i < 2; i++){ const o = new T.Group(); o.add(new T.Mesh(g.lit, matLit), new T.Mesh(g.glow, matGlow)); o.scale.setScalar(1.8); o.visible = false; o.userData = { ph: i * 1.7 }; scene.add(o); out.push(o); } return out; })();
+const SANTY_X = ROAD_W / 2 + 1.35;
 // ground markers: red strip in front of every obstacle ("this lane is blocked"), gold dot under every pick-up
 const fadeTex = (r, g, b) => { const c = document.createElement('canvas'); c.width = 8; c.height = 64; const x = c.getContext('2d'), gr = x.createLinearGradient(0, 0, 0, 64);
   gr.addColorStop(0, `rgba(${r},${g},${b},.9)`); gr.addColorStop(0.4, `rgba(${r},${g},${b},.5)`); gr.addColorStop(1, `rgba(${r},${g},${b},0)`); x.fillStyle = gr; x.fillRect(0, 0, 8, 64); return new T.CanvasTexture(c); };
@@ -745,6 +774,7 @@ const dangerGeo = new T.PlaneGeometry(2.1, 8); dangerGeo.rotateX(-Math.PI / 2); 
 const dangerMat = new T.MeshBasicMaterial({ map: fadeTex(255, 60, 80), transparent: true, depthWrite: false });
 const discGeo = new T.CircleGeometry(0.66, 18); discGeo.rotateX(-Math.PI / 2);
 const discMat = new T.MeshBasicMaterial({ color: 0xffd23f, transparent: true, opacity: 0.55, depthWrite: false });
+const discPink = new T.MeshBasicMaterial({ color: 0xff4f9a, transparent: true, opacity: 0.6, depthWrite: false });
 const laneGeo = new T.PlaneGeometry(2.1, 30); laneGeo.rotateX(-Math.PI / 2);
 const laneGlow = new T.Mesh(laneGeo, new T.MeshBasicMaterial({ map: fadeTex(255, 255, 255), transparent: true, opacity: 0.14, depthWrite: false }));
 laneGlow.rotation.y = Math.PI; laneGlow.position.set(0, 0.015, -17); laneGlow.visible = false; scene.add(laneGlow);       // soft strip showing the lane the sleigh is in
@@ -753,8 +783,9 @@ function make(type){
   if(OBST[type]){ o.add(new T.Mesh(OBST[type].lit, matLit)); if(OBST[type].glow) o.add(new T.Mesh(OBST[type].glow, matGlow)); const m = new T.Mesh(dangerGeo, dangerMat); m.position.set(0, 0.03, -0.5); o.add(m); o.userData = { strip: m }; }
   else {
     if(type === 'gift') body = new T.Mesh(GIFT_GEO[pools.gift.length % 4], matGlow);
+    else if(type === 'cheer'){ body = new T.Group(); const h = new T.Sprite(cheerHalo); h.scale.set(3.4, 3.4, 1); const sp = new T.Sprite(cheerMat); sp.scale.set(1.9, 1.9, 1); body.add(h, sp); }
     else { body = new T.Group(); body.add(new T.Mesh(STAR_GEO, starMat)); const h = new T.Sprite(haloMat); h.scale.set(3, 3, 1); body.add(h); }
-    body.position.y = 1.0; o.add(body); const dsc = new T.Mesh(discGeo, discMat); dsc.position.y = 0.03; if(type === 'star') dsc.scale.set(1.4, 1, 1.4); o.add(dsc);
+    body.position.y = 1.0; o.add(body); const dsc = new T.Mesh(discGeo, type === 'cheer' ? discPink : discMat); dsc.position.y = 0.03; if(type !== 'gift') dsc.scale.set(1.4, 1, 1.4); o.add(dsc);
   }
   o.visible = false; o.userData = { type, lane: 1, done: false, ph: Math.random() * 6, body, strip: o.userData.strip || null }; scene.add(o); pools[type].push(o); return o;
 }
@@ -766,7 +797,7 @@ function spawn(type, lane, z){
   o.visible = true; o.userData.lane = lane; o.userData.done = false;
   o.position.set(CFG.lanes[lane], 0, z); active.push(o); return o;
 }
-function clearActive(){ for(const o of active) o.visible = false; active.length = 0; }
+function clearActive(){ for(const o of active) o.visible = false; active.length = 0; for(const g of santys) g.visible = false; }
 
 /* ---- falling snow + burst particles ---- */
 const SNOW_N = LOW ? 180 : 340, snowPos = new Float32Array(SNOW_N * 3), snowVel = new Float32Array(SNOW_N);
@@ -791,7 +822,7 @@ function burst(x, y, z, color, n, power){
 /* ============================================================
    GAME STATE
    ============================================================ */
-const S = { mode: 'home', score: 0, dist: 0, bonus: 0, speed: 6, hearts: CFG.hearts, lane: 1, px: 0, invuln: 0, t: 0, opens: 1, combo: 0, comboT: 0,
+const S = { mode: 'home', score: 0, dist: 0, bonus: 0, extra: 0, pt: 0, cheer: 0, cheers: 0, nextCheer: 0, speed: 6, hearts: CFG.hearts, lane: 1, px: 0, invuln: 0, t: 0, opens: 1, combo: 0, comboT: 0,
   rowAcc: 0, rows: 0, lastFree: 1, shake: 0, endT: 0, scroll: 0, first: true, bot: false, hits: 0, gifts: 0, stars: 0 };
 let best = store.get('best', 0) || 0;
 let firstResult = store.get('first', null);          // { score, opens, total } — the coupon is fixed by the first play
@@ -812,7 +843,12 @@ function spawnRow(zAt){
   for(const b of blocked) spawn(types[Math.floor(Math.random() * types.length)], b, z);
   const n = 3 + (Math.random() < 0.5 ? 1 : 0);
   for(let i = 0; i <= n; i++) spawn('gift', g, z + i * 3.3);
-  if(free.length > 1 && Math.random() < 0.3) spawn('star', free[0] === g ? free[1] : free[0], z + 1.5);
+  if(S.rows >= 3 && S.pt >= S.nextCheer && S.cheer <= 0){        // น้องแซนตี้: her heart sits at the end of the gift trail, she stands on that side of the road
+    S.nextCheer = S.pt + CFG.cheerEvery; spawn('cheer', g, z - 4.5);
+    const side = g === 0 ? -1 : g === 2 ? 1 : (S.cheerSide = -(S.cheerSide || 1)), sg = santys.find(o => !o.visible) || santys[0];
+    sg.position.set(side * SANTY_X, 0, z - 4.5); sg.rotation.set(0, -side * 0.55, 0); sg.visible = true;
+  }
+  else if(free.length > 1 && Math.random() < 0.3) spawn('star', free[0] === g ? free[1] : free[0], z + 1.5);
   else if(Math.random() < 0.08) spawn('star', g, z - 4);
   S.lastFree = g; S.rows++;
 }
@@ -826,7 +862,7 @@ function botSteer(){
   let danger = [false, false, false], near = 1e9;
   for(const o of active){ if(!OBST[o.userData.type] || o.userData.done) continue; const z = -o.position.z; if(z > -1 && z < 19 && z <= near + 0.5){ if(z < near - 0.5){ danger = [false, false, false]; near = z; } danger[o.userData.lane] = true; } }
   if(danger[S.lane]){ const opts = [0, 1, 2].filter(l => !danger[l]).sort((a, b) => Math.abs(a - S.lane) - Math.abs(b - S.lane)); if(opts.length) S.lane = opts[0]; }
-  else { let bz = 1e9, bl = -1; for(const o of active){ if(o.userData.type === 'gift' && !o.userData.done){ const z = -o.position.z; if(z > 3.5 && z < bz && !danger[o.userData.lane]){ bz = z; bl = o.userData.lane; } } } if(bl >= 0 && bz < 22) S.lane = bl; }
+  else { let bz = 1e9, bl = -1; for(const o of active){ if((o.userData.type === 'gift' || o.userData.type === 'cheer') && !o.userData.done){ const z = -o.position.z; if(z > 3.5 && z < bz && !danger[o.userData.lane]){ bz = z; bl = o.userData.lane; } } } if(bl >= 0 && bz < 22) S.lane = bl; }
 }
 function hitObstacle(o){
   S.hearts--; S.hits++; S.invuln = 1.5; S.shake = 0.5; S.combo = 0;
@@ -838,8 +874,10 @@ function hitObstacle(o){
 }
 function collect(o){
   o.visible = false; o.userData.done = true;
-  if(o.userData.type === 'gift'){ S.bonus += CFG.giftPts; S.gifts++; S.combo++; S.comboT = 0.6; Sound.gift(S.combo); burst(o.position.x, 1.0, o.position.z, 0xffd27a, 5, 4); }
-  else { S.bonus += CFG.starPts; S.stars++; Sound.star(); burst(o.position.x, 1.0, o.position.z, 0xffe98a, 16, 7); }
+  const mul = S.cheer > 0 ? 2 : 1;
+  if(o.userData.type === 'gift'){ S.bonus += CFG.giftPts * mul; S.gifts++; S.combo++; S.comboT = 0.6; Sound.gift(S.combo); burst(o.position.x, 1.0, o.position.z, 0xffd27a, 5, 4); }
+  else if(o.userData.type === 'cheer'){ S.cheer = CFG.cheerSecs; S.cheers++; Sound.cheer(); toast(t('cheerOn')); burst(o.position.x, 1.2, o.position.z, 0xff7ab8, 22, 8); }
+  else { S.bonus += CFG.starPts * mul; S.stars++; Sound.star(); burst(o.position.x, 1.0, o.position.z, 0xffe98a, 16, 7); }
   const b = $('sc'); b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop');
 }
 
@@ -861,16 +899,20 @@ function update(dt){
 
   if(S.mode === 'play'){
     if(S.bot) botSteer();
-    S.dist += d; S.rowAcc += d;
+    S.dist += d; S.rowAcc += d; S.pt += dt;
+    if(S.cheer > 0){ S.extra += d; S.cheer = Math.max(0, S.cheer - dt); $('x2bar').style.transform = 'scaleX(' + (S.cheer / CFG.cheerSecs).toFixed(3) + ')'; }      // x2: the distance counts twice
     const gap = gapMeters(S.speed);
     if(S.rowAcc >= gap){ S.rowAcc = 0; spawnRow(); }
     if(S.invuln > 0) S.invuln -= dt;
     if(S.comboT > 0){ S.comboT -= dt; if(S.comboT <= 0) S.combo = 0; }
-    const sc = Math.floor(S.dist) + S.bonus;
+    const sc = Math.floor(S.dist + S.extra) + S.bonus;
     if(sc !== S.score){ S.score = sc; $('sc').textContent = fmt(sc); }
     const kmh = Math.round(S.speed * 3.6); if(kmh !== S.kmh){ S.kmh = kmh; $('spd').textContent = fmt(kmh); }
     if(S.first){ const o = opensFor(sc); if(o > S.opens){ S.opens = o; Sound.tier(); toast(t(o === 2 ? 'toast2' : 'toast3')); } renderGoal(); }
   }
+  const cheerOn = S.mode === 'play' && S.cheer > 0;
+  if(cheerOn !== S.cheerHud){ S.cheerHud = cheerOn; $('x2').hidden = !cheerOn; $('scoreBox').classList.toggle('cheer', cheerOn); }
+  for(const g of santys){ if(!g.visible) continue; g.position.z += d; g.position.y = Math.abs(Math.sin(S.t * 6.5 + g.userData.ph)) * 0.34; g.rotation.z = Math.sin(S.t * 6.5 + g.userData.ph) * 0.07; if(g.position.z > 14) g.visible = false; }
   // entities
   const tx = CFG.lanes[S.lane];
   S.px += (tx - S.px) * (1 - Math.exp(-dt * 15));
@@ -975,7 +1017,7 @@ let pending = store.get('pending', null);            // first game finished but 
 function startGame(){
   if(pending && !firstResult){ openPick(pending.score, pending.opens); return; }
   clearActive();
-  Object.assign(S, { mode: 'play', score: 0, dist: 0, bonus: 0, speed: CFG.speed0, hearts: CFG.hearts, lane: 1, px: 0, invuln: 0, opens: 1, combo: 0, comboT: 0, rowAcc: 0, rows: 0, lastFree: 1, shake: 0, hits: 0, gifts: 0, stars: 0, kmh: 0, skyT: 0, first: !firstResult });
+  Object.assign(S, { mode: 'play', score: 0, dist: 0, bonus: 0, speed: CFG.speed0, hearts: CFG.hearts, lane: 1, px: 0, invuln: 0, opens: 1, combo: 0, comboT: 0, rowAcc: 0, rows: 0, lastFree: 1, shake: 0, hits: 0, gifts: 0, stars: 0, kmh: 0, skyT: 0, pt: 0, extra: 0, cheer: 0, cheers: 0, nextCheer: CFG.cheerFirst, first: !firstResult });
   for(const z of [-46, -72, -98, -124]) spawnRow(z);
   $('sc').textContent = '0'; goalKey = ''; renderHearts(); renderGoal(); show(null); resize();
   Sound.setLevel(0.2);
@@ -1082,7 +1124,7 @@ window.addEventListener('contextmenu', e => e.preventDefault());
 /* ---- boot ---- */
 setSky(1); applyLang(); setSoundIcon(); renderHearts(); $('bestHome').textContent = fmt(best); $('btnReset').hidden = !firstResult; show('home'); resize();
 requestAnimationFrame(frame);
-window.__dash = { scene, camera, renderer, spawn, clearActive, setTheme(n){ skyForce = n === 'day' ? 0 : n === 'dusk' ? 0.5 : n === 'night' ? 1 : null; if(skyForce !== null) setSky(skyForce); }, get sky(){ return skyNow; }, gapMeters, cam, resize, S, CFG, active, startGame, update, finish, goHome, openBoard, moveLane, get best(){ return best; }, get first(){ return firstResult; }, reset(){ firstResult = null; pending = null; best = 0; store.set('first', null); store.set('pending', null); store.set('best', 0); store.set('how', false); seenHow = false; goHome(); }, spawnRow, stop(v){ running = !v; } };
+window.__dash = { scene, camera, renderer, spawn, clearActive, santys, setTheme(n){ skyForce = n === 'day' ? 0 : n === 'dusk' ? 0.5 : n === 'night' ? 1 : null; if(skyForce !== null) setSky(skyForce); }, get sky(){ return skyNow; }, gapMeters, cam, resize, S, CFG, active, startGame, update, finish, goHome, openBoard, moveLane, get best(){ return best; }, get first(){ return firstResult; }, reset(){ firstResult = null; pending = null; best = 0; store.set('first', null); store.set('pending', null); store.set('best', 0); store.set('how', false); seenHow = false; goHome(); }, spawnRow, stop(v){ running = !v; } };
 })();
 </script>
 
