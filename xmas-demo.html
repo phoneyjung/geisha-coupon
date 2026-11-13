@@ -36,12 +36,13 @@ svg.ic{width:1em;height:1em;fill:currentColor;flex:none;display:block}
 #home{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:10px;text-align:center;
   background:linear-gradient(180deg,rgba(10,16,48,.7) 0%,rgba(10,16,48,.25) 30%,rgba(10,16,48,0) 42%,rgba(10,16,48,0) 56%,rgba(10,16,48,.9) 84%)}
 .topbar{width:100%;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.topbar .chip{min-width:48px;min-height:48px;justify-content:center;font-size:16px}
 .chip{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:6px 12px;border-radius:999px;background:var(--panel);border:1px solid var(--line);font-size:14px;font-weight:500}
 .chip svg{font-size:18px}
 .chip b{font-family:var(--f-data);font-weight:700}
 .logo{height:46px;border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,.45)}
 .title{display:flex;flex-direction:column;align-items:center;gap:2px;margin-top:1vh}
-.eyebrow{font-family:var(--f-data);font-weight:700;letter-spacing:.2em;font-size:clamp(11px,3.1vw,15px);color:var(--ice);text-shadow:0 0 12px rgba(143,230,255,.7)}
+.eyebrow{font-family:var(--f-data);font-weight:700;letter-spacing:.06em;font-size:clamp(14px,3.9vw,18px);color:var(--ice);text-shadow:0 0 12px rgba(143,230,255,.7)}
 h1{margin:0;font-size:clamp(54px,17vw,112px);line-height:1.22;font-weight:700;transform:rotate(-3deg);color:#fff;
   text-shadow:0 0 6px #fff,0 0 22px rgba(255,120,150,.95),0 0 46px rgba(226,58,78,.85),0 5px 0 rgba(120,14,40,.9)}
 html[lang=en] h1{font-size:clamp(40px,13vw,92px)}
@@ -55,6 +56,10 @@ html[lang=en] h1{font-size:clamp(40px,13vw,92px)}
 .btn-ghost svg{font-size:20px}
 .row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
 .note{font-size:13px;color:var(--dim);text-wrap:balance}
+.prize{display:inline-flex;align-items:center;gap:8px;padding:7px 16px;border-radius:999px;background:var(--panel);border:1.5px solid var(--gold);color:#ffe9a8;font-size:clamp(14px,4vw,17px);font-weight:500;box-shadow:0 0 14px rgba(255,204,77,.35)}
+.prize svg{color:var(--gold);font-size:1.25em}
+.besttxt{font-size:14px;color:var(--dim);text-shadow:0 1px 6px rgba(0,0,0,.85)}
+.besttxt b{font-family:var(--f-data);font-weight:700;font-size:17px;color:var(--gold);margin-left:4px}
 .proto{font-size:12px;padding:3px 10px;border-radius:999px;background:rgba(255,204,77,.16);border:1px dashed rgba(255,204,77,.6);color:var(--gold)}
 
 /* ---------- HUD ---------- */
@@ -142,6 +147,18 @@ html[lang=en] h1{font-size:clamp(40px,13vw,92px)}
 .lb .r.me{background:rgba(255,204,77,.2);border:1px solid var(--gold)}
 .lb .r span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #fail{display:flex;align-items:center;justify-content:center;text-align:center}
+/* phone held sideways: title and buttons take the left half, the sleigh shows in the right half (see layoutHome) */
+@media (orientation:landscape) and (max-height:520px){
+  #home{align-items:flex-start;gap:2px}
+  #home .title,#home .cta{width:50%;max-width:none}
+  #home h1{font-size:clamp(36px,8vw,58px);line-height:1.15}
+  #home .tag{display:none}
+  #home .cta{gap:6px;margin-bottom:0}
+  #home .btn-main{min-height:46px;font-size:20px;padding:6px 34px}
+  #home .btn-ghost{min-height:40px;font-size:14px}
+  #home .prize{font-size:14px;padding:5px 14px}
+  #home .proto{display:none}
+}
 @media (max-height:620px){ h1{font-size:clamp(44px,13vw,80px)} .btn-main{min-height:52px;font-size:22px} .big{font-size:46px} .card{gap:8px;padding:14px} }
 @media (prefers-reduced-motion:reduce){ .demo *,.score b.pop{animation:none!important} }
 </style>
@@ -199,12 +216,13 @@ html[lang=en] h1{font-size:clamp(40px,13vw,92px)}
       <div class="tag" data-t="tag"></div>
     </div>
     <div class="cta">
+      <div class="prize"><svg class="ic"><use href="#i-gift"/></svg><span data-t="prize"></span></div>
       <button class="btn-main" id="btnStart" data-t="start"></button>
       <div class="row">
         <button class="btn-ghost" id="btnHow" data-t="howBtn"></button>
         <button class="btn-ghost" id="btnBoard"><svg class="ic"><use href="#i-trophy"/></svg><span data-t="boardBtn"></span></button>
       </div>
-      <div class="chip"><span data-t="best"></span> <b id="bestHome">0</b></div>
+      <div class="besttxt"><span data-t="best"></span> <b id="bestHome">0</b></div>
       <div class="proto" data-t="proto"></div>
       <button class="btn-ghost" id="btnReset" style="min-height:38px;font-size:13px" hidden data-t="resetBtn"></button>
     </div>
@@ -317,7 +335,7 @@ document.documentElement.style.setProperty('--shop', SHOP.color);
 const TXT = {
   th: {
     eyebrow: 'คริสต์มาส · ปีใหม่ 2570', title: 'เลื่อนซิ่ง', tag: 'ปัดซ้ายขวา หลบตุ๊กตาหิมะ เก็บของขวัญ',
-    resetBtn: 'ล้างผลตัวอย่าง (ลองเล่นครั้งแรกใหม่)', start: 'เริ่มเกม', howBtn: 'วิธีเล่น', boardBtn: 'อันดับ', best: 'คะแนนสูงสุด', proto: 'ตัวอย่างให้ลองเล่น · ยังไม่ต่อคูปองจริง',
+    resetBtn: 'ล้างผลตัวอย่าง (ลองเล่นครั้งแรกใหม่)', start: 'เริ่มเกม', prize: 'เล่นจบ รับคูปองส่วนลดทุกคน', howBtn: 'วิธีเล่น', boardBtn: 'อันดับ', best: 'คะแนนสูงสุด', proto: 'ตัวอย่างให้ลองเล่น · ยังไม่ต่อคูปองจริง',
     score: 'คะแนน', kmh: 'กม./ชม.', howTitle: 'วิธีเล่น', how1: 'ปัดซ้าย-ขวา', how1s: 'หรือแตะครึ่งจอซ้าย / ขวา', how2: 'เก็บของขวัญ', how2s: 'กล่อง +10 · ดาว +50 · หัวใจน้องแซนตี้ = คะแนน x2',
     how3: 'ชนได้ 3 ครั้ง', how3s: 'ยิ่งไกลยิ่งเร็ว · หัวใจหมด = จบเกม', how4: 'เล่นครั้งแรก คะแนนถึงเกณฑ์ ได้เปิดกล่องส่วนลดมากขึ้น',
     tier: 'ถึง', tierAny: 'ทุกคน', go: 'ไปเลย', paused: 'พักเกม', resume: 'เล่นต่อ', home: 'หน้าแรก',
@@ -332,7 +350,7 @@ const TXT = {
   },
   en: {
     eyebrow: 'CHRISTMAS · NEW YEAR 2027', title: 'Sleigh Dash', tag: 'Swipe left and right, dodge the snowmen, grab the gifts',
-    resetBtn: 'Reset sample (replay as first time)', start: 'Play', howBtn: 'How to play', boardBtn: 'Ranking', best: 'Best score', proto: 'Playable sample · coupons not connected yet',
+    resetBtn: 'Reset sample (replay as first time)', start: 'Play', prize: 'Everyone gets a discount coupon', howBtn: 'How to play', boardBtn: 'Ranking', best: 'Best score', proto: 'Playable sample · coupons not connected yet',
     score: 'Score', kmh: 'km/h', howTitle: 'How to play', how1: 'Swipe left / right', how1s: 'or tap the left / right half', how2: 'Collect gifts', how2s: 'Box +10 · Star +50 · Santy\'s heart = score x2',
     how3: 'Three bumps allowed', how3s: 'It keeps getting faster · no hearts = game over', how4: 'On your first play, a higher score opens more discount boxes',
     tier: 'from', tierAny: 'Everyone', go: "Let's go", paused: 'Paused', resume: 'Resume', home: 'Home',
@@ -549,14 +567,15 @@ let auroraMat = null; const SKY = {};
 const ROAD_W = 8.6;
 const snowMat = new T.MeshLambertMaterial({ color: 0xb2c1ec }), roadMat = new T.MeshLambertMaterial({ color: 0x262d52 });
 (function ground(){
-  const snow = new T.Mesh(new T.PlaneGeometry(900, 520), snowMat); snow.rotation.x = -Math.PI / 2; snow.position.set(0, -0.02, -220); scene.add(snow);
-  const road = new T.Mesh(new T.PlaneGeometry(ROAD_W, 520), roadMat); road.rotation.x = -Math.PI / 2; road.position.set(0, 0, -220); scene.add(road);
+  const snow = new T.Mesh(new T.PlaneGeometry(1400, 900), snowMat); snow.rotation.x = -Math.PI / 2; snow.position.set(0, -0.02, -130); scene.add(snow);
+  const road = new T.Mesh(new T.PlaneGeometry(ROAD_W, 900), roadMat); road.rotation.x = -Math.PI / 2; road.position.set(0, 0, -130); scene.add(road);
   const bank = [];
-  for(const s of [-1, 1]) bank.push(P('box', C.snow, [s * (ROAD_W / 2 + 0.35), 0.14, -220], [0.7, 0.28, 520]), P('box', '#f4f7ff', [s * (ROAD_W / 2 - 0.16), 0.012, -220], [0.14, 0.02, 520]));
+  // in 20 m pieces: one 900 m box right next to the home camera drew a stray coloured line (very long triangles at a grazing angle)
+  for(const s of [-1, 1]) for(let z = -570; z < 320; z += 20) bank.push(P('box', C.snow, [s * (ROAD_W / 2 + 0.35), 0.14, z], [0.7, 0.28, 20]), P('box', '#f4f7ff', [s * (ROAD_W / 2 - 0.16), 0.012, z], [0.14, 0.02, 20]));
   scene.add(new T.Mesh(merge(bank), matLit));
 })();
 const DASH = 6, dashParts = [];
-for(let i = 0; i < 44; i++) for(const x of [-1.15, 1.15]) dashParts.push(P('box', '#f4f7ff', [x, 0.02, 14 - i * DASH], [0.16, 0.02, 2.6]));
+for(let i = -24; i < 44; i++) for(const x of [-1.15, 1.15]) dashParts.push(P('box', '#f4f7ff', [x, 0.02, 14 - i * DASH], [0.16, 0.02, 2.6]));
 const dashes = new T.Mesh(merge(dashParts), matLit); scene.add(dashes);
 /* ---- sleigh, driver and reindeer ---- */
 function sleighGeo(){
@@ -625,7 +644,7 @@ function houseGeo(wall, roof, w, h, d, shop){
   const L = [], Gw = [], cx = -(1.6 + w / 2), R = Math.max(w, d) * 0.5 * 1.52, rh = 1.7;
   L.push(P('box', wall, [cx, h / 2, 0], [w, h, d]));
   L.push(P('cone4', roof, [cx, h + rh / 2, 0], [R, rh, R], [0, Math.PI / 4, 0]));
-  L.push(P('cone4', C.snow, [cx, h + rh - rh * 0.4 + 0.14, 0], [R * 0.8, rh * 0.8, R * 0.8], [0, Math.PI / 4, 0]));
+  L.push(P('cone4', C.snow, [cx, h + rh - rh * 0.46 + 0.14, 0], [R * 0.93, rh * 0.92, R * 0.93], [0, Math.PI / 4, 0]));      // snow covers nearly the whole roof
   L.push(P('box', '#7a3b2e', [cx - w * 0.2, h + rh * 0.72, -d * 0.18], [0.5, 1.1, 0.5]), P('box', C.snow, [cx - w * 0.2, h + rh * 0.72 + 0.6, -d * 0.18], [0.62, 0.14, 0.62]));
   L.push(P('box', '#4a2c1c', [cx + w / 2 + 0.03, 0.8, d * 0.22], [0.08, 1.6, 0.85]), P('box', C.green, [cx + w / 2 + 0.08, 1.3, d * 0.22], [0.06, 0.34, 0.34]), P('box', C.red, [cx + w / 2 + 0.11, 1.3, d * 0.22], [0.05, 0.1, 0.1]));
   L.push(P('sph', C.snow, [cx + w / 2 + 0.5, 0.1, -d * 0.3], [0.9, 0.3, 1.1]));
@@ -672,7 +691,7 @@ function giftParts(L, color, x, y, z, s, ry, rib){
 }
 const VAR = [];   // roadside variants: { lit, glow, signAt, halo, kind }
 (function buildVariants(){
-  const walls = [['#b5483f', '#5b2a2a'], ['#2f7f8f', '#1e3f52'], ['#e8d9b8', '#6a4a3a'], ['#d79a3a', '#5a3a22'], ['#7c5fb0', '#3a2a5c']];
+  const walls = [['#b5483f', '#5b2a2a'], ['#2d7a5a', '#1c4a3a'], ['#efe6d2', '#6a4a3a'], ['#9e3040', '#4a1c26'], ['#46639f', '#243560']];
   walls.forEach(([w, r], i) => { const v = houseGeo(w, r, 4.2 + (i % 2) * 0.6, 3.1 + (i % 3) * 0.55, 4.4, null); v.kind = 'house'; VAR.push(v); });
   [[SHOP.color, '#2a1830', '#e9c7d6'], ['#1f6f55', '#12382c', '#f0e2c0'], ['#27408a', '#16224f', '#e6ecff']].forEach(([aw, roof, wall]) => { const v = houseGeo(wall, roof, 4.6, 3.9, 4.8, aw); v.kind = 'shop'; VAR.push(v); });
   { const L = [], Gw = []; treeParts(L, Gw, -2.6, 0.4, 1.25); treeParts(L, Gw, -4.9, -1.6, 0.9); L.push(P('sph', C.snow, [-3.6, 0.12, 1.6], [1.4, 0.4, 1.0])); VAR.push({ lit: merge(L), glow: merge(Gw), kind: 'tree' }); }
@@ -712,7 +731,7 @@ function drawSigns(){
   b.textAlign = 'center'; b.textBaseline = 'middle'; b.shadowColor = '#ffcc4d'; b.shadowBlur = 16; b.fillStyle = '#ffe9a8'; b.font = '700 40px Mitr, sans-serif';
   const line = TXT[LANG].signs[1]; b.fillText(line, 256, 252); b.shadowBlur = 0; boardTex.needsUpdate = true;
 }
-if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => drawSigns());
+if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => { drawSigns(); if(typeof resize === 'function') resize(); });
 const signGeo = new T.PlaneGeometry(0.72, 1.8), boardGeo = new T.PlaneGeometry(3.5, 2.05);
 
 /* ---- roadside slots that recycle ---- */
@@ -767,6 +786,38 @@ const cheerMat = (() => { const c = document.createElement('canvas'); c.width = 
 const cheerHalo = new T.SpriteMaterial({ map: haloTex, color: 0xff7ab8, blending: T.AdditiveBlending, depthWrite: false, transparent: true });
 const santys = (() => { const g = santyGeo(), out = []; for(let i = 0; i < 2; i++){ const o = new T.Group(); o.add(new T.Mesh(g.lit, matLit), new T.Mesh(g.glow, matGlow)); o.scale.setScalar(1.8); o.visible = false; o.userData = { ph: i * 1.7 }; scene.add(o); out.push(o); } return out; })();
 const SANTY_X = ROAD_W / 2 + 1.35;
+
+/* ---- home screen stage: the sleigh is parked, seen from the front-side so Santa's face shows; น้องแซนตี้ cheers just behind it;
+        snowy pines, two cottages and a low moon behind. All of this is shown only on the home screen (the roadside slots are hidden there). ---- */
+const HOME = (() => { const az = 42 * Math.PI / 180, dist = 12.5, eye = 2.2, tx = 0, tz = -2.2, hf = 0.235;      // hf = tan(half the horizontal view) on phones
+  const fwd = [-Math.sin(az), Math.cos(az)], right = [-Math.cos(az), -Math.sin(az)], pos = [tx + dist * Math.sin(az), eye, tz - dist * Math.cos(az)];
+  // where to put something so it shows at fraction f of the half-width (−1 left edge … +1 right edge) and `depth` metres from the camera
+  const at = (f, depth) => { const r = f * depth * hf, q = depth - dist; return [tx + right[0] * r + fwd[0] * q, tz + right[1] * r + fwd[1] * q]; };
+  // phones: the same width of scene whatever the height, looking 5.5° down · wide screens: a 46° view looking only 2.3° down, so the sleigh sits below the title
+  // phones: the same width of scene whatever the height; wide screens: a 46° view. layoutHome() then tilts (and if needed widens) the view so the sleigh sits between the tag line and the prize line
+  return { pos, look: [tx, 0, tz], right, fwd, hf, at, eye, dist, fov: aspect => aspect < 0.8 ? 2 * Math.atan(hf / aspect) * 180 / Math.PI : 46, fovNow: 46, pitchNow: 5.5 * Math.PI / 180 }; })();
+const homeSet = new T.Group(); homeSet.visible = false; scene.add(homeSet);
+const homeSanty = new T.Group();
+{ const L = [], Gw = [];
+  // pines: [fraction across the screen, metres from the camera, size] — kept low enough to stay under the tag line, none right behind Santa's head
+  for(const [f, dp, sz] of [[-1.25, 36, 1.2], [-0.2, 56, 1.5], [0.2, 60, 1.5], [0.55, 48, 1.4], [1.15, 42, 1.3], [1.5, 50, 1.5], [-1.6, 48, 1.4], [-2.1, 52, 1.5], [2.2, 46, 1.4], [-2.8, 50, 1.5], [3.0, 54, 1.6]]){ const p = HOME.at(f, dp); treeParts(L, Gw, p[0], p[1], sz); L.push(P('sph', C.snow, [p[0] + 0.9, 0.1, p[1] + 0.6], [1.5 * sz, 0.32, 1.1 * sz])); }
+  homeSet.add(new T.Mesh(merge(L), matLit), new T.Mesh(merge(Gw), matGlow));
+  for(const [f, dp, wall, roof, turn] of [[-0.05, 68, '#b5483f', '#5b2a2a', 0.5], [1.4, 60, '#efe6d2', '#6a4a3a', -0.4]]){            // cottages with lit windows, far away (the second one shows on wide screens)
+    const g = houseGeo(wall, roof, 4.6, 3.3, 4.4, null), o = new T.Group(), p = HOME.at(f, dp), m1 = new T.Mesh(g.lit, matLit), m2 = new T.Mesh(g.glow, matGlow);
+    m1.position.x = m2.position.x = 1.6 + 4.6 / 2; o.add(m1, m2); o.position.set(p[0], 0, p[1]); o.rotation.y = Math.atan2(-(HOME.pos[2] - p[1]), HOME.pos[0] - p[0]) + turn; homeSet.add(o); }
+  // น้องแซนตี้ stands on the far side of the road beside the reindeer, at the right of the picture, facing the camera
+  const sg = santyGeo(), sp = HOME.at(0.68, 14.2); homeSanty.add(new T.Mesh(sg.lit, matLit), new T.Mesh(sg.glow, matGlow)); homeSanty.scale.setScalar(1.05);
+  homeSanty.position.set(sp[0], 0, sp[1]); homeSanty.rotation.y = Math.atan2(HOME.pos[0] - sp[0], HOME.pos[2] - sp[1]); homeSet.add(homeSanty);
+  // on the home screen the sleigh waits on fresh snow (the dark road is only needed in play, so things on it stand out): white becomes the second colour after night blue
+  { const cover = new T.Mesh(new T.PlaneGeometry(ROAD_W + 1.6, 260), snowMat); cover.rotation.x = -Math.PI / 2; cover.position.set(0, 0.05, 20); homeSet.add(cover);
+    const shMat = new T.MeshBasicMaterial({ color: 0x1b2a66, transparent: true, opacity: 0.3, depthWrite: false }), disc = new T.CircleGeometry(1, 16);
+    const s1 = new T.Mesh(disc, shMat); s1.rotation.x = -Math.PI / 2; s1.scale.set(1.15, 2.7, 1); s1.position.set(0, 0.07, -1.0); homeSet.add(s1);                 // under sleigh + reindeer
+    const s2 = new T.Mesh(disc, shMat); s2.rotation.x = -Math.PI / 2; s2.scale.set(0.75, 0.55, 1); s2.position.set(sp[0], 0.07, sp[1]); homeSet.add(s2); }      // under น้องแซนตี้
+  // a second, smaller moon low on the left, over the back of the sleigh — the big one is behind this camera, and up there it would sit under the buttons
+  const mo = new T.Sprite(SKY.moon.material), a = Math.atan(-0.84 * HOME.hf), el = 0.9 * Math.PI / 180, dx = HOME.fwd[0] * Math.cos(a) + HOME.right[0] * Math.sin(a), dz = HOME.fwd[1] * Math.cos(a) + HOME.right[1] * Math.sin(a);
+  mo.position.set(HOME.pos[0] + dx * 440 * Math.cos(el), HOME.pos[1] + 440 * Math.sin(el), HOME.pos[2] + dz * 440 * Math.cos(el)); mo.scale.set(96, 96, 1); mo.renderOrder = -8; homeSet.add(mo);
+}
+let homeShown = null;
 // ground markers: red strip in front of every obstacle ("this lane is blocked"), gold dot under every pick-up
 const fadeTex = (r, g, b) => { const c = document.createElement('canvas'); c.width = 8; c.height = 64; const x = c.getContext('2d'), gr = x.createLinearGradient(0, 0, 0, 64);
   gr.addColorStop(0, `rgba(${r},${g},${b},.9)`); gr.addColorStop(0.4, `rgba(${r},${g},${b},.5)`); gr.addColorStop(1, `rgba(${r},${g},${b},0)`); x.fillStyle = gr; x.fillRect(0, 0, 8, 64); return new T.CanvasTexture(c); };
@@ -889,7 +940,7 @@ function scrollWorld(d){
 }
 function update(dt){
   S.t += dt;
-  let v = 6;
+  let v = 0;                                              // home screen: parked
   if(S.mode === 'play'){ S.speed += (S.speed < CFG.speedRef ? CFG.accel : CFG.accelLate) * dt; v = S.speed; }
   else if(S.mode === 'ending'){ S.speed = Math.max(3, S.speed - 30 * dt); v = S.speed; S.endT -= dt; if(S.endT <= 0) finish(); }
   else if(S.mode === 'paused') v = 0;
@@ -931,7 +982,8 @@ function update(dt){
   player.position.x = S.px; player.rotation.z = -lean * 0.09; player.rotation.y = -lean * 0.07;
   laneGlow.position.x = S.px; laneGlow.visible = S.mode === 'play' || S.mode === 'paused';
   sleigh.position.y = Math.sin(S.t * 9) * 0.025 * (v / 15);
-  deer.position.y = Math.abs(Math.sin(S.t * (5 + v * 0.22))) * 0.16; deer.rotation.x = Math.sin(S.t * (5 + v * 0.22) * 2) * 0.05;
+  const trot = Math.min(1, 0.22 + v / 12);                // standing still: the reindeer only shifts its weight
+  deer.position.y = Math.abs(Math.sin(S.t * (5 + v * 0.22))) * 0.16 * trot; deer.rotation.x = Math.sin(S.t * (5 + v * 0.22) * 2) * 0.05 * trot;
   player.visible = !(S.invuln > 0 && S.mode === 'play' && Math.floor(S.t * 14) % 2 === 0);
   // snow + particles
   for(let i = 0; i < SNOW_N; i++){
@@ -951,15 +1003,18 @@ function update(dt){
   // camera
   if(S.shake > 0) S.shake = Math.max(0, S.shake - dt * 1.6);
   const sx = (Math.random() - 0.5) * S.shake * 0.6, sy = (Math.random() - 0.5) * S.shake * 0.4;
-  if(S.mode === 'home'){
-    const a = Math.sin(S.t * 0.25) * 0.25;
-    camera.position.set(cam.home[0] + a, cam.home[1], cam.home[2]); camera.lookAt(0, 1.35, -1.9);
+  const homeNow = S.mode === 'home';
+  if(homeNow !== homeShown){ homeShown = homeNow; homeSet.visible = homeNow; for(const s of slots) s.g.visible = !homeNow; }
+  if(homeNow){
+    const a = Math.sin(S.t * 0.25) * 0.4;                 // slow sway
+    camera.position.set(HOME.pos[0] + HOME.right[0] * a, HOME.pos[1], HOME.pos[2] + HOME.right[1] * a); camera.lookAt(HOME.look[0], HOME.eye - HOME.dist * Math.tan(HOME.pitchNow), HOME.look[2]);
+    homeSanty.position.y = Math.abs(Math.sin(S.t * 6.5)) * 0.3; homeSanty.rotation.z = Math.sin(S.t * 6.5) * 0.07;
   } else {
     camera.position.set(S.px * 0.62 + sx, cam.play[1] + sy, cam.play[2]); camera.lookAt(S.px * 0.75, cam.look[0], cam.look[1]);
     const f = cam.fov + progress() * 5 + Math.min(7, Math.max(0, S.speed - CFG.speedRef) * 0.08); if(Math.abs(camera.fov - f) > 0.05){ camera.fov = f; camera.updateProjectionMatrix(); }
   }
 }
-const cam = { fov: 60, play: [0, 4.4, 8.2], look: [1.2, -13], home: [4.2, 2.6, 5.6] };
+const cam = { fov: 60, play: [0, 4.4, 8.2], look: [1.2, -13] };
 const _c1 = new T.Color(), _c2 = new T.Color(), _mid = new T.Color(), _top = new T.Color();
 function setSky(k){                                   // 0 = day · 0.5 = sunset · 1 = night
   k = Math.min(1, Math.max(0, k)); skyNow = k;
@@ -974,12 +1029,28 @@ function setSky(k){                                   // 0 = day · 0.5 = sunset
   skyDark = num('dark'); SKY.stars.material.opacity = 0.85 * skyDark; SKY.moon.material.opacity = skyDark; haloMat.opacity = 0.3 + 0.7 * skyDark;
   SKY.stars.visible = SKY.moon.visible = SKY.aurora.visible = skyDark > 0.01;
 }
+// home screen: fit the sleigh, reindeer and น้องแซนตี้ into the gap between the tag line and the prize line, whatever the screen size
+function layoutHome(){
+  const home = $('home'); HOME.fovNow = HOME.fov(camera.aspect); HOME.shift = 0; if(home.hidden) return;
+  const box = $('app').getBoundingClientRect(), H = box.height, side = camera.aspect > 1.5 && H <= 520;      // phone held sideways
+  let tb = home.querySelector('.title').getBoundingClientRect().bottom - box.top, pt = home.querySelector('.prize').getBoundingClientRect().top - box.top, fov0 = HOME.fovNow;
+  if(side){ tb = home.querySelector('.topbar').getBoundingClientRect().bottom - box.top; pt = H - 6; HOME.shift = box.width / 4; fov0 = 30; }
+  if(!(H > 0 && pt > tb + 40)) return;
+  const DEG = Math.PI / 180, aT = 3.7 * DEG, aB = -11.2 * DEG, m = 6;      // the group spans from 3.7° above eye level (antlers, pom-poms) to 11.2° below (hooves)
+  for(let fov = fov0; ; fov += 0.5){
+    const th = Math.tan(fov * DEG / 2), y = (a, p) => H / 2 - H / 2 * Math.tan(a + p) / th;
+    let lo = -0.3, hi = 0.6; for(let i = 0; i < 30; i++){ const p = (lo + hi) / 2; if(y(aT, p) - (tb + m) > (pt - m) - y(aB, p)) lo = p; else hi = p; }      // equal room above and below
+    const p = (lo + hi) / 2; if(y(aT, p) >= tb + m - 0.5 || fov >= 78){ HOME.fovNow = fov; HOME.pitchNow = p; return; }
+  }
+}
 function resize(){
   const w = Math.max(1, $('app').clientWidth || window.innerWidth), h = Math.max(1, $('app').clientHeight || window.innerHeight);
   renderer.setSize(w, h, false); camera.aspect = w / h;
   const portrait = camera.aspect < 0.8;
-  cam.fov = portrait ? 55 : 50; cam.play = portrait ? [0, 9.6, 14.6] : [0, 6.4, 11.5]; cam.look = portrait ? [0.5, -22] : [0.8, -16]; cam.home = portrait ? [4.5, 2.5, 5.0] : [4.8, 2.4, 4.6];
-  camera.fov = S.mode === 'home' ? (portrait ? 66 : 50) : cam.fov; camera.updateProjectionMatrix();
+  cam.fov = portrait ? 55 : 50; cam.play = portrait ? [0, 9.6, 14.6] : [0, 6.4, 11.5]; cam.look = portrait ? [0.5, -22] : [0.8, -16];
+  layoutHome(); camera.fov = S.mode === 'home' ? HOME.fovNow : cam.fov;
+  if(S.mode === 'home' && HOME.shift) camera.setViewOffset(w, h, -HOME.shift, 0, w, h); else camera.clearViewOffset();
+  camera.updateProjectionMatrix();
 }
 window.addEventListener('resize', resize); window.addEventListener('orientationchange', () => setTimeout(resize, 200));
 
@@ -1102,7 +1173,7 @@ tap('btnPickAgain', () => { Sound.click(); startGame(); });
 tap('btnPause', () => pause(true));
 tap('btnResume', () => pause(false));
 tap('btnQuit', () => { Sound.suspend(false); goHome(); });
-tap('btnLang', () => { LANG = LANG === 'th' ? 'en' : 'th'; store.set('lang', LANG); goalKey = ''; applyLang(); Sound.click(); });
+tap('btnLang', () => { LANG = LANG === 'th' ? 'en' : 'th'; store.set('lang', LANG); goalKey = ''; applyLang(); resize(); Sound.click(); });
 tap('btnSound', () => { Sound.toggleMute(); setSoundIcon(); });
 tap('btnReset', () => { firstResult = null; pending = null; best = 0; store.set('first', null); store.set('pending', null); store.set('best', 0); $('btnReset').hidden = true; $('bestHome').textContent = '0'; Sound.click(); });
 
@@ -1124,7 +1195,7 @@ window.addEventListener('contextmenu', e => e.preventDefault());
 /* ---- boot ---- */
 setSky(1); applyLang(); setSoundIcon(); renderHearts(); $('bestHome').textContent = fmt(best); $('btnReset').hidden = !firstResult; show('home'); resize();
 requestAnimationFrame(frame);
-window.__dash = { scene, camera, renderer, spawn, clearActive, santys, setTheme(n){ skyForce = n === 'day' ? 0 : n === 'dusk' ? 0.5 : n === 'night' ? 1 : null; if(skyForce !== null) setSky(skyForce); }, get sky(){ return skyNow; }, gapMeters, cam, resize, S, CFG, active, startGame, update, finish, goHome, openBoard, moveLane, get best(){ return best; }, get first(){ return firstResult; }, reset(){ firstResult = null; pending = null; best = 0; store.set('first', null); store.set('pending', null); store.set('best', 0); store.set('how', false); seenHow = false; goHome(); }, spawnRow, stop(v){ running = !v; } };
+window.__dash = { scene, camera, renderer, spawn, clearActive, santys, HOME, homeSet, homeSanty, slots, player, setTheme(n){ skyForce = n === 'day' ? 0 : n === 'dusk' ? 0.5 : n === 'night' ? 1 : null; if(skyForce !== null) setSky(skyForce); }, get sky(){ return skyNow; }, gapMeters, cam, resize, S, CFG, active, startGame, update, finish, goHome, openBoard, moveLane, get best(){ return best; }, get first(){ return firstResult; }, reset(){ firstResult = null; pending = null; best = 0; store.set('first', null); store.set('pending', null); store.set('best', 0); store.set('how', false); seenHow = false; goHome(); }, spawnRow, stop(v){ running = !v; } };
 })();
 </script>
 
