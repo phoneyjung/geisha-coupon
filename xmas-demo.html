@@ -139,6 +139,30 @@ html[lang=en] h1{font-size:clamp(40px,13vw,92px)}
 .gbox:disabled{cursor:default}
 .coupon{border-radius:18px;padding:12px;background:linear-gradient(135deg,#b3122f,#e23a4e);border:2px dashed rgba(255,255,255,.7)}
 .coupon .big{color:#fff}
+.coupon{animation:couponIn .4s cubic-bezier(.2,1.4,.4,1)}
+@keyframes couponIn{0%{transform:scale(.7);opacity:0}100%{transform:scale(1);opacity:1}}
+/* ฿150–250: gold frame that glows · ฿300: a gold coupon */
+.coupon.good{border-style:solid;border-color:var(--gold);box-shadow:0 0 0 3px rgba(255,204,77,.35),0 0 26px rgba(255,204,77,.7)}
+.coupon.jackpot{background:linear-gradient(135deg,#fff0b3,#ffc531 55%,#ff9d1e);border:2px solid #fff6cf;color:#4a2b00;box-shadow:0 0 0 3px rgba(255,204,77,.5),0 0 34px rgba(255,204,77,.95)}
+.coupon.jackpot .big{color:#a3142c}
+.coupon.jackpot .note{color:#4a2b00!important}
+/* confetti for the better endings */
+#fx{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:9}
+#fx i{position:absolute;top:-4vh;width:9px;height:14px;border-radius:2px;animation:confetti linear forwards}
+@keyframes confetti{0%{transform:translateY(0) rotate(0)}100%{transform:translateY(112vh) rotate(720deg)}}
+/* ฿300 jackpot: full-screen celebration over the 3D stage */
+#jackpot{display:flex;flex-direction:column;justify-content:space-between;align-items:center;text-align:center;cursor:pointer;
+  background:linear-gradient(180deg,rgba(10,16,48,.72) 0%,rgba(10,16,48,.15) 36%,rgba(10,16,48,0) 60%,rgba(10,16,48,.85) 100%)}
+.jp-top{margin-top:5vh;display:flex;flex-direction:column;align-items:center;gap:2px}
+.jp-k{font-size:clamp(30px,9.5vw,54px);line-height:1.2;font-weight:700;color:#fff;text-shadow:0 0 18px rgba(255,204,77,.95),0 3px 0 #b3122f}
+.jp-amt{font-family:var(--f-data);font-size:clamp(76px,25vw,132px);line-height:1;font-weight:700;color:var(--gold);text-shadow:0 0 34px rgba(255,204,77,.9),0 5px 0 #a86a00;animation:jpPulse .9s ease-in-out infinite}
+.jp-s{font-size:clamp(15px,4.4vw,20px);font-weight:500;text-shadow:0 2px 8px rgba(0,0,0,.8)}
+@keyframes jpPulse{50%{transform:scale(1.07)}}
+.jp-bottom{margin-bottom:3vh;width:100%}
+.jp-tap{font-size:17px;font-weight:500;animation:bob 1.2s infinite;text-shadow:0 2px 8px rgba(0,0,0,.8)}
+.jp-bar{width:min(70%,280px);height:6px;border-radius:3px;background:rgba(255,255,255,.22);overflow:hidden;margin:12px auto 0}
+.jp-bar i{display:block;height:100%;width:0;background:var(--gold)}
+button.proto{cursor:pointer;min-height:34px;font-family:inherit}
 .lb{display:flex;flex-direction:column;gap:5px;text-align:left}
 .lb .r{display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:8px;padding:7px 12px;border-radius:12px;background:rgba(255,255,255,.07);font-size:16px}
 .lb .r b{font-family:var(--f-data);font-variant-numeric:tabular-nums}
@@ -160,7 +184,7 @@ html[lang=en] h1{font-size:clamp(40px,13vw,92px)}
   #home .proto{display:none}
 }
 @media (max-height:620px){ h1{font-size:clamp(44px,13vw,80px)} .btn-main{min-height:52px;font-size:22px} .big{font-size:46px} .card{gap:8px;padding:14px} }
-@media (prefers-reduced-motion:reduce){ .demo *,.score b.pop{animation:none!important} }
+@media (prefers-reduced-motion:reduce){ .demo *,.score b.pop,.jp-amt,.jp-tap,.coupon{animation:none!important} #fx{display:none} }
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -200,6 +224,7 @@ html[lang=en] h1{font-size:clamp(40px,13vw,92px)}
     <span id="ctlR"><svg class="ic"><use href="#i-right"/></svg></span>
   </div>
   <div id="flash"></div>
+  <div id="fx"></div>
 
   <!-- home -->
   <section id="home" class="layer screen">
@@ -210,21 +235,20 @@ html[lang=en] h1{font-size:clamp(40px,13vw,92px)}
         <button class="chip" id="btnSound" aria-label="sound"><svg class="ic" id="icSound"><use href="#i-sound"/></svg></button>
       </div>
     </div>
-    <div class="title">
+    <div class="title stage-top">
       <div class="eyebrow" data-t="eyebrow"></div>
       <h1 data-t="title"></h1>
       <div class="tag" data-t="tag"></div>
     </div>
     <div class="cta">
-      <div class="prize"><svg class="ic"><use href="#i-gift"/></svg><span data-t="prize"></span></div>
+      <div class="prize stage-bottom"><svg class="ic"><use href="#i-gift"/></svg><span data-t="prize"></span></div>
       <button class="btn-main" id="btnStart" data-t="start"></button>
       <div class="row">
         <button class="btn-ghost" id="btnHow" data-t="howBtn"></button>
         <button class="btn-ghost" id="btnBoard"><svg class="ic"><use href="#i-trophy"/></svg><span data-t="boardBtn"></span></button>
       </div>
       <div class="besttxt"><span data-t="best"></span> <b id="bestHome">0</b></div>
-      <div class="proto" data-t="proto"></div>
-      <button class="btn-ghost" id="btnReset" style="min-height:38px;font-size:13px" hidden data-t="resetBtn"></button>
+      <button class="proto" id="btnDemo" data-t="demoBtn"></button>
     </div>
   </section>
 
@@ -275,7 +299,7 @@ html[lang=en] h1{font-size:clamp(40px,13vw,92px)}
       <div class="sub" id="pickSub"></div>
       <div class="grid9" id="grid9"></div>
       <div class="coupon" id="coupon" hidden>
-        <div data-t="couponLbl"></div>
+        <div id="couponLbl" data-t="couponLbl"></div>
         <div class="big" id="couponAmt"></div>
         <div class="note" style="color:#fff" data-t="couponNote"></div>
       </div>
@@ -287,6 +311,32 @@ html[lang=en] h1{font-size:clamp(40px,13vw,92px)}
   </section>
 
   <!-- ranking -->
+  <!-- ฿300 jackpot scene -->
+  <section id="jackpot" class="layer screen" hidden>
+    <div class="jp-top stage-top">
+      <div class="jp-k" data-t="jpTitle"></div>
+      <div class="jp-amt" id="jpAmt">฿300</div>
+      <div class="jp-s" data-t="jpSub"></div>
+    </div>
+    <div class="jp-bottom stage-bottom">
+      <div class="jp-tap" data-t="jpTap"></div>
+      <div class="jp-bar"><i id="jpBar"></i></div>
+    </div>
+  </section>
+
+  <!-- sample tools (prototype only): preview each ending, reset the sample result -->
+  <section id="demo" class="layer screen center shade" hidden>
+    <div class="card">
+      <h2 data-t="demoTitle"></h2>
+      <div class="sub" data-t="demoNote"></div>
+      <button class="btn-ghost" id="btnDemo50" style="justify-content:center" data-t="demo50"></button>
+      <button class="btn-ghost" id="btnDemo150" style="justify-content:center" data-t="demo150"></button>
+      <button class="btn-ghost" id="btnDemo300" style="justify-content:center" data-t="demo300"></button>
+      <button class="btn-ghost" id="btnReset" style="justify-content:center" hidden data-t="resetBtn"></button>
+      <button class="btn-main sm" id="btnDemoBack" style="align-self:center" data-t="home"></button>
+    </div>
+  </section>
+
   <section id="board" class="layer screen center shade" hidden>
     <div class="card">
       <h2 data-t="boardTitle"></h2>
@@ -342,7 +392,9 @@ const TXT = {
     over: 'จบเกม', newBest: 'สถิติใหม่!', overSubFirst: 'ได้เปิดกล่องของขวัญ', boxes: 'กล่อง', openBtn: 'เปิดกล่องของขวัญ',
     overSubAgain: 'คะแนนสูงสุดของคุณ', locked: 'คูปองของคุณ ฿{a} · ล็อกจากครั้งแรก', again: 'เล่นอีกครั้ง',
     pickTitle: 'เลือก {n} กล่อง', pickSub: 'แตะกล่องที่ชอบ', pickLeft: 'เหลืออีก {n} กล่อง', pickDone: 'รวมส่วนลดของคุณ',
-    empty: 'กล่องเปล่า', couponLbl: 'คูปองส่วนลด', couponNote: 'ตัวอย่าง · ของจริงระบบจะออกคูปองให้ทาง LINE',
+    empty: 'กล่องเปล่า', couponLbl: 'คูปองส่วนลด', couponJp: 'คูปองแจ็กพอต', goodDone: 'เยี่ยมมาก! รวมส่วนลดของคุณ', jpDone: 'แจ็กพอต! ส่วนลดสูงสุด',
+    jpTitle: 'แจ็กพอต!', jpSub: 'รางวัลสูงสุดของเกม', jpTap: 'แตะเพื่อรับคูปอง', demoBtn: 'ตัวอย่าง · แตะดูฉากจบคูปอง ›', demoTitle: 'เครื่องมือตัวอย่าง', demoNote: 'ดูฉากจบแต่ละระดับได้โดยไม่ต้องเล่น · เกมจริงจะไม่มีหน้านี้',
+    demo50: 'ฉากจบ ฿50 (ปกติ)', demo150: 'ฉากจบ ฿150 (ดี)', demo300: 'ฉากจบ ฿300 (แจ็กพอต)', couponNote: 'ตัวอย่าง · ของจริงระบบจะออกคูปองให้ทาง LINE',
     boardTitle: 'อันดับ Top 10', boardSub: 'ตัวอย่าง · ของจริงจะเป็นคะแนนของลูกค้าทั้งร้าน', you: 'คุณ',
     cheerOn: 'น้องแซนตี้เชียร์! คะแนน x2', toast2: 'เปิดได้ 2 กล่องแล้ว!', toast3: 'เปิดได้ 3 กล่องแล้ว!', hint: 'ปัดซ้าย-ขวา เปลี่ยนเลน', toGo: 'อีก {n} → {k} กล่อง', maxed: 'ครบ 3 กล่องแล้ว',
     bestTag: 'สถิติ {n}', failTitle: 'อุปกรณ์นี้เปิดเกมไม่ได้', failSub: 'ลองเปิดด้วย Chrome หรือ Safari รุ่นใหม่',
@@ -357,7 +409,9 @@ const TXT = {
     over: 'Game over', newBest: 'New best!', overSubFirst: 'Gift boxes you can open', boxes: 'boxes', openBtn: 'Open my gift boxes',
     overSubAgain: 'Your best score', locked: 'Your coupon ฿{a} · locked from first play', again: 'Play again',
     pickTitle: 'Pick {n} boxes', pickSub: 'Tap the ones you like', pickLeft: '{n} more to pick', pickDone: 'Your total discount',
-    empty: 'Empty', couponLbl: 'Discount coupon', couponNote: 'Sample · the real coupon will be issued through LINE',
+    empty: 'Empty', couponLbl: 'Discount coupon', couponJp: 'Jackpot coupon', goodDone: 'Great! Your total discount', jpDone: 'Jackpot! Top discount',
+    jpTitle: 'JACKPOT!', jpSub: 'The top prize', jpTap: 'Tap to get your coupon', demoBtn: 'Sample · tap to preview the endings ›', demoTitle: 'Sample tools', demoNote: 'Preview each ending without playing · not in the real game',
+    demo50: 'Ending ฿50 (normal)', demo150: 'Ending ฿150 (good)', demo300: 'Ending ฿300 (jackpot)', couponNote: 'Sample · the real coupon will be issued through LINE',
     boardTitle: 'Top 10 Ranking', boardSub: 'Sample · the real board will show every customer', you: 'You',
     cheerOn: 'Santy cheers! Score x2', toast2: '2 boxes unlocked!', toast3: '3 boxes unlocked!', hint: 'Swipe left / right to change lane', toGo: '{n} more → {k} boxes', maxed: 'All 3 boxes unlocked',
     bestTag: 'Best {n}', failTitle: 'This device cannot run the game', failSub: 'Try a recent Chrome or Safari',
@@ -454,6 +508,14 @@ const Sound = (() => {
     move(){ if(!ctx) return; noise(sfx, ctx.currentTime, 0.07, 0.08, 2500); },
     tier(){ if(!ctx) return; const t0 = ctx.currentTime; [784, 988, 1175, 1568].forEach((f, i) => tone(sfx, 'triangle', f, t0 + i * 0.09, 0.3, 0.24)); },
     click(){ if(!ctx) return; tone(sfx, 'sine', 660, ctx.currentTime, 0.07, 0.18, 990); },
+    fanfare(){ if(!ctx) return; const t0 = ctx.currentTime; [523, 659, 784, 1047, 1319, 1568].forEach((f, i) => tone(sfx, 'triangle', f, t0 + i * 0.08, 0.36, 0.24)); [1568, 2093, 2637].forEach((f, i) => tone(sfx, 'sine', f, t0 + 0.62 + i * 0.1, 0.7, 0.13)); },
+    // jackpot: the carol turns up, sleigh bells in tempo, a rising fanfare and chimes every bar; returns a function that stops it
+    jackpot(sec){ if(!ctx) return () => {}; const t0 = ctx.currentTime, bus = ctx.createGain(); bus.gain.value = 1; bus.connect(sfx); music.gain.setTargetAtTime(0.85, t0, 0.15);
+      [392, 523, 659, 784, 1047, 1319, 1568, 2093].forEach((f, i) => tone(bus, 'triangle', f, t0 + i * 0.075, 0.5, 0.26));
+      for(let k = 0; k * BEAT / 2 < sec - 0.8; k++) noise(bus, t0 + 0.75 + k * BEAT / 2, 0.06, k % 2 ? 0.05 : 0.11, 7000);
+      for(let k = 0; k * BEAT * 4 < sec - 1.2; k++){ const tt = t0 + 0.75 + k * BEAT * 4; [1568, 2093, 2637].forEach((f, i) => tone(bus, 'sine', f, tt + i * 0.11, 0.65, 0.12)); }
+      return () => { if(!ctx) return; bus.gain.setTargetAtTime(0.0001, ctx.currentTime, 0.08); music.gain.setTargetAtTime(musicLevel, ctx.currentTime, 0.4); setTimeout(() => { try{ bus.disconnect(); }catch(e){} }, 600); }; },
+    pop(){ if(!ctx) return; noise(sfx, ctx.currentTime, 0.18, 0.05, 1800); },
     cheer(){ if(!ctx) return; const t0 = ctx.currentTime; [880, 1109, 1319, 1760, 2217].forEach((f, i) => tone(sfx, 'triangle', f, t0 + i * 0.07, 0.26, 0.24)); },
     over(){ if(!ctx) return; const t0 = ctx.currentTime; [523, 440, 349, 262].forEach((f, i) => tone(sfx, 'triangle', f, t0 + i * 0.16, 0.34, 0.22)); },
   };
@@ -818,6 +880,7 @@ const homeSanty = new T.Group();
   mo.position.set(HOME.pos[0] + dx * 440 * Math.cos(el), HOME.pos[1] + 440 * Math.sin(el), HOME.pos[2] + dz * 440 * Math.cos(el)); mo.scale.set(96, 96, 1); mo.renderOrder = -8; homeSet.add(mo);
 }
 let homeShown = null;
+const stageOn = () => S.mode === 'home' || S.mode === 'jackpot', FW_COLORS = [0xffd54a, 0xff4d63, 0x4de38a, 0xffffff, 0xff8fc4, 0x8fe6ff];
 // ground markers: red strip in front of every obstacle ("this lane is blocked"), gold dot under every pick-up
 const fadeTex = (r, g, b) => { const c = document.createElement('canvas'); c.width = 8; c.height = 64; const x = c.getContext('2d'), gr = x.createLinearGradient(0, 0, 0, 64);
   gr.addColorStop(0, `rgba(${r},${g},${b},.9)`); gr.addColorStop(0.4, `rgba(${r},${g},${b},.5)`); gr.addColorStop(1, `rgba(${r},${g},${b},0)`); x.fillStyle = gr; x.fillRect(0, 0, 8, 64); return new T.CanvasTexture(c); };
@@ -862,6 +925,26 @@ for(let i = 0; i < PART_N; i++) pPos[i * 3 + 1] = -50;
 const partGeo = new T.BufferGeometry(); partGeo.setAttribute('position', new T.BufferAttribute(pPos, 3)); partGeo.setAttribute('color', new T.BufferAttribute(pCol, 3));
 const partPts = new T.Points(partGeo, new T.PointsMaterial({ map: dotTex, size: 0.42, transparent: true, depthWrite: false, vertexColors: true, blending: T.AdditiveBlending }));
 partPts.frustumCulled = false; scene.add(partPts);
+// fireworks for the ฿300 jackpot scene: slow, long-lived sparks that fade out
+const FW_N = LOW ? 360 : 900, fPos = new Float32Array(FW_N * 3), fCol = new Float32Array(FW_N * 3), fBase = new Float32Array(FW_N * 3), fVel = new Float32Array(FW_N * 3), fLife = new Float32Array(FW_N), fMax = new Float32Array(FW_N); let fNext = 0, fAlive = 0;
+for(let i = 0; i < FW_N; i++) fPos[i * 3 + 1] = -60;
+const fwGeo = new T.BufferGeometry(); fwGeo.setAttribute('position', new T.BufferAttribute(fPos, 3)); fwGeo.setAttribute('color', new T.BufferAttribute(fCol, 3));
+const fwPts = new T.Points(fwGeo, new T.PointsMaterial({ map: dotTex, size: 1.25, transparent: true, depthWrite: false, vertexColors: true, blending: T.AdditiveBlending, fog: false }));
+fwPts.frustumCulled = false; fwPts.visible = false; scene.add(fwPts);
+function firework(x, y, z, color){
+  _c.set(color); const n = LOW ? 45 : 90, sp = 5.5 + Math.random() * 3.5;
+  for(let k = 0; k < n; k++){ const i = fNext; fNext = (fNext + 1) % FW_N; const u = Math.random() * 2 - 1, a = Math.random() * 6.283, r = Math.sqrt(1 - u * u), v = sp * (0.75 + Math.random() * 0.25);
+    fPos[i * 3] = x; fPos[i * 3 + 1] = y; fPos[i * 3 + 2] = z; fVel[i * 3] = Math.cos(a) * r * v; fVel[i * 3 + 1] = u * v; fVel[i * 3 + 2] = Math.sin(a) * r * v;
+    fLife[i] = fMax[i] = 1.1 + Math.random() * 0.6; fBase[i * 3] = _c.r; fBase[i * 3 + 1] = _c.g; fBase[i * 3 + 2] = _c.b; }
+}
+function stepFireworks(dt){
+  fAlive = 0;
+  for(let i = 0; i < FW_N; i++){ if(fLife[i] <= 0) continue; fLife[i] -= dt; if(fLife[i] <= 0){ fPos[i * 3 + 1] = -60; continue; } fAlive++;
+    const dr = Math.max(0, 1 - 1.5 * dt); fVel[i * 3] *= dr; fVel[i * 3 + 1] = fVel[i * 3 + 1] * dr - 2.4 * dt; fVel[i * 3 + 2] *= dr;
+    fPos[i * 3] += fVel[i * 3] * dt; fPos[i * 3 + 1] += fVel[i * 3 + 1] * dt; fPos[i * 3 + 2] += fVel[i * 3 + 2] * dt;
+    const f = Math.min(1, fLife[i] / fMax[i] * 1.6); fCol[i * 3] = fBase[i * 3] * f; fCol[i * 3 + 1] = fBase[i * 3 + 1] * f; fCol[i * 3 + 2] = fBase[i * 3 + 2] * f; }
+  fwGeo.attributes.position.needsUpdate = true; fwGeo.attributes.color.needsUpdate = true; fwPts.visible = fAlive > 0;
+}
 const _c = new T.Color();
 function burst(x, y, z, color, n, power){
   _c.set(color);
@@ -873,7 +956,7 @@ function burst(x, y, z, color, n, power){
 /* ============================================================
    GAME STATE
    ============================================================ */
-const S = { mode: 'home', score: 0, dist: 0, bonus: 0, extra: 0, pt: 0, cheer: 0, cheers: 0, nextCheer: 0, speed: 6, hearts: CFG.hearts, lane: 1, px: 0, invuln: 0, t: 0, opens: 1, combo: 0, comboT: 0,
+const S = { mode: 'home', score: 0, dist: 0, bonus: 0, extra: 0, pt: 0, cheer: 0, cheers: 0, nextCheer: 0, fwT: 0, speed: 6, hearts: CFG.hearts, lane: 1, px: 0, invuln: 0, t: 0, opens: 1, combo: 0, comboT: 0,
   rowAcc: 0, rows: 0, lastFree: 1, shake: 0, endT: 0, scroll: 0, first: true, bot: false, hits: 0, gifts: 0, stars: 0 };
 let best = store.get('best', 0) || 0;
 let firstResult = store.get('first', null);          // { score, opens, total } — the coupon is fixed by the first play
@@ -998,17 +1081,19 @@ function update(dt){
   if(auroraMat) auroraMat.opacity = (0.42 + Math.sin(S.t * 0.5) * 0.12) * skyDark;
   // time of day: home screen = night · a run starts bright and darkens with the speed · it eases, never jumps
   if(S.mode === 'play') S.skyT = Math.min(1, Math.max(0, (progress() - SKY_FROM) / (SKY_TO - SKY_FROM)));
-  const skyGoal = skyForce !== null ? skyForce : S.mode === 'home' ? 1 : (S.skyT || 0);
+  const skyGoal = skyForce !== null ? skyForce : stageOn() ? 1 : (S.skyT || 0);
   if(Math.abs(skyGoal - skyNow) > 0.0015){ const k = skyNow + (skyGoal - skyNow) * (1 - Math.exp(-dt * 2.2)); setSky(Math.abs(skyGoal - k) < 0.003 ? skyGoal : k); }
   // camera
   if(S.shake > 0) S.shake = Math.max(0, S.shake - dt * 1.6);
   const sx = (Math.random() - 0.5) * S.shake * 0.6, sy = (Math.random() - 0.5) * S.shake * 0.4;
-  const homeNow = S.mode === 'home';
+  const homeNow = stageOn(), jp = S.mode === 'jackpot';
+  if(jp){ S.fwT -= dt; if(S.fwT <= 0){ S.fwT = 0.22 + Math.random() * 0.3; const p = HOME.at(Math.random() * 1.7 - 0.85, 26 + Math.random() * 14); firework(p[0], 7 + Math.random() * 8, p[1], FW_COLORS[Math.floor(Math.random() * FW_COLORS.length)]); Sound.pop(); } }
+  if(jp || fAlive) stepFireworks(dt);
   if(homeNow !== homeShown){ homeShown = homeNow; homeSet.visible = homeNow; for(const s of slots) s.g.visible = !homeNow; }
   if(homeNow){
     const a = Math.sin(S.t * 0.25) * 0.4;                 // slow sway
     camera.position.set(HOME.pos[0] + HOME.right[0] * a, HOME.pos[1], HOME.pos[2] + HOME.right[1] * a); camera.lookAt(HOME.look[0], HOME.eye - HOME.dist * Math.tan(HOME.pitchNow), HOME.look[2]);
-    homeSanty.position.y = Math.abs(Math.sin(S.t * 6.5)) * 0.3; homeSanty.rotation.z = Math.sin(S.t * 6.5) * 0.07;
+    homeSanty.position.y = Math.abs(Math.sin(S.t * (jp ? 9 : 6.5))) * (jp ? 0.6 : 0.3); homeSanty.rotation.z = Math.sin(S.t * (jp ? 9 : 6.5)) * 0.07;      // jackpot: she jumps higher and faster
   } else {
     camera.position.set(S.px * 0.62 + sx, cam.play[1] + sy, cam.play[2]); camera.lookAt(S.px * 0.75, cam.look[0], cam.look[1]);
     const f = cam.fov + progress() * 5 + Math.min(7, Math.max(0, S.speed - CFG.speedRef) * 0.08); if(Math.abs(camera.fov - f) > 0.05){ camera.fov = f; camera.updateProjectionMatrix(); }
@@ -1031,12 +1116,13 @@ function setSky(k){                                   // 0 = day · 0.5 = sunset
 }
 // home screen: fit the sleigh, reindeer and น้องแซนตี้ into the gap between the tag line and the prize line, whatever the screen size
 function layoutHome(){
-  const home = $('home'); HOME.fovNow = HOME.fov(camera.aspect); HOME.shift = 0; if(home.hidden) return;
-  const box = $('app').getBoundingClientRect(), H = box.height, side = camera.aspect > 1.5 && H <= 520;      // phone held sideways
-  let tb = home.querySelector('.title').getBoundingClientRect().bottom - box.top, pt = home.querySelector('.prize').getBoundingClientRect().top - box.top, fov0 = HOME.fovNow;
-  if(side){ tb = home.querySelector('.topbar').getBoundingClientRect().bottom - box.top; pt = H - 6; HOME.shift = box.width / 4; fov0 = 30; }
+  const scr = $(S.mode === 'jackpot' ? 'jackpot' : 'home'); HOME.fovNow = HOME.fov(camera.aspect); HOME.shift = 0; if(scr.hidden) return;
+  const box = $('app').getBoundingClientRect(), H = box.height, side = scr.id === 'home' && camera.aspect > 1.5 && H <= 520;      // phone held sideways (home screen only)
+  let tb = scr.querySelector('.stage-top').getBoundingClientRect().bottom - box.top, pt = scr.querySelector('.stage-bottom').getBoundingClientRect().top - box.top, fov0 = HOME.fovNow;
+  if(side){ tb = scr.querySelector('.topbar').getBoundingClientRect().bottom - box.top; pt = H - 6; HOME.shift = box.width / 4; fov0 = 30; }
   if(!(H > 0 && pt > tb + 40)) return;
   const DEG = Math.PI / 180, aT = 3.7 * DEG, aB = -11.2 * DEG, m = 6;      // the group spans from 3.7° above eye level (antlers, pom-poms) to 11.2° below (hooves)
+  if(scr.id === 'jackpot') tb += (pt - tb) * 0.3;                          // jackpot: keep the sky under the text free for fireworks, the sleigh sits lower
   for(let fov = fov0; ; fov += 0.5){
     const th = Math.tan(fov * DEG / 2), y = (a, p) => H / 2 - H / 2 * Math.tan(a + p) / th;
     let lo = -0.3, hi = 0.6; for(let i = 0; i < 30; i++){ const p = (lo + hi) / 2; if(y(aT, p) - (tb + m) > (pt - m) - y(aB, p)) lo = p; else hi = p; }      // equal room above and below
@@ -1048,8 +1134,8 @@ function resize(){
   renderer.setSize(w, h, false); camera.aspect = w / h;
   const portrait = camera.aspect < 0.8;
   cam.fov = portrait ? 55 : 50; cam.play = portrait ? [0, 9.6, 14.6] : [0, 6.4, 11.5]; cam.look = portrait ? [0.5, -22] : [0.8, -16];
-  layoutHome(); camera.fov = S.mode === 'home' ? HOME.fovNow : cam.fov;
-  if(S.mode === 'home' && HOME.shift) camera.setViewOffset(w, h, -HOME.shift, 0, w, h); else camera.clearViewOffset();
+  layoutHome(); camera.fov = stageOn() ? HOME.fovNow : cam.fov;
+  if(stageOn() && HOME.shift) camera.setViewOffset(w, h, -HOME.shift, 0, w, h); else camera.clearViewOffset();
   camera.updateProjectionMatrix();
 }
 window.addEventListener('resize', resize); window.addEventListener('orientationchange', () => setTimeout(resize, 200));
@@ -1069,7 +1155,7 @@ function frame(now){
 /* ============================================================
    UI
    ============================================================ */
-const SCREENS = ['home', 'how', 'pause', 'over', 'pick', 'board'];
+const SCREENS = ['home', 'how', 'pause', 'over', 'pick', 'board', 'jackpot', 'demo'];
 function show(id){ for(const s of SCREENS) $(s).hidden = s !== id; $('hud').hidden = !(id === null || id === 'pause'); $('ctl').hidden = id !== null; }
 function renderHearts(){ let h = ''; for(let i = 0; i < CFG.hearts; i++) h += ic('heart', i < S.hearts ? '' : 'off'); $('hearts').innerHTML = h; }
 let goalKey = '';
@@ -1115,30 +1201,63 @@ function finish(){
   }
   Sound.setLevel(0.5); show('over');
 }
+/* ---- endings: ฿50–100 normal · ฿150–250 good (confetti, gold frame, fanfare) · ฿300 jackpot (full-screen scene, then a gold coupon) ---- */
+const JP_SEC = 10; let pickDemo = false;
+const tierOf = total => total >= 300 ? 'jackpot' : total >= 150 ? 'good' : 'normal';
+function confetti(n){
+  const fx = $('fx'), cols = ['#ffcc4d', '#e23a4e', '#27a36b', '#ffffff', '#ff8fc4'];
+  for(let k = 0; k < n; k++){ const p = document.createElement('i'); p.style.left = Math.random() * 100 + '%'; p.style.background = cols[k % cols.length]; p.style.animationDuration = (1.7 + Math.random() * 1.3).toFixed(2) + 's'; p.style.animationDelay = (Math.random() * 0.5).toFixed(2) + 's';
+    p.style.transform = 'rotate(' + Math.floor(Math.random() * 360) + 'deg)'; fx.appendChild(p); setTimeout(() => p.remove(), 3700); }
+}
+function showCoupon(total, tier){
+  $('pickTitle').textContent = t(tier === 'jackpot' ? 'jpDone' : tier === 'good' ? 'goodDone' : 'pickDone'); $('pickSub').textContent = '';
+  $('coupon').className = 'coupon' + (tier === 'normal' ? '' : ' ' + tier); $('couponLbl').textContent = t(tier === 'jackpot' ? 'couponJp' : 'couponLbl'); $('couponAmt').textContent = '฿' + total;
+  $('btnPickAgain').textContent = t(pickDemo ? 'home' : 'again'); $('coupon').hidden = false; $('pickBtns').hidden = false;
+  if(tier === 'jackpot'){ confetti(70); Sound.fanfare(); } else if(tier === 'good'){ confetti(44); Sound.fanfare(); } else Sound.tier();
+}
+function showJackpot(total){
+  const back = S.mode; S.mode = 'jackpot'; S.fwT = 0.25; $('jpAmt').textContent = '฿' + total; show('jackpot'); resize();
+  const stop = Sound.jackpot(JP_SEC), bar = $('jpBar'); bar.style.transition = 'none'; bar.style.width = '0';
+  requestAnimationFrame(() => requestAnimationFrame(() => { bar.style.transition = 'width ' + JP_SEC + 's linear'; bar.style.width = '100%'; }));
+  let done = false; const scr = $('jackpot'); confetti(30); const rain = setInterval(() => confetti(22), 1300);
+  const go = () => { if(done) return; done = true; clearTimeout(auto); clearInterval(rain); stop(); scr.onclick = null; S.mode = back; show('pick'); resize(); showCoupon(total, 'jackpot'); };
+  const auto = setTimeout(go, JP_SEC * 1000);            // no tap → the coupon comes by itself when the song ends
+  setTimeout(() => { scr.onclick = go; }, 900);          // ignore the tap that opened the last box
+}
+function endPick(total){ const tier = tierOf(total); if(tier === 'jackpot') setTimeout(() => showJackpot(total), 900); else showCoupon(total, tier); }
 /* gift boxes — SAMPLE values only; the real game asks the server, which decides and issues the coupon */
+const boxColors = ['#e23a4e', '#27a36b', '#3d7dff', '#9b5de5', '#ff8a3d', '#e23a4e', '#27a36b', '#3d7dff', '#9b5de5'];
+const amtHtml = v => v ? `<span class="amt">฿${v}</span>` : `<span class="amt zero">${t('empty')}</span>`;
 function openPick(score, n){
-  let left = n, total = 0; const grid = $('grid9'); grid.innerHTML = '';
+  let left = n, total = 0; const grid = $('grid9'); grid.innerHTML = ''; pickDemo = false;
   $('coupon').hidden = true; $('pickBtns').hidden = true;
   $('pickTitle').textContent = t('pickTitle', { n }); $('pickSub').textContent = t('pickSub');
-  const colors = ['#e23a4e', '#27a36b', '#3d7dff', '#9b5de5', '#ff8a3d', '#e23a4e', '#27a36b', '#3d7dff', '#9b5de5'];
-  const amt = v => v ? `<span class="amt">฿${v}</span>` : `<span class="amt zero">${t('empty')}</span>`;
   for(let i = 0; i < 9; i++){
-    const b = document.createElement('button'); b.className = 'gbox'; b.style.color = colors[i]; b.innerHTML = ic('gift'); b.setAttribute('aria-label', 'gift ' + (i + 1));
+    const b = document.createElement('button'); b.className = 'gbox'; b.style.color = boxColors[i]; b.innerHTML = ic('gift'); b.setAttribute('aria-label', 'gift ' + (i + 1));
     b.onclick = () => {
       if(b.disabled || left <= 0) return;
       const first = left === n, v = first ? (Math.random() < 0.6 ? 50 : 100) : [0, 50, 50, 100][Math.floor(Math.random() * 4)];
-      total += v; left--; b.disabled = true; b.classList.add('open'); b.innerHTML = amt(v); if(v) Sound.star(); else Sound.click();
+      total += v; left--; b.disabled = true; b.classList.add('open'); b.innerHTML = amtHtml(v); if(v) Sound.star(); else Sound.click();
       if(left > 0){ $('pickSub').textContent = t('pickLeft', { n: left }); return; }
       setTimeout(() => {
-        grid.querySelectorAll('.gbox:not(.open)').forEach(r => { r.disabled = true; r.classList.add('rest'); r.innerHTML = amt([0, 50, 0, 100, 50, 150][Math.floor(Math.random() * 6)]); });
+        grid.querySelectorAll('.gbox:not(.open)').forEach(r => { r.disabled = true; r.classList.add('rest'); r.innerHTML = amtHtml([0, 50, 0, 100, 50, 150][Math.floor(Math.random() * 6)]); });
         firstResult = { score, opens: n, total }; store.set('first', firstResult); pending = null; store.set('pending', null); $('btnReset').hidden = false;
-        $('pickTitle').textContent = t('pickDone'); $('pickSub').textContent = '';
-        $('couponAmt').textContent = '฿' + total; $('coupon').hidden = false; $('pickBtns').hidden = false; Sound.tier();
+        endPick(total);
       }, 650);
     };
     grid.appendChild(b);
   }
   show('pick');
+}
+/* sample tools: show an ending without playing (nothing is saved) */
+function demoEnding(total){
+  const vals = { 50: [50], 150: [100, 50], 300: [100, 100, 100] }[total], grid = $('grid9'); grid.innerHTML = ''; pickDemo = true;
+  $('coupon').hidden = true; $('pickBtns').hidden = true; $('pickTitle').textContent = t('pickTitle', { n: vals.length }); $('pickSub').textContent = '';
+  for(let i = 0; i < 9; i++){ const b = document.createElement('button'); b.className = 'gbox'; b.style.color = boxColors[i]; b.disabled = true;
+    const v = [4, 1, 7].indexOf(i) < vals.length && [4, 1, 7].indexOf(i) >= 0 ? vals[[4, 1, 7].indexOf(i)] : null;
+    if(v !== null){ b.classList.add('open'); b.innerHTML = amtHtml(v); } else { b.classList.add('rest'); b.innerHTML = amtHtml([0, 50, 0, 100, 50, 150][i % 6]); }
+    grid.appendChild(b); }
+  show('pick'); endPick(total);
 }
 /* ranking — SAMPLE rows; the real board comes from the server */
 function openBoard(){
@@ -1169,7 +1288,10 @@ tap('btnPickBoard', () => { Sound.click(); openBoard(); });
 tap('btnOverHome', () => { Sound.click(); goHome(); });
 tap('btnBoardHome', () => { Sound.click(); goHome(); });
 tap('btnBoardPlay', () => { Sound.click(); startGame(); });
-tap('btnPickAgain', () => { Sound.click(); startGame(); });
+tap('btnPickAgain', () => { Sound.click(); if(pickDemo){ pickDemo = false; goHome(); } else startGame(); });
+tap('btnDemo', () => { Sound.click(); show('demo'); });
+tap('btnDemoBack', () => { Sound.click(); goHome(); });
+for(const v of [50, 150, 300]) tap('btnDemo' + v, () => { Sound.click(); demoEnding(v); });
 tap('btnPause', () => pause(true));
 tap('btnResume', () => pause(false));
 tap('btnQuit', () => { Sound.suspend(false); goHome(); });
@@ -1195,7 +1317,7 @@ window.addEventListener('contextmenu', e => e.preventDefault());
 /* ---- boot ---- */
 setSky(1); applyLang(); setSoundIcon(); renderHearts(); $('bestHome').textContent = fmt(best); $('btnReset').hidden = !firstResult; show('home'); resize();
 requestAnimationFrame(frame);
-window.__dash = { scene, camera, renderer, spawn, clearActive, santys, HOME, homeSet, homeSanty, slots, player, setTheme(n){ skyForce = n === 'day' ? 0 : n === 'dusk' ? 0.5 : n === 'night' ? 1 : null; if(skyForce !== null) setSky(skyForce); }, get sky(){ return skyNow; }, gapMeters, cam, resize, S, CFG, active, startGame, update, finish, goHome, openBoard, moveLane, get best(){ return best; }, get first(){ return firstResult; }, reset(){ firstResult = null; pending = null; best = 0; store.set('first', null); store.set('pending', null); store.set('best', 0); store.set('how', false); seenHow = false; goHome(); }, spawnRow, stop(v){ running = !v; } };
+window.__dash = { scene, camera, renderer, spawn, clearActive, santys, demoEnding, tierOf, get fwAlive(){ return fAlive; }, HOME, homeSet, homeSanty, slots, player, setTheme(n){ skyForce = n === 'day' ? 0 : n === 'dusk' ? 0.5 : n === 'night' ? 1 : null; if(skyForce !== null) setSky(skyForce); }, get sky(){ return skyNow; }, gapMeters, cam, resize, S, CFG, active, startGame, update, finish, goHome, openBoard, moveLane, get best(){ return best; }, get first(){ return firstResult; }, reset(){ firstResult = null; pending = null; best = 0; store.set('first', null); store.set('pending', null); store.set('best', 0); store.set('how', false); seenHow = false; goHome(); }, spawnRow, stop(v){ running = !v; } };
 })();
 </script>
 
